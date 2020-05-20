@@ -24,7 +24,7 @@ class Detector:
         # Frames Per Second
         self.fps = None
         self.model_file = 'ped_ssd_mobilenet_v2_quantized_edgetpu.tflite'
-        self.model_path = 'libs/detectors/edgetpu/data/' + self.model_file
+        self.model_path = '/repo/data/edgetpu/' + self.model_file
 
         # Get the model .tflite file path from the config.
         # If there is no .tflite file in the path it will be downloaded automatically from base_url

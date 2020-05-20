@@ -5,8 +5,6 @@
 
 FROM amd64/debian:buster
 
-VOLUME  /repo
-
 RUN apt-get update && apt-get install -y wget gnupg usbutils
 
 RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list
@@ -18,7 +16,8 @@ RUN python3 -m pip install https://dl.google.com/coral/python/tflite_runtime-2.1
 
 RUN apt-get install -y python3-flask python3-opencv python3-scipy
 
-WORKDIR /repo/applications/smart-distancing
+COPY . /repo
+WORKDIR /repo
 
 ENTRYPOINT ["python3", "neuralet-distancing.py"]
 CMD ["--config", "config-skeleton.ini"]

@@ -8,8 +8,6 @@ FROM nvcr.io/nvidia/l4t-base:r32.3.1
 ENV TZ=US/Pacific
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-VOLUME /repo
-
 RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/tensorrt.tar.gz -O /opt/tensorrt.tar.gz
 RUN tar -xzf /opt/tensorrt.tar.gz -C /usr/local/lib/python3.6/dist-packages/
 
@@ -21,7 +19,8 @@ RUN apt-get install -y python3-flask python3-opencv python3-scipy python3-matplo
 
 RUN pip3 install pycuda
 
-WORKDIR /repo/applications/smart-distancing
+ADD . /repo
+WORKDIR /repo
 
 ENTRYPOINT ["python3", "neuralet-distancing.py"]
 CMD ["--config", "config-jetson.ini"]

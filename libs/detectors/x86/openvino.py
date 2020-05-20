@@ -24,7 +24,7 @@ class Detector:
         # Frames Per Second
         self.fps = None
 
-        model_path = 'libs/detectors/x86/data'
+        model_path = '/repo/data/x86'
 
         core = IECore()
         network = core.read_network(
