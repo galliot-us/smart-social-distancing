@@ -5,6 +5,7 @@ import numpy as np
 from datetime import date
 from flask import Flask
 from flask import render_template
+from flask import send_from_directory
 from flask import Response
 
 from .utils import visualization_utils as vis_util
@@ -109,7 +110,11 @@ class WebGUI:
 
     def create_flask_app(self):
         # Create and return a flask instance named 'app'
-        app = Flask(__name__)
+        app = Flask(__name__, static_folder='/repo/data/web_gui/static')
+
+        @app.route('/js/<path:path>')
+        def send_js(path):
+            return send_from_directory('static/js', path)
 
         @app.route("/")
         def _index():
