@@ -1,3 +1,7 @@
+**/__pycache__/
 demo.gif
 .git/
 data/
+frontend/build/
+frontend/node_modules/
+tasks/

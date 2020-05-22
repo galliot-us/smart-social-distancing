@@ -20,7 +20,11 @@ RUN python3 -m pip install --upgrade pip==19.3.1 setuptools==41.0.0 && python3 -
 
 RUN apt-get install -y python3-wget
 
-RUN apt-get install -y python3-flask python3-opencv python3-scipy
+RUN apt-get install -y python3-opencv python3-scipy
+
+RUN pip3 install fastapi uvicorn aiofiles pyzmq
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
 WORKDIR /repo

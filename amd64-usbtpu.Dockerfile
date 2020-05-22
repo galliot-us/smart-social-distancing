@@ -14,7 +14,11 @@ RUN apt-get update && apt-get install -y python3-pip pkg-config libedgetpu1-std 
 
 RUN python3 -m pip install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_x86_64.whl 
 
-RUN apt-get install -y python3-flask python3-opencv python3-scipy
+RUN apt-get install -y python3-opencv python3-scipy
+
+RUN pip3 install fastapi uvicorn aiofiles pyzmq
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
 WORKDIR /repo

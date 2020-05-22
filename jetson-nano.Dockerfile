@@ -15,9 +15,11 @@ RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/j
 
 RUN apt-get update && apt-get install -y python3-pip pkg-config
 
-RUN apt-get install -y python3-flask python3-opencv python3-scipy python3-matplotlib
+RUN apt-get install -y python3-opencv python3-scipy python3-matplotlib
 
-RUN pip3 install pycuda
+RUN pip3 install pycuda fastapi uvicorn aiofiles pyzmq
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 ADD . /repo
 WORKDIR /repo

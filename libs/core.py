@@ -2,9 +2,14 @@ import time
 import cv2 as cv
 import numpy as np
 import math
+import os
+
+from libs import pubsub
 from libs.centroid_object_tracker import CentroidTracker
-from scipy.spatial import distance as dist
 from libs.loggers.loggers import Logger
+from tools.environment_score import mx_environment_scoring_consider_crowd
+from tools.objects_post_process import extract_violating_objects
+from ui.utils import visualization_utils
 
 
 class Distancing:
@@ -40,6 +45,7 @@ class Distancing:
 
         self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
+        self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
 
     def set_ui(self, ui):
         self.ui = ui
@@ -51,13 +57,12 @@ class Distancing:
         """
 
         # Resize input image to resolution
-        resolution = [int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')]
-        cv_image = cv.resize(cv_image, tuple(resolution))
+        cv_image = cv.resize(cv_image, self.resolution)
 
         resized_image = cv.resize(cv_image, tuple(self.image_size[:2]))
         rgb_resized_image = cv.cvtColor(resized_image, cv.COLOR_BGR2RGB)
         tmp_objects_list = self.detector.inference(rgb_resized_image)
-        [w,h] = resolution
+        [w,h] = self.resolution
 
         for obj in tmp_objects_list:
             box = obj["bbox"]
@@ -83,14 +88,72 @@ class Distancing:
             return
 
         self.running_video = True
+
+        dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
+        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
+
+        send = pubsub.init_publisher('default')  # TODO hossein: replace default with camera-id in multi-camera
+        send_birds_eye = pubsub.init_publisher('default-birdseye')
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
+            birds_eye_window = np.zeros((300, 200, 3), dtype="uint8")
             if np.shape(cv_image) != ():
                 cv_image, objects, distancings = self.__process(cv_image)
+                output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
+
+                category_index = {class_id: {
+                    "id": class_id,
+                    "name": "Pedestrian",
+                }}  # TODO: json file for detector config
+                # Draw bounding boxes and other visualization factors on input_frame
+                visualization_utils.visualize_boxes_and_labels_on_image_array(
+                    cv_image,
+                    output_dict["detection_boxes"],
+                    output_dict["detection_classes"],
+                    output_dict["detection_scores"],
+                    output_dict["detection_colors"],
+                    category_index,
+                    instance_masks=output_dict.get("detection_masks"),
+                    use_normalized_coordinates=True,
+                    line_thickness=3,
+                )
+                # TODO: Implement perspective view for objects
+                birds_eye_window = visualization_utils.birds_eye_view(birds_eye_window, output_dict["detection_boxes"],
+                                                           output_dict["violating_objects"])
+                try:
+                    fps = self.detector.fps
+                except:
+                    # fps is not implemented for the detector instance"
+                    fps = None
+
+                # Put fps to the frame
+                # region
+                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+                txt_fps = 'Frames rate = ' + str(fps) + '(fps)'  # Frames rate = 95 (fps)
+                # (0, 0) is the top-left (x,y); normalized number between 0-1
+                origin = (0.05, 0.93)
+                visualization_utils.text_putter(cv_image, txt_fps, origin)
+                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+                # endregion
+
+                # Put environment score to the frame
+                # region
+                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+                violating_objects = extract_violating_objects(distancings, dist_threshold)
+                env_score = mx_environment_scoring_consider_crowd(len(objects), len(violating_objects))
+                txt_env_score = 'Env Score = ' + str(env_score)  # Env Score = 0.7
+                origin = (0.05, 0.98)
+                visualization_utils.text_putter(cv_image, txt_env_score, origin)
+                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+                # endregion
+
+                _, cv_image = cv.imencode(".jpeg", cv_image)
+                _, birds_eye_window = cv.imencode(".jpeg", birds_eye_window)
+                send(bytearray(cv_image))
+                send_birds_eye(bytearray(birds_eye_window))
             else:
                 continue
             self.logger.update(objects, distancings)
-            self.ui.update(cv_image, objects, distancings)
         input_cap.release()
         self.running_video = False
 

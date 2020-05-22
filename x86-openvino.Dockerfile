@@ -4,7 +4,9 @@ USER root
 
 RUN apt-get update && apt-get install -y pkg-config libsm6 libxext6 libxrender-dev
 
-RUN pip3 install --upgrade pip setuptools==41.0.0 && pip3 install opencv-python wget flask scipy image
+RUN pip3 install --upgrade pip setuptools==41.0.0 && pip3 install opencv-python wget fastapi uvicorn aiofiles pyzmq scipy image
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
 WORKDIR /repo
