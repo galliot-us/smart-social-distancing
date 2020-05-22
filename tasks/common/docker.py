@@ -6,6 +6,7 @@ _target = lambda target: '' if target is None else f' --target {target}'
 _tag = lambda tag: '' if tag is None else f' -t {tag}'  # tag
 _rm = lambda rm: '' if rm is None else ' --rm'  # remove after use
 _it = lambda it: '' if it is None else ' -it'  # interactive
+_runtime = lambda runtime: '' if runtime is None else f' --runtime {runtime}'
 listable = lambda func: lambda x: ''.join(map(func, x)) if isinstance(x, (list, tuple)) else func(
     x)  # allow single item or list of multiple items
 _p = listable(lambda p: '' if p is None else (f' -p {p}' if ':' in str(p) else f' -p {p}:{p}'))  # port mapping
@@ -26,8 +27,8 @@ def push(c, tag, host=None):
     c.run(f'{_host(host)} docker --config ~/.neuralet-dev/docker push {tag}')
 
 
-def run(c, tag, rm=None, it=None, p=None, host=None, v=None):
-    c.run(f'{_host(host)} docker run{_rm(rm)}{_it(it)}{_p(p)}{_v(v)} {tag}')
+def run(c, tag, rm=None, it=None, p=None, host=None, v=None, runtime=None):
+    c.run(f'{_host(host)} docker run{_runtime(runtime)}{_rm(rm)}{_it(it)}{_p(p)}{_v(v)} {tag}')
 
 
 def get_tag(c, name, version='latest'):
@@ -71,5 +72,6 @@ def auto_run(c, name, **kwargs):
         c,
         tag=get_tag(c, name),
         host=get_run_host(c, name),
+        runtime=get_config(c, 'docker.custom_runtimes').get(name, None),
         **kwargs,
     )

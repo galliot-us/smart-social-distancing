@@ -39,6 +39,9 @@ defaults = {
             constants.D_AMD64_USBTPU: 'gpu'
         },
         'custom_targets': {},
+        'custom_runtimes': {
+            constants.D_JETSON_NANO: 'nvidia',
+        },
     },
 }
 
