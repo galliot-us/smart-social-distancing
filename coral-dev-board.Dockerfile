@@ -1,7 +1,7 @@
 # docker can be installed on the dev board following these instructions: 
 # https://docs.docker.com/install/linux/docker-ce/debian/#install-using-the-repository , step 4: arm64
-# 1) build: docker build -f Dockerfile-coral-dev-board -t "neuralet/coral-dev-board:applications-smart-distancing" .
-# 2) run: docker run -it --privileged -p HOST_PORT:8000 -v /PATH_TO_CLONED_REPO_ROOT/:/repo neuralet/coral-dev-board:applications-smart-distancing
+# 1) build: docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
+# 2) run: docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-coral-dev-board
 
 FROM arm64v8/debian:buster
 
