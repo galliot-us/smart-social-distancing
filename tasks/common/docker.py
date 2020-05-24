@@ -7,6 +7,7 @@ _tag = lambda tag: '' if tag is None else f' -t {tag}'  # tag
 _rm = lambda rm: '' if rm is None else ' --rm'  # remove after use
 _it = lambda it: '' if it is None else ' -it'  # interactive
 _runtime = lambda runtime: '' if runtime is None else f' --runtime {runtime}'
+_cache_from = lambda cache_from: '' if cache_from is None else f' --cache-from {cache_from}'
 listable = lambda func: lambda x: ''.join(map(func, x)) if isinstance(x, (list, tuple)) else func(
     x)  # allow single item or list of multiple items
 _p = listable(lambda p: '' if p is None else (f' -p {p}' if ':' in str(p) else f' -p {p}:{p}'))  # port mapping
@@ -14,8 +15,12 @@ _v = listable(lambda v: '' if v is None else (f' -v {v}' if ':' in str(v) else f
 _e = listable(lambda e: '' if e is None else f' -e {e}')  # environment variable
 
 
-def build(c, dockerfile, tag=None, target=None, host=None):
-    c.run(f'{_host(host)} docker build{_target(target)}{_tag(tag)} -f {dockerfile} {ROOT_DIR}')
+def build(c, dockerfile, tag=None, target=None, host=None, cache_from=None):
+    c.run(
+        f'{_host(host)} docker '
+        f'build{_target(target)}{_tag(tag)}{_cache_from(cache_from)} '
+        f'-f {dockerfile} {ROOT_DIR}'
+    )
 
 
 def login(c):
@@ -28,7 +33,10 @@ def push(c, tag, host=None):
 
 
 def run(c, tag, rm=None, it=None, p=None, host=None, v=None, runtime=None):
-    c.run(f'{_host(host)} docker run{_runtime(runtime)}{_rm(rm)}{_it(it)}{_p(p)}{_v(v)} {tag}')
+    c.run(
+        f'{_host(host)} docker '
+        f'run{_runtime(runtime)}{_rm(rm)}{_it(it)}{_p(p)}{_v(v)} {tag}'
+    )
 
 
 def get_tag(c, name, version='latest'):
@@ -37,11 +45,11 @@ def get_tag(c, name, version='latest'):
     return f'{image_name}:{version}{tag_suffix}'
 
 
-def get_build_host(c, name):
+def get_remote_build_host(c, name):
     return get_config(c, 'docker.default_host')[name]
 
 
-def get_run_host(c, name):
+def get_remote_run_host(c, name):
     return get_config(c, 'docker.default_host')[name]
 
 
@@ -49,29 +57,33 @@ def get_dockerfile(c, name):
     return get_config(c, 'docker.dockerfiles')[name]
 
 
-def auto_build(c, name):
+def auto_build(c, name, local=False, **kwargs):
+    tag = get_tag(c, name)
+    kwargs.setdefault('cache_from', tag)
     build(
         c,
         get_dockerfile(c, name),
-        host=get_build_host(c, name),
-        tag=get_tag(c, name),
+        host=None if local else get_remote_build_host(c, name),
+        tag=tag,
         target=get_config(c, 'docker.custom_targets').get(name, None),
+        **kwargs,
     )
 
 
-def auto_push(c, name):
+def auto_push(c, name, local=False, **kwargs):
     push(
         c,
         tag=get_tag(c, name),
-        host=get_build_host(c, name),
+        host=None if local else get_remote_build_host(c, name),
+        **kwargs,
     )
 
 
-def auto_run(c, name, **kwargs):
+def auto_run(c, name, local=False, **kwargs):
     run(
         c,
         tag=get_tag(c, name),
-        host=get_run_host(c, name),
+        host=None if local else get_remote_run_host(c, name),
         runtime=get_config(c, 'docker.custom_runtimes').get(name, None),
         **kwargs,
     )

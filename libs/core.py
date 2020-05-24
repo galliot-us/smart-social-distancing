@@ -1,8 +1,6 @@
-import time
 import cv2 as cv
 import numpy as np
 import math
-import os
 
 from libs import pubsub
 from libs.centroid_object_tracker import CentroidTracker
@@ -16,7 +14,6 @@ class Distancing:
 
     def __init__(self, config):
         self.config = config
-        self.ui = None
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
         self.running_video = False
@@ -46,9 +43,6 @@ class Distancing:
         self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
-
-    def set_ui(self, ui):
-        self.ui = ui
 
     def __process(self, cv_image):
         """
@@ -156,12 +150,6 @@ class Distancing:
             self.logger.update(objects, distancings)
         input_cap.release()
         self.running_video = False
-
-    def process_image(self, image_path):
-        # Process and pass the image to ui modules
-        cv_image = cv.imread(image_path)
-        cv_image, objects, distancings = self.__process(cv_image)
-        self.ui.update(cv_image, objects, distancings)
 
     def calculate_distancing(self, objects_list):
         """
@@ -300,7 +288,6 @@ class Distancing:
         l=math.sqrt(lx**2+ly**2)
         
         return l 
-
 
     def calculate_box_distances(self, nn_out):
         

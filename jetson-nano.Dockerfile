@@ -19,10 +19,10 @@ RUN apt-get install -y python3-opencv python3-scipy python3-matplotlib
 
 RUN pip3 install pycuda fastapi uvicorn aiofiles pyzmq
 
-COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
-
-ADD . /repo
-WORKDIR /repo
-
 ENTRYPOINT ["python3", "neuralet-distancing.py"]
 CMD ["--config", "config-jetson.ini"]
+WORKDIR /repo
+EXPOSE 8000
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+COPY . /repo/

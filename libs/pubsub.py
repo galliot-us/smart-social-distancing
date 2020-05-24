@@ -3,11 +3,20 @@ Inspired from: https://github.com/zeromq/pyzmq/issues/1241#issuecomment-44118752
 TODO: replace with more efficient shared-memory solution
 """
 import zmq
-import threading
+import multiprocessing
 
 ctx = zmq.Context()
-_zmq_port = {}
-_zmq_lock = threading.Lock()
+manager = None
+_zmq_port = None
+_zmq_lock = None
+
+
+def init_shared_resources():
+    global manager, _zmq_port, _zmq_lock
+    manager = multiprocessing.Manager()
+    _zmq_port = manager.dict()
+    _zmq_lock = manager.Lock()
+
 
 def init_publisher(pipe_id, buffer_size=1024 * 1024):
     """

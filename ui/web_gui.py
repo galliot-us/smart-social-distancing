@@ -1,8 +1,4 @@
-import threading
 import time
-import cv2 as cv
-import numpy as np
-from datetime import date
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse, StreamingResponse
@@ -22,18 +18,12 @@ class WebGUI:
         is possible by calling get_section_dict method.
     """
 
-    def __init__(self, config, engine_instance):
+    def __init__(self, config):
         self.config = config
-        self.__ENGINE_INSTANCE = engine_instance
-        self._output_frame = None
-        self._birds_view = None
-        self._lock = threading.Lock()
         self._host = self.config.get_section_dict("App")["Host"]
         self._port = int(self.config.get_section_dict("App")["Port"])
-        self.app = self.create_fastapi_app()
-        self._displayed_items = {}  # all items here will be used at ui webpage
         self._public_url = self.config.get_section_dict("App")["PublicUrl"]
-
+        self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):
         # Create and return a fastapi instance
@@ -41,7 +31,8 @@ class WebGUI:
 
         if os.environ.get('DEV_ALLOW_ALL_ORIGINS', False):
             from fastapi.middleware.cors import CORSMiddleware
-            app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
+            app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'],
+                               allow_headers=['*'])
 
         app.mount("/panel/static", StaticFiles(directory="/srv/frontend/static"), name="panel")
         app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
@@ -86,19 +77,5 @@ class WebGUI:
 
         return app
 
-
-    def _run(self):
-        # Get video file path from the config
-        video_path = self.config.get_section_dict("App")["VideoPath"]
-        self.__ENGINE_INSTANCE.process_video(video_path)
-
     def start(self):
-        """
-        Start the thread's activity.
-        It must be called at most once. It runes self._run method on a separate thread and starts
-        process_video method at engine instance
-        """
-        process_thread = threading.Thread(target=self._run)
-        process_thread.start()
         uvicorn.run(self.app, host=self._host, port=self._port, log_level='error')
-        self.__ENGINE_INSTANCE.running_video = False

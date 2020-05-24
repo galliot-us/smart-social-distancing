@@ -18,10 +18,11 @@ RUN apt-get install -y python3-opencv python3-scipy
 
 RUN pip3 install fastapi uvicorn aiofiles pyzmq
 
+ENTRYPOINT ["python3", "neuralet-distancing.py"]
+CMD ["--config", "config-skeleton.ini"]
+WORKDIR /repo
+EXPOSE 8000
+
 COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
-WORKDIR /repo
-
-ENTRYPOINT ["python3", "neuralet-distancing.py"]
-CMD ["--config", "config-skeleton.ini"]
