@@ -78,4 +78,4 @@ class WebGUI:
         return app
 
     def start(self):
-        uvicorn.run(self.app, host=self._host, port=self._port, log_level='error')
+        uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)

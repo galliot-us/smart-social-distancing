@@ -18,7 +18,6 @@ def run(c, name, local=False, port=None, rm=True, build_frontend=True):
 
     if build_frontend:
         docker.auto_build(c, constants.D_FRONTEND, host=docker.get_host(c, name, local))
-        globals()['build'].body(c, name, local=local)
 
     if local:
         data_mount = f'{ROOT_DIR}/data'
@@ -35,8 +34,3 @@ def run(c, name, local=False, port=None, rm=True, build_frontend=True):
     docker.auto_build(c, name, local=local)
     docker.auto_run(c, name, p=[f'{port}:8000'], v=[f'{data_mount}:/repo/data', f'{data_mount}/root:/root'], rm=rm,
                     local=local)
-
-@task
-def tmp(c):
-    from pprint import pprint
-    pprint(dir(c))

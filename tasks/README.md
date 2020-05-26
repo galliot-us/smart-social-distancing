@@ -1,4 +1,4 @@
-This folder is intended for internal DevOps only.
+This folder is intended for internal DevOps only. This code is not being used by any module unless by installing and running `invoke`. 
 
 Uses http://www.pyinvoke.org/.
 

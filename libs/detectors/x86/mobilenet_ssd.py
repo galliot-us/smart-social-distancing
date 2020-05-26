@@ -40,7 +40,6 @@ class Detector:
         # Frames Per Second
         self.fps = None
 
-        tf.compat.v1.disable_eager_execution()
         self.detection_model = load_model('ssd_mobilenet_v2_coco_2018_03_29')
 
     def inference(self, resized_rgb_image):
@@ -69,7 +68,6 @@ class Detector:
         class_id = int(self.config.get_section_dict('Detector')['ClassID'])
         score_threshold = float(self.config.get_section_dict('Detector')['MinScore'])
         result = []
-        print(scores, boxes.shape, flush=True)
         for i in range(boxes.shape[1]):  # number of boxes
             if labels[0, i] == class_id and scores[0, i] > score_threshold:
                 result.append({"id": str(class_id) + '-' + str(i), "bbox": boxes[0, i, :], "score": scores[0, i]})
