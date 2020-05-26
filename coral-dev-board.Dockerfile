@@ -1,24 +1,15 @@
 # docker can be installed on the dev board following these instructions: 
 # https://docs.docker.com/install/linux/docker-ce/debian/#install-using-the-repository , step 4: arm64
-# 1) build: docker build -f Dockerfile-coral-dev-board -t "neuralet/coral-dev-board:applications-smart-distancing" .
-# 2) run: docker run -it --privileged -p HOST_PORT:8000 -v /PATH_TO_CLONED_REPO_ROOT/:/repo neuralet/coral-dev-board:applications-smart-distancing
-
-FROM node:14-alpine as frontend
-WORKDIR /frontend
-COPY ui/frontend/package.json ui/frontend/package-lock.json /frontend/
-RUN npm install --production
-COPY ui/frontend /frontend
-RUN npm run build
+# 1) build: docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
+# 2) run: docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-coral-dev-board
 
 FROM arm64v8/debian:buster
-
-VOLUME  /repo
 
 RUN apt-get update && apt-get install -y wget gnupg \
     && rm /etc/apt/sources.list  && rm -rf /var/lib/apt/lists \
     && wget -qO - https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 
-COPY data/multistrap* /etc/apt/sources.list.d/
+COPY docker/coral-dev-board/multistrap* /etc/apt/sources.list.d/
 
 RUN apt-get update && apt-get install -y python3-pip pkg-config libedgetpu1-std 
 # Also if you needed tensorflow: python-dev python3-dev libhdf5-dev python3-h5py python3-scipy 
@@ -31,12 +22,14 @@ RUN apt-get install -y python3-wget
 
 RUN apt-get install -y python3-opencv python3-scipy
 
-RUN pip3 install fastapi uvicorn aiofiles
+RUN pip3 install fastapi uvicorn aiofiles pyzmq
 
-COPY --from=frontend /frontend/build /srv/frontend
-
-WORKDIR /repo/applications/smart-distancing
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
-
 ENTRYPOINT ["python3", "neuralet-distancing.py"]
 CMD ["--config", "config-skeleton.ini"]
+WORKDIR /repo
+EXPOSE 8000
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+
+COPY . /repo

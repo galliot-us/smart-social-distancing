@@ -22,14 +22,11 @@ class Logger:
         # The parent directory that stores all log file.
         self.log_directory = config.get_section_dict("Logger")["LogDirectory"]
         # A directory inside the log_directory that stores object log files.
-        self.objects_log_directory = os.path.join(self.log_directory, "objects_log")
+        camera_id = 'default' # TODO hossein: replace with camera-id in multicamera settings
+        self.objects_log_directory = os.path.join(self.log_directory, camera_id, "objects_log")
         self.dist_threshold = config.get_section_dict("PostProcessor")["DistThreshold"]
 
-        if not os.path.exists(self.log_directory):
-            os.mkdir(self.log_directory)
-
-        if not os.path.exists(self.objects_log_directory):
-            os.mkdir(self.objects_log_directory)
+        os.makedirs(self.objects_log_directory, exist_ok=True)
 
     def update(self, objects_list, distances):
         """Write the object and violated distances information of a frame into log files.

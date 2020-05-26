@@ -1,16 +1,6 @@
-FROM node:14-alpine as frontend
-WORKDIR /frontend
-COPY ui/frontend/package.json ui/frontend/package-lock.json /frontend/
-RUN npm install --production
-COPY ui/frontend /frontend
-RUN npm run build
-
-FROM tensorflow/tensorflow:latest-gpu-py3
+FROM tensorflow/tensorflow:latest-py3
 
 ARG OPENCV_VERSION=4.3.0
-
-VOLUME  /repo
-WORKDIR /repo/applications/smart-distancing
 
 # get all packages from apt sources
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -55,11 +45,14 @@ RUN pip install --upgrade pip setuptools==41.0.0 && pip install \
     image \
     scipy \
     uvicorn \
-    wget
-
-COPY --from=frontend /frontend/build /srv/frontend
-
-EXPOSE 8000
+    wget \
+    pyzmq
 
 ENTRYPOINT ["python", "neuralet-distancing.py"]
 CMD ["--config", "config-x86.ini"]
+WORKDIR /repo
+EXPOSE 8000
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+
+COPY . /repo

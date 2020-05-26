@@ -1,5 +1,6 @@
 __pycache__/
-/libs/detectors/*/data
+/tasks/overrides.yaml
+/data
 *~
 *.swp
 .ToDo

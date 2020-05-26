@@ -1,15 +1,15 @@
 import axios from 'axios';
 import React, {useEffect, useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import RefreshIcon from '@material-ui/icons/Refresh';
 import {Card, Table, TableBody, TableCell, TableRow, Grid, Typography, IconButton} from "@material-ui/core";
+import RefreshIcon from '@material-ui/icons/Refresh';
 import Plot from "react-plotly.js"
 import Plotly from "plotly.js"
 import {mergeDeepLeft} from "ramda";
 import ContainerDimensions from "react-container-dimensions";
-import {Player} from 'video-react';
-import HLSSource from './components/HLSSource';
-import "video-react/dist/video-react.css";
+// import {Player} from 'video-react';
+// import HLSSource from './components/HLSSource';
+// import "video-react/dist/video-react.css";
 
 const useStyle = makeStyles((theme) => ({
     fullWidth: {
@@ -38,6 +38,7 @@ function CameraFeed() {
             <Typography variant="h6" color="textSecondary">
                 Camera Feed
             </Typography>
+            <img src="/live_feed/default"/>
         </Card>
     );
 }
@@ -76,7 +77,7 @@ function BirdsView() {
             <Typography variant="h6" color="textSecondary">
                 Bird's View
             </Typography>
-            <img src="/birds_view_feed"/>
+            <img src="/live_feed/default-birdseye"/>
         </Card>
     );
 }
@@ -86,11 +87,13 @@ function Charts({cameras}) {
     const [data, setData] = useState(undefined)
 
     function update() {
+        console.log('update', cameras)
         const headers = {'Cache-Control': 'no-store'};
         if (!cameras) {
             return
         }
-        const url = `/static/data/objects_log/${cameras[0]['id']}/${new Date().toISOString().slice(0, 10)}.csv`;
+        console.log('here')
+        const url = `/static/data/${cameras[0]['id']}/objects_log/${new Date().toISOString().slice(0, 10)}.csv`;
         axios.get(url, {headers}).then(response => {
             let records = Plotly.d3.csv.parse(response.data);
             let x1 = [], y1 = [], y2 = [], env_score = [];
@@ -106,6 +109,10 @@ function Charts({cameras}) {
         // })
     }
 
+    useEffect(()=>{
+        let intervalId = setInterval(update, 15000);  // refresh chart every 15 seconds
+        return () => clearInterval(intervalId);
+    }, [cameras]);
     useEffect(update, [cameras]);
 
     const [envScoreFigure, setEnvScoreFigure] = useState(undefined)
@@ -187,14 +194,7 @@ export default function Live() {
     return (
         <Grid container spacing={3}>
             <Grid item xs={12} md={7}>
-                {cameras ? (
-                    <Player>
-                        <HLSSource
-                            isVideoChild
-                            src={cameras[0].streams[0].src}
-                        />
-                    </Player>
-                ) : null}
+                <CameraFeed/>
             </Grid>
             <Grid item container xs={12} md={5} spacing={3}>
                 {process.env.NODE_ENV === 'development' /* IN_PROGRESS */ ? (
@@ -203,7 +203,7 @@ export default function Live() {
                     </Grid>
                 ) : null}
                 <Grid item xs={12}>
-                    {/*<BirdsView/>*/}
+                    <BirdsView/>
                 </Grid>
             </Grid>
             <Grid item xs={12}>

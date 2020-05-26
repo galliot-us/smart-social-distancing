@@ -1,13 +1,12 @@
-import threading
 import time
-import cv2 as cv
-import numpy as np
-from datetime import date
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse, StreamingResponse
 import uvicorn
 import os
+
+from libs import pubsub
+
 
 class WebGUI:
     """
@@ -19,22 +18,12 @@ class WebGUI:
         is possible by calling get_section_dict method.
     """
 
-    def __init__(self, config, engine_instance):
+    def __init__(self, config):
         self.config = config
-        self.__ENGINE_INSTANCE = engine_instance
-        self._output_frame = None
-        self._birds_view = None
-        self._lock = threading.Lock()
         self._host = self.config.get_section_dict("App")["Host"]
         self._port = int(self.config.get_section_dict("App")["Port"])
-        self.app = self.create_fastapi_app()
-        self._displayed_items = {}  # all items here will be used at ui webpage
         self._public_url = self.config.get_section_dict("App")["PublicUrl"]
-
-        # TODO: read from config file
-        file_name = str(date.today()) + '.csv'
-        self.objects_log = './static/data/objects_log/' + file_name
-
+        self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):
         # Create and return a fastapi instance
@@ -42,10 +31,11 @@ class WebGUI:
 
         if os.environ.get('DEV_ALLOW_ALL_ORIGINS', False):
             from fastapi.middleware.cors import CORSMiddleware
-            app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
+            app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'],
+                               allow_headers=['*'])
 
         app.mount("/panel/static", StaticFiles(directory="/srv/frontend/static"), name="panel")
-        app.mount("/static", StaticFiles(directory="ui/static"), name="static")
+        app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
 
         @app.get("/panel/")
         async def panel():
@@ -56,7 +46,7 @@ class WebGUI:
             return RedirectResponse("/panel/")
 
         @app.get("/api/cameras/")
-        async def live_api():
+        async def api_cameras():
             return [{
                 'id': 'default',
                 'streams': [
@@ -64,21 +54,28 @@ class WebGUI:
                 ],
             }]
 
+        @app.get("/live_feed/{feed_name}")
+        def live_feed(feed_name):
+            # TODO hossein: check if feed_name is valid. Otherwise, many requests will loop on time.sleep(1)
+            while True:
+                receive = pubsub.init_subscriber(feed_name)
+                if receive is None:
+                    time.sleep(1)
+                else:
+                    break
+
+            def generate_frames():
+                while True:
+                    yield (
+                        b"--frame\r\n"
+                        b"Content-Type: image/jpeg\r\n\r\n" + receive() + b"\r\n"
+                    )
+
+            return StreamingResponse(
+                generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame"
+            )
+
         return app
 
-
-    def _run(self):
-        # Get video file path from the config
-        video_path = self.config.get_section_dict("App")["VideoPath"]
-        self.__ENGINE_INSTANCE.process_video(video_path)
-
     def start(self):
-        """
-        Start the thread's activity.
-        It must be called at most once. It runes self._run method on a separate thread and starts
-        process_video method at engine instance
-        """
-        process_thread = threading.Thread(target=self._run)
-        process_thread.start()
-        uvicorn.run(self.app, host=self._host, port=self._port, log_level='info')
-        self.__ENGINE_INSTANCE.running_video = False
+        uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
