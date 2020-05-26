@@ -45,12 +45,8 @@ def get_tag(c, name, version='latest'):
     return f'{image_name}:{version}{tag_suffix}'
 
 
-def get_remote_build_host(c, name):
-    return get_config(c, 'docker.default_host')[name]
-
-
-def get_remote_run_host(c, name):
-    return get_config(c, 'docker.default_host')[name]
+def get_host(c, name, local):
+    return None if local else get_config(c, 'docker.default_host')[name]
 
 
 def get_dockerfile(c, name):
@@ -59,31 +55,21 @@ def get_dockerfile(c, name):
 
 def auto_build(c, name, local=False, **kwargs):
     tag = get_tag(c, name)
-    kwargs.setdefault('cache_from', tag)
-    build(
-        c,
-        get_dockerfile(c, name),
-        host=None if local else get_remote_build_host(c, name),
-        tag=tag,
-        target=get_config(c, 'docker.custom_targets').get(name, None),
-        **kwargs,
-    )
+    # kwargs.setdefault('cache_from', tag)
+    kwargs.setdefault('host', get_host(c, name, local))
+    kwargs.setdefault('tag', tag)
+    kwargs.setdefault('target', get_config(c, 'docker.custom_targets').get(name, None))
+    build(c, get_dockerfile(c, name), **kwargs)
 
 
 def auto_push(c, name, local=False, **kwargs):
-    push(
-        c,
-        tag=get_tag(c, name),
-        host=None if local else get_remote_build_host(c, name),
-        **kwargs,
-    )
+    kwargs.setdefault('host', get_host(c, name, local))
+    kwargs.setdefault('tag', get_tag(c, name))
+    push(c, **kwargs)
 
 
 def auto_run(c, name, local=False, **kwargs):
-    run(
-        c,
-        tag=get_tag(c, name),
-        host=None if local else get_remote_run_host(c, name),
-        runtime=get_config(c, 'docker.custom_runtimes').get(name, None),
-        **kwargs,
-    )
+    kwargs.setdefault('tag', get_tag(c, name))
+    kwargs.setdefault('host', get_host(c, name, local))
+    kwargs.setdefault('runtime', get_config(c, 'docker.custom_runtimes').get(name, None))
+    run(c, **kwargs)
