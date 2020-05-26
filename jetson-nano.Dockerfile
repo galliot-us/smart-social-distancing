@@ -1,7 +1,7 @@
 # docker can be installed on the dev board following these instructions:
 # https://docs.docker.com/install/linux/docker-ce/debian/#install-using-the-repository , step 4: arm64
-# 1) build: docker build -f Dockerfile-jetson-nano -t "neuralet/jetson-nano:applications-smart-distancing" .
-# 2) run: docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v /PATH_TO_CLONED_REPO_ROOT/:/repo neuralet/jetson-nano:applications-smart-distancing
+# 1) build: docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
+# 2) run: docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-jetson-nano
 
 FROM nvcr.io/nvidia/l4t-base:r32.3.1
 
