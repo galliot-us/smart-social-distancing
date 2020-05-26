@@ -20,11 +20,16 @@ RUN python3 -m pip install --upgrade pip==19.3.1 setuptools==41.0.0 && python3 -
 
 RUN apt-get install -y python3-wget
 
-RUN apt-get install -y python3-flask python3-opencv python3-scipy
+RUN apt-get install -y python3-opencv python3-scipy
 
-COPY . /repo
-WORKDIR /repo
+RUN pip3 install fastapi uvicorn aiofiles pyzmq
+
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
-
 ENTRYPOINT ["python3", "neuralet-distancing.py"]
 CMD ["--config", "config-skeleton.ini"]
+WORKDIR /repo
+EXPOSE 8000
+
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+
+COPY . /repo
