@@ -19,7 +19,7 @@ Please join [our slack channel](https://neuralet.slack.com/join/shared_invite/zt
 
 ## Getting Started
 
-You can read the [Smart Social Distancing tutorial](https://neuralet.com/docs/tutorials/smart-social-distancing/overview/) on our website. The following instructions will help you get started.
+You can read the [Smart Social Distancing tutorial](https://neuralet.com/docs/tutorials/smart-social-distancing/) on our website. The following instructions will help you get started.
 
 ### Prerequisites
 
