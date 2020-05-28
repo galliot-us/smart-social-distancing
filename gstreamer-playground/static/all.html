@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="common.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/2.5.11/shaka-player.compiled.js"></script>
+    <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
+    <script src="https://unpkg.com/video.js/dist/video.js"></script>
+    <script src="https://unpkg.com/videojs-contrib-hls/dist/videojs-contrib-hls.js"></script>
+</head>
+<body>
+<h3>shaka</h3>
+<script>
+    // https://shaka-player-demo.appspot.com/docs/api/tutorial-basic-usage.html
+    var manifestUri = window.video_url;
+
+    function initApp() {
+      // Install built-in polyfills to patch browser incompatibilities.
+      shaka.polyfill.installAll();
+
+      // Check to see if the browser supports the basic APIs Shaka needs.
+      if (shaka.Player.isBrowserSupported()) {
+        // Everything looks good!
+        initPlayer();
+      } else {
+        // This browser does not have the minimum set of APIs we need.
+        console.error('Browser not supported!');
+      }
+    }
+
+    function initPlayer() {
+      // Create a Player instance.
+      var video = document.getElementById('video');
+      var player = new shaka.Player(video);
+
+      // Attach player to the window to make it easy to access in the JS console.
+      window.player = player;
+
+      // Listen for error events.
+      player.addEventListener('error', onErrorEvent);
+
+      // Try to load a manifest.
+      // This is an asynchronous process.
+      player.load(manifestUri).then(function() {
+        // This runs if the asynchronous load is successful.
+        console.log('The video has now been loaded!');
+      }).catch(onError);  // onError is executed if the asynchronous load fails.
+    }
+
+    function onErrorEvent(event) {
+      // Extract the shaka.util.Error object from the event.
+      onError(event.detail);
+    }
+
+    function onError(error) {
+      // Log the error.
+      console.error('Error code', error.code, 'object', error);
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+</script>
+<video id="video"
+       width="640"
+       controls autoplay></video>
+
+<h3>video.js</h3>
+<video id="my_video_1" class="video-js vjs-default-skin" controls preload="auto" width="640" height="268">
+</video>
+
+<script>
+    var player3 = videojs('my_video_1');
+
+    player3.src({
+      src: window.video_url,
+      type: 'application/x-mpegURL'
+    });
+</script>
+
+<h3>hls.js</h3>
+<p>right-click and choose play on the video if it did not start playing</p>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<!-- Or if you want a more recent canary version -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/hls.js@canary"></script> -->
+<video id="video2"></video>
+<script>
+  var video2 = document.getElementById('video2');
+  var videoSrc = window.video_url;
+  if (Hls.isSupported()) {
+    var hls = new Hls();
+    hls.loadSource(videoSrc);
+    hls.attachMedia(video2);
+    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+      video2.play();
+    });
+  }
+  // hls.js is not supported on platforms that do not have Media Source
+  // Extensions (MSE) enabled.
+  //
+  // When the browser has built-in HLS support (check using `canPlayType`),
+  // we can provide an HLS manifest (i.e. .m3u8 URL) directly to the video
+  // element through the `src` property. This is using the built-in support
+  // of the plain video element, without using hls.js.
+  //
+  // Note: it would be more normal to wait on the 'canplay' event below however
+  // on Safari (where you are most likely to find built-in HLS support) the
+  // video.src URL must be on the user-driven white-list before a 'canplay'
+  // event will be emitted; the last video event that can be reliably
+  // listened-for when the URL is not on the white-list is 'loadedmetadata'.
+  else if (video2.canPlayType('application/vnd.apple.mpegurl')) {
+    video2.src = videoSrc;
+    video2.addEventListener('loadedmetadata', function() {
+      video2.play();
+    });
+  }
+</script>
+
+</body>
+</html>

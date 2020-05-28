@@ -7,9 +7,9 @@ import Plot from "react-plotly.js"
 import Plotly from "plotly.js"
 import {mergeDeepLeft} from "ramda";
 import ContainerDimensions from "react-container-dimensions";
-// import {Player} from 'video-react';
-// import HLSSource from './components/HLSSource';
-// import "video-react/dist/video-react.css";
+import {Player} from 'video-react';
+import HLSSource from './components/HLSSource';
+import "video-react/dist/video-react.css";
 
 const useStyle = makeStyles((theme) => ({
     fullWidth: {
@@ -87,12 +87,10 @@ function Charts({cameras}) {
     const [data, setData] = useState(undefined)
 
     function update() {
-        console.log('update', cameras)
         const headers = {'Cache-Control': 'no-store'};
         if (!cameras) {
             return
         }
-        console.log('here')
         const url = `/static/data/${cameras[0]['id']}/objects_log/${new Date().toISOString().slice(0, 10)}.csv`;
         axios.get(url, {headers}).then(response => {
             let records = Plotly.d3.csv.parse(response.data);
@@ -194,7 +192,11 @@ export default function Live() {
     return (
         <Grid container spacing={3}>
             <Grid item xs={12} md={7}>
-                <CameraFeed/>
+                {cameras && (
+                    <Player>
+                        <HLSSource isVideoChild src={cameras[0].streams[0].src} />
+                    </Player>
+                )}
             </Grid>
             <Grid item container xs={12} md={5} spacing={3}>
                 {process.env.NODE_ENV === 'development' /* IN_PROGRESS */ ? (

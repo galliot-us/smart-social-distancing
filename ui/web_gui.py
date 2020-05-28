@@ -50,7 +50,7 @@ class WebGUI:
             return [{
                 'id': 'default',
                 'streams': [
-                    {'src': 'http://qthttp.apple.com.edgesuite.net/1010qwoeiuryfg/sl.m3u8'},
+                    {'src': '/static/gstreamer/default/playlist.m3u8'},
                 ],
             }]
 

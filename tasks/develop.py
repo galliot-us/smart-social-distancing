@@ -12,7 +12,7 @@ def build(c, name, local=False, build_frontend=True):
 
 
 @task(help={'name': '|'.join(valid_backend_names)})
-def run(c, name, local=False, port=None, rm=True, build_frontend=True):
+def run(c, name, local=False, port=None, rm=True, build_frontend=True, dev_mode=False, env=None):
     assert name in valid_backend_names
     username = config.get_config(c, 'develop.username')
 
@@ -31,6 +31,8 @@ def run(c, name, local=False, port=None, rm=True, build_frontend=True):
     if port is None:
         port = config.get_config(c, 'develop.host_ports.backend')
 
+    env = ['DEV_ALLOW_ALL_ORIGINS=true' if dev_mode else None]
+
     docker.auto_build(c, name, local=local)
     docker.auto_run(c, name, p=[f'{port}:8000'], v=[f'{data_mount}:/repo/data', f'{data_mount}/root:/root'], rm=rm,
-                    local=local)
+                    local=local, e=env)
