@@ -22,7 +22,7 @@ class Detector:
 
     def _load_engine(self):
         """ Load engine file as a trt Runtime. """
-        trt_bin_path = 'libs/detectors/jetson/data/TRT_%s.bin' % self.model
+        trt_bin_path = '/repo/data/jetson/TRT_%s.bin' % self.model
         with open(trt_bin_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
             return runtime.deserialize_cuda_engine(f.read())
 
