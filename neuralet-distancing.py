@@ -3,7 +3,6 @@ import argparse
 from multiprocessing import Process
 import threading
 from libs.config_engine import ConfigEngine
-import libs.pubsub
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,7 +27,6 @@ def main(config):
     logging.basicConfig(level=logging.INFO)
     if isinstance(config, str):
         config = ConfigEngine(config)
-    libs.pubsub.init_shared_resources()
 
     video_path = config.get_section_dict("App").get("VideoPath", None)
     process_engine = Process(target=start_engine, args=(config, video_path,))

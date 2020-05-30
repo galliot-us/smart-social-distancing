@@ -5,8 +5,6 @@ from fastapi.responses import RedirectResponse, FileResponse, StreamingResponse
 import uvicorn
 import os
 
-from libs import pubsub
-
 
 class WebGUI:
     """
@@ -53,27 +51,6 @@ class WebGUI:
                     {'src': '/static/gstreamer/default/playlist.m3u8'},
                 ],
             }]
-
-        @app.get("/live_feed/{feed_name}")
-        def live_feed(feed_name):
-            # TODO hossein: check if feed_name is valid. Otherwise, many requests will loop on time.sleep(1)
-            while True:
-                receive = pubsub.init_subscriber(feed_name)
-                if receive is None:
-                    time.sleep(1)
-                else:
-                    break
-
-            def generate_frames():
-                while True:
-                    yield (
-                        b"--frame\r\n"
-                        b"Content-Type: image/jpeg\r\n\r\n" + receive() + b"\r\n"
-                    )
-
-            return StreamingResponse(
-                generate_frames(), media_type="multipart/x-mixed-replace; boundary=frame"
-            )
 
         return app
 
