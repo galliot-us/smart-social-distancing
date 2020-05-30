@@ -5,4 +5,5 @@ docs/
 data/
 frontend/build/
 frontend/node_modules/
+experiments/
 tasks/

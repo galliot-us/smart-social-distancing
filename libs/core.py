@@ -85,7 +85,7 @@ class Distancing:
         if not playlist_root.endswith('/'):
             playlist_root = f'{playlist_root}/'
         # the entire encoding pipeline, as a string:
-        pipeline = f'appsrc ! {encoder} ! mpegtsmux ! hlssink max-files=15 ' \
+        pipeline = f'appsrc ! video/x-raw,format=I420 ! {encoder} ! mpegtsmux ! hlssink max-files=15 ' \
                    f'target-duration=5 ' \
                    f'playlist-root={playlist_root} ' \
                    f'location={video_root}/video_%05d.ts ' \

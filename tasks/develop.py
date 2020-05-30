@@ -5,18 +5,19 @@ valid_backend_names = constants.D_BACKENDS
 
 
 @task(help={'name': '|'.join(constants.D_ALL)})
-def build(c, name, local=False, build_frontend=True):
+def build(c, name, local=False, frontend_build_skip=False):
     assert name in constants.D_ALL
-    docker.auto_build(c, 'frontend', local=local)
+    if not frontend_build_skip:
+        docker.auto_build(c, 'frontend', local=local)
     docker.auto_build(c, name, local=local)
 
 
 @task(help={'name': '|'.join(valid_backend_names)})
-def run(c, name, local=False, port=None, rm=True, build_frontend=True, dev_mode=False, env=None):
+def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_build_skip=False, dev_mode=False):
     assert name in valid_backend_names
     username = config.get_config(c, 'develop.username')
 
-    if build_frontend:
+    if not frontend_build_skip:
         docker.auto_build(c, constants.D_FRONTEND, host=docker.get_host(c, name, local))
 
     if local:
@@ -28,11 +29,25 @@ def run(c, name, local=False, port=None, rm=True, build_frontend=True, dev_mode=
     else:
         data_mount = f'/home/{username}/data'
 
+    volumes = []
+
+    if dev_mode:
+        volumes.append(f'{data_mount}/root:/root')
+
+    mount_repo = local and dev_mode
+
+    if mount_repo:
+        volumes.append(f'{ROOT_DIR}:/repo')
+    else:
+        # only mount data dir
+        volumes.append(f'{data_mount}:/repo/data')
+
     if port is None:
         port = config.get_config(c, 'develop.host_ports.backend')
 
     env = ['DEV_ALLOW_ALL_ORIGINS=true' if dev_mode else None]
 
-    docker.auto_build(c, name, local=local)
-    docker.auto_run(c, name, p=[f'{port}:8000'], v=[f'{data_mount}:/repo/data', f'{data_mount}/root:/root'], rm=rm,
+    if not build_skip:
+        docker.auto_build(c, name, local=local)
+    docker.auto_run(c, name, p=[f'{port}:8000'], v=volumes, rm=rm,
                     local=local, e=env)
