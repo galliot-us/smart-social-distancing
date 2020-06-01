@@ -1,4 +1,4 @@
-from invoke import task
+from invoke import task, exceptions
 from .common import docker, constants, config, ROOT_DIR
 
 valid_backend_names = constants.D_BACKENDS
@@ -13,7 +13,8 @@ def build(c, name, local=False, frontend_build_skip=False):
 
 
 @task(help={'name': '|'.join(valid_backend_names)})
-def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_build_skip=False, dev_mode=False):
+def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_build_skip=False, dev_mode=False,
+        tunnel_skip=False, shell=False):
     assert name in valid_backend_names
     username = config.get_config(c, 'develop.username')
 
@@ -49,5 +50,29 @@ def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_bui
 
     if not build_skip:
         docker.auto_build(c, name, local=local)
-    docker.auto_run(c, name, p=[f'{port}:8000'], v=volumes, rm=rm,
-                    local=local, e=env)
+
+    tunnel_host = docker.get_host(c, name, local)
+    tunnel = not tunnel_skip and not local and tunnel_host
+    if tunnel:
+        tunnel_handle = c.run(f'ssh -N -L {port}:127.0.0.1:{port} {tunnel_host}', asynchronous=True)
+
+    if shell:
+        it = True
+        entrypoint = "bash"
+    else:
+        it = entrypoint = None
+
+    try:
+        docker.auto_run(c, name, p=[f'{port}:8000'], v=volumes, rm=rm, local=local, e=env, it=it, entrypoint=entrypoint)
+    finally:
+        if tunnel and not c.config.run.get('dry', False):
+            try:
+                tunnel_handle.runner.kill()
+                tunnel_handle.join()
+            except exceptions.UnexpectedExit:
+                pass
+
+@task
+def frontend(c):
+    with c.cd(f'{ROOT_DIR}/frontend'):
+        c.run('npm start')

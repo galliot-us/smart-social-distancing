@@ -20,7 +20,6 @@ class WebGUI:
         self.config = config
         self._host = self.config.get_section_dict("App")["Host"]
         self._port = int(self.config.get_section_dict("App")["Port"])
-        self._public_url = self.config.get_section_dict("App")["PublicUrl"]
         self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):

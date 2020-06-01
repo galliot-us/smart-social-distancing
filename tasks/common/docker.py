@@ -9,6 +9,8 @@ _it = lambda it: '' if it is None else ' -it'  # interactive
 _runtime = lambda runtime: '' if runtime is None else f' --runtime {runtime}'
 _cache_from = lambda cache_from: '' if cache_from is None else f' --cache-from {cache_from}'
 _privileged = lambda privileged: '' if privileged is None else ' --privileged'
+_entrypoint = lambda entrypoint: '' if entrypoint is None else f' --entrypoint {entrypoint}'
+_command = lambda command: '' if command is None else f' {command}'
 listable = lambda func: lambda x: ''.join(map(func, x)) if isinstance(x, (list, tuple)) else func(
     x)  # allow single item or list of multiple items
 _p = listable(lambda p: '' if p is None else (f' -p {p}' if ':' in str(p) else f' -p {p}:{p}'))  # port mapping
@@ -33,10 +35,11 @@ def push(c, tag, host=None):
     c.run(f'{_host(host)} docker --config ~/.neuralet-dev/docker push {tag}')
 
 
-def run(c, tag, rm=None, it=None, p=None, host=None, v=None, runtime=None, e=None, privileged=None):
+def run(c, tag, rm=None, it=None, p=None, host=None, v=None, runtime=None, e=None, privileged=None, entrypoint=None, command=None):
     c.run(
-        f'{_host(host)} docker '
-        f'run{_runtime(runtime)}{_rm(rm)}{_it(it)}{_p(p)}{_v(v)}{_e(e)}{_privileged(privileged)} {tag}'
+        f'{_host(host)} docker'
+        f' run{_runtime(runtime)}{_rm(rm)}{_it(it)}{_p(p)}{_v(v)}{_e(e)}{_privileged(privileged)}{_entrypoint(entrypoint)}'
+        f' {tag}{_command(command)}'
     )
 
 

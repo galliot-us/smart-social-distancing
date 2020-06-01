@@ -9,7 +9,8 @@ from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
 from ui.utils import visualization_utils
-
+import logging
+logger = logging.getLogger(__name__)
 
 class Distancing:
 
@@ -81,11 +82,11 @@ class Distancing:
         shutil.rmtree(video_root, ignore_errors=True)
         os.makedirs(video_root, exist_ok=True)
 
-        playlist_root = self.config.config['App']['PublicUrl'] + f'/static/gstreamer/{feed_name}'
+        playlist_root = f'/static/gstreamer/{feed_name}'
         if not playlist_root.endswith('/'):
             playlist_root = f'{playlist_root}/'
         # the entire encoding pipeline, as a string:
-        pipeline = f'appsrc ! video/x-raw,format=I420 ! {encoder} ! mpegtsmux ! hlssink max-files=15 ' \
+        pipeline = f'appsrc is-live=true !  {encoder} ! mpegtsmux ! hlssink max-files=15 ' \
                    f'target-duration=5 ' \
                    f'playlist-root={playlist_root} ' \
                    f'location={video_root}/video_%05d.ts ' \
@@ -124,7 +125,7 @@ class Distancing:
 
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
         class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-
+        frame_num = 0
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
             birds_eye_window = np.zeros(self.birds_eye_resolution + (3,), dtype="uint8")
@@ -180,6 +181,9 @@ class Distancing:
 
                 out.write(cv_image)
                 out_birdseye.write(birds_eye_window)
+                frame_num += 1
+                if frame_num % 1000 == 1:
+                    logger.info(f'processed frame {frame_num} for {video_uri}')
             else:
                 continue
             self.logger.update(objects, distancings)
