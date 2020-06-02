@@ -10,7 +10,9 @@ from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
 from ui.utils import visualization_utils
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class Distancing:
 
@@ -92,11 +94,18 @@ class Distancing:
                    f'location={video_root}/video_%05d.ts ' \
                    f'playlist-location={video_root}/playlist.m3u8'
 
-        out = cv.VideoWriter(
-            pipeline,
-            cv.CAP_GSTREAMER,
-            0, fps, resolution
-        )
+        if cv.__version__.startswith('4'):
+            out = cv.VideoWriter(
+                pipeline,
+                cv.CAP_GSTREAMER,
+                0, fps, resolution
+            )
+        elif cv.__version__.startswith('3'):
+            out = cv.VideoWriter(
+                pipeline,
+                0, fps, resolution, True
+            )
+
         if not out.isOpened():
             raise RuntimeError("Could not open gstreamer output for " + feed_name)
         return out
@@ -106,9 +115,9 @@ class Distancing:
         fps = input_cap.get(cv.CAP_PROP_FPS)
 
         if (input_cap.isOpened()):
-            print('opened video ', video_uri)
+            logger.info(f'opened video {video_uri}')
         else:
-            print('failed to load video ', video_uri)
+            logger.error(f'failed to load video {video_uri}')
             return
 
         self.running_video = True
@@ -188,6 +197,8 @@ class Distancing:
                 continue
             self.logger.update(objects, distancings)
         input_cap.release()
+        out.release()
+        out_birdseye.release()
         self.running_video = False
 
     def calculate_distancing(self, objects_list):

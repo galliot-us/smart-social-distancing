@@ -19,11 +19,12 @@ _e = listable(lambda e: '' if e is None else f' -e {e}')  # environment variable
 
 
 def build(c, dockerfile, tag=None, target=None, host=None, cache_from=None):
-    c.run(
-        f'{_host(host)} docker '
-        f'build{_target(target)}{_tag(tag)}{_cache_from(cache_from)} '
-        f'-f {dockerfile} {ROOT_DIR}'
-    )
+    with c.cd(ROOT_DIR):
+        c.run(
+            f'{_host(host)} docker '
+            f'build{_target(target)}{_tag(tag)}{_cache_from(cache_from)} '
+            f'-f {dockerfile} .'
+        )
 
 
 def login(c):

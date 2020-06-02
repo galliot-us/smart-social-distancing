@@ -1,12 +1,13 @@
 FROM openvino/ubuntu18_runtime
 USER root
 
+# The `python3-opencv` package isn't built with gstreamer. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
+# http://amritamaz.net/blog/opencv-config
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
         cmake \
         curl \
-        g++ \
-        gcc \
         git \
         gstreamer1.0-plugins-bad \
         gstreamer1.0-plugins-good \
@@ -20,9 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libswscale-dev \
         libxext6 \
         libxrender-dev \
-        make \
         mesa-va-drivers \
-        pkg-config \
         python3-dev \
         python3-numpy \
     && rm -rf /var/lib/apt/lists/* \
@@ -32,7 +31,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd /tmp/opencv-${OPENCV_VERSION} \
     && mkdir build \
     && cd build \
-    && cmake -DBUILD_opencv_python3=yes -DPYTHON_EXECUTABLE=$(which python3) ../ \
+    && cmake \
+        -DBUILD_opencv_python3=yes \
+        -DPYTHON_EXECUTABLE=$(which python3) \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DINSTALL_TESTS=OFF \
+        -DBUILD_opencv_apps=OFF \
+        -DBUILD_DOCS=OFF \
+        ../ \
     && make -j$(nproc) \
     && make install \
     && cd /tmp \
@@ -58,7 +67,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-scipy \
         python3-wget \
     && rm -rf /var/lib/apt/lists/* \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 && pip install \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install \
         aiofiles \
         fastapi \
         uvicorn \
