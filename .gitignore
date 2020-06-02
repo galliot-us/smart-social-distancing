@@ -10,3 +10,8 @@ __pycache__/
 *.caffemodel
 *.uff
 *.avi
+*.ts
+*.m3u8
+.vscode
+venv/
+*.tbz2
