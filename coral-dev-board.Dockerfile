@@ -11,18 +11,74 @@ RUN apt-get update && apt-get install -y wget gnupg \
 
 COPY docker/coral-dev-board/multistrap* /etc/apt/sources.list.d/
 
-RUN apt-get update && apt-get install -y python3-pip pkg-config libedgetpu1-std 
-# Also if you needed tensorflow: python-dev python3-dev libhdf5-dev python3-h5py python3-scipy 
-# Also python3-opencv may be needed, but it brings lots of dependencies (even x11-common !)
+ARG OPENCV_VERSION=4.3.0
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        cmake \
+        curl \
+        g++ \
+        gcc \
+        git \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-ugly \
+        gstreamer1.0-vaapi \
+        libavcodec-dev \
+        libavformat-dev \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        libsm6 \
+        libswscale-dev \
+        libxext6 \
+        libxrender-dev \
+        make \
+        mesa-va-drivers \
+        pkg-config \
+        python3-dev \
+        python3-numpy \
+    && rm -rf /var/lib/apt/lists/* \
+    && cd /tmp/ \
+    && curl -L https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz \
+    && tar zxvf opencv.tar.gz && rm opencv.tar.gz \
+    && cd /tmp/opencv-${OPENCV_VERSION} \
+    && mkdir build \
+    && cd build \
+    && cmake -DBUILD_opencv_python3=yes -DPYTHON_EXECUTABLE=$(which python3) ../ \
+    && make -j$(nproc) \
+    && make install \
+    && cd /tmp \
+    && rm -rf opencv-${OPENCV_VERSION} \
+    && apt-get purge -y \
+        cmake \
+        git \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        libxrender-dev \
+        python3-dev \
+    && apt-get autoremove -y
 
-RUN python3 -m pip install --upgrade pip==19.3.1 setuptools==41.0.0 && python3 -m pip install https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_aarch64.whl  
-#if you needed tensorflow: grpcio==1.26.0  keras==2.2.4 protobuf https://github.com/lhelontra/tensorflow-on-arm/releases/download/v2.0.0/tensorflow-2.0.0-cp37-none-linux_aarch64.whl
+# https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
+ARG DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get install -y python3-wget
+# Also if you needed tensorflow: python-dev python3-dev libhdf5-dev python3-h5py python3-scipy
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libedgetpu1-std \
+        pkg-config \
+        python3-dev \
+        python3-numpy \
+        python3-pillow \
+        python3-pip \
+        python3-scipy \
+        python3-wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 && pip install \
+        https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_aarch64.whl \
+        aiofiles \
+        fastapi \
+        uvicorn \
+    && apt-get purge -y \
+        python3-dev \
+    && apt-get autoremove -y
 
-RUN apt-get install -y python3-opencv python3-scipy
-
-RUN pip3 install fastapi uvicorn aiofiles pyzmq
 
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
 ENTRYPOINT ["python3", "neuralet-distancing.py"]

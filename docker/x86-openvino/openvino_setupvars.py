@@ -1,8 +1,8 @@
 """
 Openvino includes a set of plugins for gstreamer, including https://github.com/opencv/gst-video-analytics/wiki/Install-Guide#2-install-gstreamer-video-analytics-plugin.
-{OPENVINO_SETUP_VARS_PATH} sets environment variables including PATH, LD_LIBRARY_PATH, and PYTHONPATH so that Openvino libraries,
-including gstreamer plugins, are available for softwares. However, these environment variables prevent using the globally-installed
-libgstreamer1.0 package on Ubuntu. Thus, this script filters those values relating to gstreamer out of the environemnt variables
+the script in {OPENVINO_SETUP_VARS_PATH} sets environment variables like PATH, LD_LIBRARY_PATH, and PYTHONPATH so that Openvino libraries,
+including gstreamer plugins, are available for other binaries. However, these environment variables prevent access to the globally-installed
+libgstreamer1.0 apt-get package. Thus, this script filters those values relating to gstreamer out of the environemnt variables
 and output the rest in stdout.
 
 Original usage without this script:

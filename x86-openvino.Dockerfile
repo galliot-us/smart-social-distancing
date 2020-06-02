@@ -1,9 +1,10 @@
 FROM openvino/ubuntu18_runtime
-ARG OPENCV_VERSION=4.3.0
 USER root
 
+ARG OPENCV_VERSION=4.3.0
 RUN apt-get update && apt-get install -y --no-install-recommends \
         cmake \
+        curl \
         g++ \
         gcc \
         git \
@@ -12,7 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gstreamer1.0-plugins-ugly \
         gstreamer1.0-vaapi \
         libavcodec-dev \
-        libavcodec-extra \
         libavformat-dev \
         libgstreamer-plugins-base1.0-dev \
         libgstreamer1.0-dev \
@@ -20,24 +20,51 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libswscale-dev \
         libxext6 \
         libxrender-dev \
+        make \
         mesa-va-drivers \
         pkg-config \
+        python3-dev \
         python3-numpy \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN cd /tmp \
-    && curl https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz -L \
+    && rm -rf /var/lib/apt/lists/* \
+    && cd /tmp/ \
+    && curl -L https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz \
     && tar zxvf opencv.tar.gz && rm opencv.tar.gz \
-    && mv opencv-${OPENCV_VERSION} opencv \
-    && mkdir opencv/build \
-    && cd opencv/build \
-    && cmake -DBUILD_opencv_python3=yes -DPYTHON_EXECUTABLE=/usr/local/bin/python3 ../ \
+    && cd /tmp/opencv-${OPENCV_VERSION} \
+    && mkdir build \
+    && cd build \
+    && cmake -DBUILD_opencv_python3=yes -DPYTHON_EXECUTABLE=$(which python3) ../ \
     && make -j$(nproc) \
     && make install \
     && cd /tmp \
-    && rm -rf opencv
+    && rm -rf opencv-${OPENCV_VERSION} \
+    && apt-get purge -y \
+        cmake \
+        git \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        libxrender-dev \
+        python3-dev \
+    && apt-get autoremove -y
 
-RUN pip3 install --upgrade pip setuptools==41.0.0 && pip3 install wget fastapi uvicorn aiofiles pyzmq scipy image
+# https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        pkg-config \
+        python3-dev \
+        python3-numpy \
+        python3-pillow \
+        python3-pip \
+        python3-scipy \
+        python3-wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 && pip install \
+        aiofiles \
+        fastapi \
+        uvicorn \
+    && apt-get purge -y \
+        python3-dev \
+    && apt-get autoremove -y
 
 # Remove the opencv which is included in Openvino and is incompatible with globally-installed gstreamer
 RUN rm -rf /opt/intel/openvino/opencv /opt/intel/openvino/python/cv2.* /opt/intel/openvino/python/python3/cv2.*

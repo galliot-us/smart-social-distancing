@@ -6,6 +6,9 @@ defaults = {
         'username': NotImplemented,
         'host_ports': {
             'backend': 8000,
+        },
+        'docker_overrides': {
+            'image_name': 'private/smart-social-distancing'
         }
     },
     'run': {

@@ -7,8 +7,8 @@ valid_backend_names = constants.D_BACKENDS
 @task(help={'name': '|'.join(constants.D_ALL)})
 def build(c, name, local=False, frontend_build_skip=False):
     assert name in constants.D_ALL
-    if not frontend_build_skip:
-        docker.auto_build(c, 'frontend', local=local)
+    if not frontend_build_skip and name != constants.D_FRONTEND:
+        docker.auto_build(c, constants.D_FRONTEND, host=docker.get_host(c, name, local))
     docker.auto_build(c, name, local=local)
 
 
@@ -18,7 +18,7 @@ def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_bui
     assert name in valid_backend_names
     username = config.get_config(c, 'develop.username')
 
-    if not frontend_build_skip:
+    if not frontend_build_skip and name != constants.D_FRONTEND:
         docker.auto_build(c, constants.D_FRONTEND, host=docker.get_host(c, name, local))
 
     if local:
