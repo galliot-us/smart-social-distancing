@@ -3,13 +3,10 @@ from . import constants
 
 defaults = {
     'develop': {
-        'username': NotImplemented,
+        'host_username': NotImplemented,
         'host_ports': {
             'backend': 8000,
         },
-        'docker_overrides': {
-            'image_name': 'private/smart-social-distancing'
-        }
     },
     'run': {
         # http://www.pyinvoke.org/faq.html#why-is-my-command-behaving-differently-under-invoke-versus-being-run-by-hand
@@ -17,6 +14,7 @@ defaults = {
     },
     'docker': {
         'image_name': 'neuralet/smart-social-distancing',
+        'private_image_name': NotImplemented,
         'dockerfiles': {
             constants.D_FRONTEND: 'frontend.Dockerfile',
             constants.D_X86: 'x86.Dockerfile',

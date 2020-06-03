@@ -42,6 +42,7 @@ const useStyle = makeStyles((theme) => ({
 
 function CameraFeed({cameras}) {
     const classes = useStyle();
+    const [time, _] = useState(new Date().toISOString()); // time is appended to live urls to prevent caching
 
     return (
         <Card className={classes.withPadding} variant="outlined">
@@ -50,7 +51,7 @@ function CameraFeed({cameras}) {
             </Typography>
             {cameras ? (
                 <Player muted={true} autoPlay={true}>
-                    <HLSSource isVideoChild src={cameras[0].streams[0].src}/>
+                    <HLSSource isVideoChild src={`${cameras[0].streams[0].src}?${time}`}/>
                     <BigPlayButton position="center" />
                 </Player>
             ) : <CircularProgress/>}
@@ -85,14 +86,21 @@ function Status() {
     )
 }
 
-function BirdsView() {
+function BirdsView({cameras}) {
     const classes = useStyle();
+    const [time, _] = useState(new Date().toISOString()); // time is appended to live urls to prevent caching
+
     return (
         <Card variant="outlined" className={classes.withPadding}>
             <Typography variant="h6" color="textSecondary">
                 Bird's View
             </Typography>
-            <img src="/live_feed/default-birdseye"/>
+            {cameras ? (
+                <Player muted={true} autoPlay={true} fluid={false}>
+                    <HLSSource isVideoChild src={`${cameras[0].streams[1].src}?${time}`}/>
+                    <BigPlayButton position="center" />
+                </Player>
+            ) : <CircularProgress/>}
         </Card>
     );
 }
@@ -216,7 +224,7 @@ export default function Live() {
                     </Grid>
                 ) : null}
                 <Grid item xs={12}>
-                    <BirdsView/>
+                    <BirdsView cameras={cameras} />
                 </Grid>
             </Grid>
             <Grid item xs={12}>

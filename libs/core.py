@@ -47,7 +47,7 @@ class Distancing:
         self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
-        self.birds_eye_resolution = (300, 200)
+        self.birds_eye_resolution = (200, 300)
 
     def __process(self, cv_image):
         """
@@ -92,19 +92,13 @@ class Distancing:
                    f'target-duration=5 ' \
                    f'playlist-root={playlist_root} ' \
                    f'location={video_root}/video_%05d.ts ' \
-                   f'playlist-location={video_root}/playlist.m3u8'
+                   f'playlist-location={video_root}/playlist.m3u8 '
 
-        if cv.__version__.startswith('4'):
-            out = cv.VideoWriter(
-                pipeline,
-                cv.CAP_GSTREAMER,
-                0, fps, resolution
-            )
-        elif cv.__version__.startswith('3'):
-            out = cv.VideoWriter(
-                pipeline,
-                0, fps, resolution, True
-            )
+        out = cv.VideoWriter(
+            pipeline,
+            cv.CAP_GSTREAMER,
+            0, fps, resolution
+        )
 
         if not out.isOpened():
             raise RuntimeError("Could not open gstreamer output for " + feed_name)
@@ -137,7 +131,7 @@ class Distancing:
         frame_num = 0
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
-            birds_eye_window = np.zeros(self.birds_eye_resolution + (3,), dtype="uint8")
+            birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
             if np.shape(cv_image) != ():
                 cv_image, objects, distancings = self.__process(cv_image)
                 output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)

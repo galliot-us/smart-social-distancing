@@ -9,18 +9,13 @@ logger = logging.getLogger(__name__)
 
 
 def start_engine(config, video_path):
-    import pdb, traceback, sys
-    try:
-        if video_path:
-            from libs.core import Distancing as CvEngine
-            engine = CvEngine(config)
-            engine.process_video(video_path)
-        else:
-            logger.info('Skipping CVEngine as video_path is not set')
-    except:
-        extype, value, tb = sys.exc_info()
-        traceback.print_exc()
-        pdb.post_mortem(tb)
+    if video_path:
+        from libs.core import Distancing as CvEngine
+        engine = CvEngine(config)
+        engine.process_video(video_path)
+    else:
+        logger.warning('Skipping CVEngine as video_path is not set in config file')
+
 
 def start_web_gui(config):
     from ui.web_gui import WebGUI

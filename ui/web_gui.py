@@ -27,6 +27,10 @@ class WebGUI:
         app = FastAPI()
 
         if os.environ.get('DEV_ALLOW_ALL_ORIGINS', False):
+            # This option allows React development server (which is served on another port, like 3000) to proxy requests
+            # to this server.
+            # WARNING: read this before enabling it in your environment:
+            # https://medium.com/@stestagg/stealing-secrets-from-developers-using-websockets-254f98d577a0
             from fastapi.middleware.cors import CORSMiddleware
             app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'],
                                allow_headers=['*'])
@@ -38,6 +42,10 @@ class WebGUI:
         async def panel():
             return FileResponse("/srv/frontend/index.html")
 
+        @app.get("/favicon.ico")
+        async def panel():
+            return FileResponse("/srv/frontend/favicon.ico")
+
         @app.get("/")
         async def index():
             return RedirectResponse("/panel/")
@@ -47,7 +55,10 @@ class WebGUI:
             return [{
                 'id': 'default',
                 'streams': [
-                    {'src': '/static/gstreamer/default/playlist.m3u8'},
+                    {'src': '/static/gstreamer/default/playlist.m3u8', 'type': 'application/x-mpegURL',
+                     'birdseye': False},
+                    {'src': '/static/gstreamer/default-birdseye/playlist.m3u8', 'type': 'application/x-mpegURL',
+                     'birdseye': True},
                 ],
             }]
 
