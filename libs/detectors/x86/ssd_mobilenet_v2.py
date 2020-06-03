@@ -12,7 +12,7 @@ from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 def load_model(model_name):
     base_url = 'http://download.tensorflow.org/models/object_detection/'
     model_file = model_name + '.tar.gz'
-    base_dir = "libs/detectors/x86/data/"
+    base_dir = "/repo/data/x86/"
     model_dir = os.path.join(base_dir, model_name)
     if not os.path.isdir(model_dir):
         print('model does not exist under: ', model_dir, 'downloading from ', base_url + model_file)

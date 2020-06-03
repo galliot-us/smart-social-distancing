@@ -11,7 +11,7 @@ from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 def load_model(model_name):
     base_url = 'https://raw.githubusercontent.com/neuralet/neuralet-models/master/amd64/'
     model_file = model_name + "/saved_model/saved_model.pb"
-    base_dir = "libs/detectors/x86/data/"
+    base_dir = "/repo/data/x86/"
     model_dir = os.path.join(base_dir, model_name)
     if not os.path.isdir(model_dir):
         os.makedirs(os.path.join(model_dir, "saved_model"), exist_ok=True)
