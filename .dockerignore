@@ -7,3 +7,7 @@ frontend/build/
 frontend/node_modules/
 experiments/
 tasks/
+*.avi
+*.tbz2
+.vscode/
+venv/
