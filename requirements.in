@@ -1,0 +1,8 @@
+aiofiles
+fastapi
+numpy
+Pillow
+protobuf
+scipy
+setuptools
+uvicorn

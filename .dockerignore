@@ -2,12 +2,12 @@
 demo.gif
 docs/
 .git/
-data/
 frontend/build/
 frontend/node_modules/
 experiments/
 tasks/
 *.avi
-*.tbz2
 .vscode/
 venv/
+*.ts
+*.m3u8
