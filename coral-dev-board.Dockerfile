@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y wget gnupg \
 
 COPY docker/coral-dev-board/multistrap* /etc/apt/sources.list.d/
 
+# The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
 RUN apt-get update && apt-get install -y --no-install-recommends \
         cmake \
@@ -60,6 +61,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Also if you needed tensorflow: python-dev python3-dev libhdf5-dev python3-h5py python3-scipy
+# PIP - if you needed tensorflow: grpcio==1.26.0  keras==2.2.4 protobuf https://github.com/lhelontra/tensorflow-on-arm/releases/download/v2.0.0/tensorflow-2.0.0-cp37-none-linux_aarch64.whl
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libedgetpu1-std \
         pkg-config \

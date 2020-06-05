@@ -13,7 +13,7 @@ RUN tar -xzf /opt/tensorrt.tar.gz -C /usr/local/lib/python3.6/dist-packages/
 
 RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/libflattenconcat.so -O /opt/libflattenconcat.so
 
-# The `python3-opencv` package isn't built with gstreamer. So we need to manually build opencv.
+# The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
 # http://amritamaz.net/blog/opencv-config
 RUN apt-get update && apt-get install -y --no-install-recommends \
