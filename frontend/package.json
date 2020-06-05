@@ -13,7 +13,7 @@
     "babel-plugin-transform-imports": "2.0.0",
     "customize-cra": "0.9.1",
     "hls.js": "0.13.2",
-    "plotly.js": "1.54.1",
+    "plotly.js-cartesian-dist": "1.54.1",
     "ramda": "0.27.0",
     "react": "^16.13.1",
     "react-app-rewired": "2.1.6",
@@ -24,10 +24,13 @@
     "react-scripts": "3.4.1",
     "video-react": "0.14.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "source-map-explorer": "2.4.2"
+  },
   "scripts": {
+    "analyze": "react-app-rewired --expose-gc --max-old-space-size=2048 build && source-map-explorer build/static/js/*.js",
     "start": "react-app-rewired start",
-    "build": "env GENERATE_SOURCEMAP=false react-app-rewired --expose-gc --max-old-space-size=8192 build",
+    "build": "env GENERATE_SOURCEMAP=false react-app-rewired --expose-gc --max-old-space-size=2048 build",
     "test": "react-app-rewired test",
     "eject": "react-app-rewired eject"
   },
