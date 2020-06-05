@@ -290,6 +290,12 @@ class DsConfig(GstConfig):
         }
 
     @property
+    def distance_config(self) -> ElemConfig:
+        return {
+            'class-id': int(self.class_ids)
+        }
+
+    @property
     def infer_configs(self) -> List[ElemConfig]:
         """
         Return nvinfer configs.
