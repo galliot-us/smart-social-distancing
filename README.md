@@ -10,7 +10,7 @@ Smart Distancing is an open-source application to quantify social distancing mea
   <img  width="100%" src="demo.gif">
 </div>
 
-You can run this application on edge devices such as NVIDIA's Jetson Nano or Google's Coral Edge-TPU. This application measures social distancing rates and gives proper notifications each time someone ignores social distancing rules. By generating and analyzing data, this solution outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus. The project is under substantial active development; you can find our roadmap at https://github.com/neuralet/neuralet/projects/1.
+You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 or Google's Coral Edge-TPU. This application measures social distancing rates and gives proper notifications each time someone ignores social distancing rules. By generating and analyzing data, this solution outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus. The project is under substantial active development; you can find our roadmap at https://github.com/neuralet/neuralet/projects/1.
 
 We encourage the community to join us in building a practical solution to keep people safe while allowing them to get back to their jobs. You can read more about the project motivation and roadmap here: https://docs.google.com/presentation/d/13EEt4JfdkYSqpPLpotx9taBHpNW6WtfXo2SfwFU_aQ0/edit?usp=sharing
 
@@ -23,11 +23,12 @@ You can read the [Smart Social Distancing tutorial](https://neuralet.com/docs/tu
 
 ### Prerequisites
 
-**Hardware**
-* A host edge device. We currently support the following:
-    * NVIDIA Jetson Nano
-    * Coral Dev Board
-    * AMD64 node with attached Coral USB Accelerator
+**Hardware**  
+A host edge device. We currently support the following:
+* NVIDIA Jetson Nano
+* NVIDIA Jetson TX2
+* Coral Dev Board
+* AMD64 node with attached Coral USB Accelerator
 
 **Software**
 * You should have [Docker](https://docs.docker.com/get-docker/) on your device.
@@ -37,8 +38,8 @@ You can read the [Smart Social Distancing tutorial](https://neuralet.com/docs/tu
 Make sure you have the prerequisites and then clone this repository to your local system by running this command:
 
 ```
-git clone https://github.com/neuralet/neuralet.git
-cd neuralet/applications/smart-distancing/
+git clone https://github.com/neuralet/smart-social-distancing.git
+cd smart-social-distancing
 ```
 
 ### Usage
@@ -47,8 +48,6 @@ Make sure you have `Docker` installed on your device by following [these instruc
 
 **Download Required Files**
 ```
-cd smart-social-distancing/
-
 # Download a sample video file from https://megapixels.cc/oxford_town_centre/
 ./download_sample_video.sh
 ```
@@ -57,22 +56,32 @@ cd smart-social-distancing/
 * You need to have JetPack 4.3 installed on your Jetson Nano.
 
 ```
-cd smart-social-distancing/
-
 # 1) Download TensorRT engine file built with JetPack 4.3:
-./download_jetson_trt.sh
+./download_jetson_nano_trt.sh
 
-# 2) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 2) Build Docker image for Jetson Nano (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 
 # 3) Run Docker container:
 docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-jetson-nano
 ```
 
+**Run on Jetson TX2**
+* You need to have JetPack 4.3 installed on your Jetson TX2.
+
+```
+# 1) Download TensorRT engine file built with JetPack 4.3:
+./download_jetson_tx2_trt.sh
+
+# 2) Build Docker image for Jetson TX2
+docker build -f jetson-tx2.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-tx2" .
+
+# 3) Run Docker container:
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-jetson-tx2
+```
+
 **Run on Coral Dev Board**
 ```
-cd smart-social-distancing/
-
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
 # 2) Run Docker container:
@@ -81,8 +90,6 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet
 
 **Run on AMD64 node with a connected Coral USB Accelerator**
 ```
-cd smart-social-distancing/
-
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
 # 2) Run Docker container:
@@ -91,8 +98,6 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet
 
 **Run on x86**
 ```
-cd smart-social-distancing/
-
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
 # 2) Run Docker container:
@@ -100,10 +105,7 @@ docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social
 ```
 
 **Run on x86 using OpenVino**
-
-
 ```
-cd smart-social-distancing/
 # download model first
 ./download_openvino_model.sh
 
@@ -114,7 +116,7 @@ docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social
 ```
 
 ### Configurations
-You can read and modify the configurations in `config-jetson.ini` file for Jetson Nano and `config-skeleton.ini` file for Coral.
+You can read and modify the configurations in `config-jetson.ini` file for Jetson Nano / TX2 and `config-skeleton.ini` file for Coral.
 
 Under the `[Detector]` section, you can modify the `Min score` parameter to define the person detection threshold. You can also change the distance threshold by altering the value of `DistThreshold`.
 
