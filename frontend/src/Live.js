@@ -13,13 +13,15 @@ import {
     CircularProgress
 } from "@material-ui/core";
 import RefreshIcon from '@material-ui/icons/Refresh';
-import Plot from "react-plotly.js"
-import Plotly from "plotly.js"
+import createPlotlyComponent from 'react-plotly.js/factory';
+import Plotly from 'plotly.js-cartesian-dist'
 import {mergeDeepLeft} from "ramda";
 import ContainerDimensions from "react-container-dimensions";
 import {Player, BigPlayButton} from 'video-react';
 import HLSSource from './components/HLSSource';
 import "video-react/dist/video-react.css";
+
+const Plot = createPlotlyComponent(Plotly);
 
 const useStyle = makeStyles((theme) => ({
     fullWidth: {
