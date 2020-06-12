@@ -71,6 +71,7 @@ docker save -o "frontend_image.tar" neuralet/smart-social-distancing:latest-fron
 ```
 # Copy "frontend_image.tar" to your edge device and run this command on your device:
 docker load -i "frontend_image.tar"
+rm frontend_image.tar
 ```
 
 **Run on Jetson Nano**
