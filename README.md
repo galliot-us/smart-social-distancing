@@ -53,11 +53,10 @@ Make sure you have `Docker` installed on your device by following [these instruc
 ```
 
 **Building the Docker image for frontend**
-(This step is optional if are not going to build the docker image)
+(This step is optional if are not going to build any docker image)
 
-All dockerfiles in this repository use `neuralet/smart-social-distancing:latest-frontend` docker image for copying 
-frontend javascript artifacts to the main dockerfile. If the `frontend` directory on your branch is not identical to
-the upstream `master` branch, you would need to build the frontend image with tag "`neuralet/smart-social-distancing:latest-frontend`".
+All dockerfiles in this repository copy the static files from `neuralet/smart-social-distancing:latest-frontend` to their own  image. If the `frontend` directory on your branch is not identical to
+the upstream `master` branch, you MUST build the frontend image with tag "`neuralet/smart-social-distancing:latest-frontend`" BEFORE BUILDING THE MAIN IMAGE.
 Otherwise, skip this step, as we have already built the frontend for `master` branch on Dockerhub.
 
 * Building the frontend is resource intensive. If you are using a host edge device, we suggest building the docker image
