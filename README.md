@@ -52,6 +52,28 @@ Make sure you have `Docker` installed on your device by following [these instruc
 ./download_sample_video.sh
 ```
 
+**Building the Docker image for frontend**
+(This step is optional if are not going to build the docker image)
+
+All dockerfiles in this repository use `neuralet/smart-social-distancing:latest-frontend` docker image for copying 
+frontend javascript artifacts to the main dockerfile. If the `frontend` directory on your branch is not identical to
+the upstream `master` branch, you would need to build the frontend image with tag "`neuralet/smart-social-distancing:latest-frontend`".
+Otherwise, skip this step, as we have already built the frontend for `master` branch on Dockerhub.
+
+* Building the frontend is resource intensive. If you are using a host edge device, we suggest building the docker image
+on your PC/laptop first: 
+```
+# Run these commands on your PC/laptop:
+docker build -f frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-frontend" .
+docker save -o "frontend_image.tar" neuralet/smart-social-distancing:latest-frontend
+```
+
+* Then, move the file `frontend_image.tar` that was just built on your PC/laptop to your edge device and load it:
+```
+# Copy "frontend_image.tar" to your edge device and run this command on your device:
+docker load -i "frontend_image.tar"
+```
+
 **Run on Jetson Nano**
 * You need to have JetPack 4.3 installed on your Jetson Nano.
 

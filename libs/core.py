@@ -78,6 +78,28 @@ class Distancing:
         return cv_image, objects_list, distancings
 
     def gstreamer_writer(self, feed_name, fps, resolution):
+        """
+        This method creates and returns an OpenCV Video Writer instance. The VideoWriter expects its `.write()` method
+        to be called with a single frame image multiple times. It encodes frames into live video segments and produces
+        a video segment once it has received enough frames to produce a 5-seconds segment of live video.
+        The video segments are written on the filesystem. The target directory for writing segments is determined by
+        `video_root` variable.  In addition to writing the video segments, the VideoWriter also updates a file named
+        playlist.m3u8 in the target directory. This file contains the list of generated video segments and is updated
+        automatically.
+        This instance does not serve these video segments to the client. It is expected that the target video directory
+        is being served by a static file server and the clientside HLS video library downloads "playlist.m3u8". Then,
+        the client video player reads the link for video segments, according to HLS protocol, and downloads them from
+        static file server.
+
+        :param feed_name: Is the name for video feed. We may have multiple cameras, each with multiple video feeds (e.g. one
+        feed for visualizing bounding boxes and one for bird's eye view). Each video feed should be written into a
+        separate directory. The name for target directory is defined by this variable.
+        :param fps: The HLS video player on client side needs to know how many frames should be shown to the user per
+        second. This parameter is independent from the frame rate with which the video is being processed. For example,
+        if we set fps=60, but produce only frames (by calling `.write()`) per second, the client will see a loading
+        indicator for 5*60/30 seconds and then 5 seconds of video is played with fps 60.
+        :param resolution: A tuple of size 2 which indicates the resolution of output video.
+        """
         encoder = self.config.get_section_dict('App')['Encoder']
         video_root = f'/repo/data/web_gui/static/gstreamer/{feed_name}'
 
