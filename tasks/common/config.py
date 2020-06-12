@@ -22,6 +22,7 @@ defaults = {
             constants.D_CORAL_DEV_BORAD: 'coral-dev-board.Dockerfile',
             constants.D_JETSON_NANO: 'jetson-nano.Dockerfile',
             constants.D_AMD64_USBTPU: 'amd64-usbtpu.Dockerfile',
+            constants.D_JETSON_TX2: 'jetson-tx2.Dockerfile',
         },
         'tag_suffixes': {
             constants.D_FRONTEND: '-frontend',
@@ -30,6 +31,7 @@ defaults = {
             constants.D_CORAL_DEV_BORAD: '-coral-dev-board',
             constants.D_JETSON_NANO: '-jetson-nano',
             constants.D_AMD64_USBTPU: '-amd64',
+            constants.D_JETSON_TX2: '-jetson-tx2',
         },
         'default_host': {
             constants.D_FRONTEND: 'gpu',
@@ -38,6 +40,7 @@ defaults = {
             constants.D_CORAL_DEV_BORAD: 'tpu',
             constants.D_JETSON_NANO: 'jetson',
             constants.D_AMD64_USBTPU: 'gpu'
+
         },
         'custom_targets': {},
         'custom_runtimes': {

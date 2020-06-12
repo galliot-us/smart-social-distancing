@@ -11,7 +11,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/tensorrt.tar.gz -O /opt/tensorrt.tar.gz
 RUN tar -xzf /opt/tensorrt.tar.gz -C /usr/local/lib/python3.6/dist-packages/
 
-RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/libflattenconcat.so -O /opt/libflattenconcat.so
+RUN wget https://github.com/sasikiran/jetson_tx2_trt_ssd/raw/master/libflattenconcat.so -O /opt/libflattenconcat.so
 
 # The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
