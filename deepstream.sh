@@ -52,6 +52,13 @@ else
     "all"
   )
 fi
+# the user id to use
+if [[ -z "$SUDO_USER" ]]; then
+  readonly USER_ID=$UID
+else
+  echo "sudo user: $SUDO_USER"
+  readonly USER_ID="$(id -u $SUDO_USER)"
+fi
 
 # this helps tag the image
 GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -82,9 +89,10 @@ function run() {
     "${GPU_ARGS[@]}" \
     -v "$THIS_DIR/deepstream.ini:/repo/deepstream.ini" \
     -v "$THIS_DIR/data:/repo/data" \
-    --user $UID:$GROUP_ID \
+    --user $USER_ID:$GROUP_ID \
     -p "$PORT:8000" \
-    "$USER_NAME/smart-distancing:$TAG_SUFFIX1"
+    "$USER_NAME/smart-distancing:$TAG_SUFFIX1" \
+    --verbose
 }
 
 main() {
