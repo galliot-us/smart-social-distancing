@@ -21,49 +21,83 @@
 
 set -e
 
+# change the default run port
+readonly PORT="8000"
+# change this to bump the version tag
+readonly VERSION="0.1.0"
 # change this to your docker hub user if you fork this and want to push it
 readonly USER_NAME="neuralet"
-# DeepStream constants:
-readonly DS_PYBIND_URL="https://developer.nvidia.com/deepstream-getting-started#python_bindings"
-# Dockerfile names
-readonly DOCKERFILE="deepstream-$(arch).Dockerfile"
+# change this to override the arch (should never be necessary)
+readonly ARCH="$(arch)"
+# Dockerfile name
+readonly DOCKERFILE="deepstream-$ARCH.Dockerfile"
 # https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
 readonly THIS_SCRIPT_BASENAME="${0##*/}"
 # change this to use a newer gst-cuda-plugin version
 readonly CUDA_PLUGIN_VER="0.3.1"
-
-# get the docker tag suffix from the git branch
-TAG_SUFFIX="deepstream-$(git rev-parse --abbrev-ref HEAD)"
-if [[ $TAG_SUFFIX == "deepstream-master" ]]; then
-  # if we're on master, just use "deepstream"
-  TAG_SUFFIX="deepstream"
+# https://stackoverflow.com/questions/4774054/reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+readonly THIS_DIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+# the primary group to use
+if [[ $ARCH = "aarch64" ]]; then
+  # on tegra, a user must be in the video group to use the gpu
+  readonly GROUP_ID="$(cut -d: -f3 < <(getent group video))"
+  declare readonly GPU_ARGS=(
+    "--runtime"
+    "nvidia"
+  )
+else
+  readonly GROUP_ID=$(id -g)
+  declare readonly GPU_ARGS=(
+    "--gpus"
+    "all"
+  )
 fi
 
+# this helps tag the image
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+# get the docker tag suffix from the git branch
+if [[ $GIT_BRANCH == "master" ]]; then
+  # if we're on master, just use "deepstream"
+  readonly GIT_BRANCH="latest"
+else
+  readonly GIT_BRANCH=$GIT_BRANCH
+fi
+
+# change this to ovverride the image tag suffix
+readonly TAG_SUFFIX1="deepstream-$VERSION-$ARCH"
+readonly TAG_SUFFIX2="deepstream-$GIT_BRANCH-$ARCH"
+
 function build() {
+  set -x
   exec docker build --pull -f $DOCKERFILE \
-    -t "$USER_NAME/smart-distancing:$TAG_SUFFIX-$1" \
-    --build-arg CUDA_PLUGIN_TAG="${CUDA_PLUGIN_VER}-$1" \
+    -t "$USER_NAME/smart-distancing:$TAG_SUFFIX1" \
+    -t "$USER_NAME/smart-distancing:$TAG_SUFFIX2" \
+    --build-arg CUDA_PLUGIN_TAG="$CUDA_PLUGIN_VER-$ARCH" \
     .
 }
 
 function run() {
-  exec docker build --pull -f $DOCKERFILE \
-    -t "$USER_NAME/smart-distancing:$TAG_SUFFIX-$1" \
-    --build-arg CUDA_PLUGIN_TAG="${CUDA_PLUGIN_VER}-$1" \
-    .
+  set -x
+  exec docker run -it --rm \
+    "${GPU_ARGS[@]}" \
+    -v "$THIS_DIR/deepstream.ini:/repo/deepstream.ini" \
+    -v "$THIS_DIR/data:/repo/data" \
+    --user $UID:$GROUP_ID \
+    -p "$PORT:8000" \
+    "$USER_NAME/smart-distancing:$TAG_SUFFIX1" \
+    "$@"
 }
 
 main() {
-  local ARCH="$(arch)"
 case "$1" in
   build)
-      build $ARCH
+      build
       ;;
   run)
-      run $ARCH
+      run
       ;;
   *)
-      echo "Usage: $ARCH"
+      echo "Usage: $THIS_SCRIPT_BASENAME {build|run}"
 esac
 }
 

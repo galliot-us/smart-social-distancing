@@ -65,17 +65,10 @@ COPY tools ./tools/
 COPY logs ./logs/
 COPY data ./data/
 
-# drop all caps to a regular user
-RUN useradd -md /var/smart_distancing -rUs /bin/false smart_distancing \
-    && chown -R smart_distancing:smart_distancing /repo/data/web_gui/static/gstreamer/default \
-    && chown -R smart_distancing:smart_distancing /repo/data/web_gui/static/data/default/objects_log
-
-USER smart_distancing:smart_distancing
-
 # copy frontend
 COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 # entrypoint with deepstream.
 EXPOSE 8000
-ENTRYPOINT [ "/usr/bin/python3", "neuralet-distancing.py" ]
-CMD [ "--verbose", "--config", "deepstream.ini" ]
+ENTRYPOINT [ "/usr/bin/python3", "neuralet-distancing.py", "--config", "deepstream.ini" ]
+
