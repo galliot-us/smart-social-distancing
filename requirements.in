@@ -1,8 +1,4 @@
-aiofiles
 fastapi
-numpy
-Pillow
-protobuf
-scipy
+protobuf==3.12.2
 setuptools
 uvicorn

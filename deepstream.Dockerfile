@@ -33,12 +33,17 @@ COPY requirements.txt /tmp/
 
 # install pip, install requirements, remove pip and deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-aiofiles \
+        python3-dev \
         python3-gi \
         python3-gst-1.0 \
-        python3-pip \
-        python3-setuptools \
+        python3-numpy \
         python3-opencv \
-        python3-dev \
+        python3-pil \
+        python3-pip \
+        python3-protobuf \
+        python3-scipy \
+        python3-setuptools \
         graphviz \
     && pip3 install --require-hashes -r /tmp/requirements.txt \
     && apt-get purge -y --autoremove \
