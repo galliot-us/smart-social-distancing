@@ -78,14 +78,13 @@ function build() {
 
 function run() {
   set -x
-  exec docker run -it --rm \
+  exec docker run -it --rm --name smart_distancing \
     "${GPU_ARGS[@]}" \
     -v "$THIS_DIR/deepstream.ini:/repo/deepstream.ini" \
     -v "$THIS_DIR/data:/repo/data" \
     --user $UID:$GROUP_ID \
     -p "$PORT:8000" \
-    "$USER_NAME/smart-distancing:$TAG_SUFFIX1" \
-    "$@"
+    "$USER_NAME/smart-distancing:$TAG_SUFFIX1"
 }
 
 main() {
