@@ -113,6 +113,14 @@ docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:lat
 docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
+**Run on x86 using DeepStream**
+
+```
+cd smart-social-distancing/
+./deepstream.sh build
+./deepstream.sh run
+```
+
 ### Configurations
 You can read and modify the configurations in `config-jetson.ini` file for Jetson Nano and `config-skeleton.ini` file for Coral.
 
