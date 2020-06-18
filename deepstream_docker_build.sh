@@ -24,49 +24,46 @@ set -e
 # change this to your docker hub user if you fork this and want to push it
 readonly USER_NAME="neuralet"
 # DeepStream constants:
-readonly DS_PYBIND_TBZ2="ds_pybind_v0.9.tbz2"  # deepstrem python bindings
 readonly DS_PYBIND_URL="https://developer.nvidia.com/deepstream-getting-started#python_bindings"
 # Dockerfile names
-readonly X86_DOCKERFILE="deepstream-x86.Dockerfile"
-readonly TEGRA_DOCKERFILE="deepstream-tegra.Dockerfile"
+readonly DOCKERFILE="deepstream-$(arch).Dockerfile"
 # https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
 readonly THIS_SCRIPT_BASENAME="${0##*/}"
+# change this to use a newer gst-cuda-plugin version
+readonly CUDA_PLUGIN_VER="0.3.1"
 
 # get the docker tag suffix from the git branch
-# if master, use "latest"
-TAG_SUFFIX=$(git rev-parse --abbrev-ref HEAD)
-if [[ $TAG_SUFFIX == "master" ]]; then
-    TAG_SUFFIX="deepstream"
+TAG_SUFFIX="deepstream-$(git rev-parse --abbrev-ref HEAD)"
+if [[ $TAG_SUFFIX == "deepstream-master" ]]; then
+  # if we're on master, just use "deepstream"
+  TAG_SUFFIX="deepstream"
 fi
 
-function check_deps() {
-  if [ ! -f ${DS_PYBIND_TBZ2} ]; then
-    echo "ERROR: ${DS_PYBIND_TBZ2} needed in same directory as Dockerfile." > /dev/stderr
-    echo "Download from: ${DS_PYBIND_URL}" > /dev/stderr
-    echo "(it's inside deepstream_python_v0.9.tbz2)" > /dev/stderr
-    exit 1
-  fi
-}
-
 function x86() {
-  exec docker build -f $X86_DOCKERFILE -t "$USER_NAME/smart-distancing:$TAG_SUFFIX" .
+  exec docker build --pull -f $DOCKERFILE \
+    -t "$USER_NAME/smart-distancing:$TAG_SUFFIX-$1" \
+    --build-arg CUDA_PLUGIN_TAG="${CUDA_PLUGIN_VER}-$1" \
+    .
 }
 
 function tegra() {
-  exec docker build -f $TEGRA_DOCKERFILE -t "$USER_NAME/smart-distancing:$TAG_SUFFIX" .
+  exec docker build --pull -f $DOCKERFILE \
+    -t "$USER_NAME/smart-distancing:$TAG_SUFFIX-$1" \
+    --build-arg CUDA_PLUGIN_TAG="${CUDA_PLUGIN_VER}-$1" \
+    .
 }
 
 main() {
-  check_deps
-case "$1" in
-  x86)
-      x86
+  local ARCH="$(arch)"
+case $ARCH in
+  x86_64)
+      x86 $ARCH
       ;;
-  tegra)
-      tegra
+  aarch64)
+      tegra $ARCH
       ;;
   *)
-      echo "Usage: $THIS_SCRIPT_BASENAME {x86|tegra}"
+      echo "Unrecognized architecture: $ARCH"
 esac
 }
 
