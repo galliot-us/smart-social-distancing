@@ -117,8 +117,8 @@ docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social
 
 ```
 cd smart-social-distancing/
-./deepstream.sh build
-./deepstream.sh run
+(sudo) ./deepstream.sh build
+(sudo) ./deepstream.sh run
 ```
 
 ### Configurations
