@@ -18,21 +18,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-FROM registry.hub.docker.com/mdegans/gstcudaplugin:latest
+ARG CUDA_PLUGIN_TAG="build me with deepstream_docker_build.sh"
+FROM registry.hub.docker.com/mdegans/gstcudaplugin:${CUDA_PLUGIN_TAG}
 
 # this can't be downloaded directly because a license needs to be accepted,
 # (because those who abuse it will care so much about that) and a tarball
 # extracted. This is very un-fun:
 # https://developer.nvidia.com/deepstream-getting-started#python_bindings
-ARG DS_PYBIND_TBZ2='ds_pybind_v0.9.tbz2'
 ARG DS_SOURCES_ROOT='/opt/nvidia/deepstream/deepstream/sources'
+ARG CONFIG_FILE="deepstream.ini"
 
 # copy stuff we need at the start of the build
-COPY ${DS_PYBIND_TBZ2} requirements.txt /tmp/
-
-# extract and install the python bindings
-RUN mkdir -p ${DS_SOURCES_ROOT} \
-    && tar -xf /tmp/${DS_PYBIND_TBZ2} -C ${DS_SOURCES_ROOT}
+COPY requirements.txt /tmp/
 
 # install pip, install requirements, remove pip and deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -70,7 +67,9 @@ COPY data ./data/
 
 # drop all caps to a regular user
 RUN useradd -md /var/smart_distancing -rUs /bin/false smart_distancing \
-    && chown -R smart_distancing:smart_distancing /repo/data/web_gui/static/gstreamer
+    && chown -R smart_distancing:smart_distancing /repo/data/web_gui/static/gstreamer/default \
+    && chown -R smart_distancing:smart_distancing /repo/data/web_gui/static/data/default/objects_log
+
 USER smart_distancing:smart_distancing
 
 # copy frontend
@@ -79,4 +78,4 @@ COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /sr
 # entrypoint with deepstream.
 EXPOSE 8000
 ENTRYPOINT [ "/usr/bin/python3", "neuralet-distancing.py" ]
-CMD [ "--config", "deepstream.ini" ]
+CMD [ "--verbose", "--config", "deepstream.ini" ]
