@@ -30,7 +30,7 @@ readonly USER_NAME="neuralet"
 # change this to override the arch (should never be necessary)
 readonly ARCH="$(arch)"
 # Dockerfile name
-readonly DOCKERFILE="deepstream-$ARCH.Dockerfile"
+readonly DOCKERFILE="deepstream.Dockerfile"
 # https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
 readonly THIS_SCRIPT_BASENAME="${0##*/}"
 # change this to use a newer gst-cuda-plugin version
