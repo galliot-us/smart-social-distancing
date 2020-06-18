@@ -26,7 +26,7 @@ readonly USER_NAME="neuralet"
 # DeepStream constants:
 readonly DS_PYBIND_URL="https://developer.nvidia.com/deepstream-getting-started#python_bindings"
 # Dockerfile names
-readonly DOCKERFILE="deepstream-$(arch).Dockerfile"
+readonly DOCKERFILE="deepstream.Dockerfile"
 # https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
 readonly THIS_SCRIPT_BASENAME="${0##*/}"
 # change this to use a newer gst-cuda-plugin version
