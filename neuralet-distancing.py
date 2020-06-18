@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import os
 import argparse
 import logging
 import sys
@@ -35,12 +36,10 @@ def main(config, verbose=False):
     video_path = config.get_section_dict("App").get("VideoPath", None)
 
     # create our inference process
-    try:
-        # try to launch deepstream but skip if any import errors
-        # (eg. pyds not found, gi not found)
-        from libs.detectors.deepstream import DsEngine, DsConfig
-        process_engine = DsEngine(DsConfig(config))
-    except ImportError:
+    if os.path.isdir('/opt/nvidia/deepstream'):
+        from libs.detectors.deepstream import GstEngine, DsConfig
+        process_engine = GstEngine(DsConfig(config), debug=verbose)
+    else:
         # DeepStream is not available. Let's try CvEngine
         process_engine = Process(target=start_cv_engine, args=(config, video_path,))
 

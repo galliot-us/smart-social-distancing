@@ -24,6 +24,7 @@ DsConfig and GstConfig wrappers live here (they wrap ConfigEngine).
 
 import os
 import logging
+import datetime
 
 from math import (
     log,
@@ -99,7 +100,6 @@ class GstConfig(object):
     MUXER_TYPE = 'concat'  # using this just because it has request pads
     INFER_TYPE = 'identity'
     DISTANCE_TYPE = 'identity'
-    PAYLOAD_TYPE = 'identity'
     BROKER_TYPE = 'identity'
     OSD_CONVERTER_TYPE = 'identity'
     TILER_TYPE = 'identity'
@@ -162,7 +162,6 @@ class GstConfig(object):
     osd_converter_config = property(_blank_config)
     sink_config = property(_blank_config)
     distance_config = property(_blank_config)
-    payload_config = property(_blank_config)
     broker_config = property(_blank_config)
 
     @property
@@ -240,7 +239,6 @@ class DsConfig(GstConfig):
     MUXER_TYPE = 'nvstreammux'
     INFER_TYPE = 'nvinfer'
     DISTANCE_TYPE = 'dsdistance'
-    PAYLOAD_TYPE = 'dsprotopayload'
     BROKER_TYPE = 'payloadbroker'
     OSD_CONVERTER_TYPE = 'nvvideoconvert'
     TILER_TYPE = 'nvmultistreamtiler'
@@ -293,6 +291,17 @@ class DsConfig(GstConfig):
     def distance_config(self) -> ElemConfig:
         return {
             'class-id': int(self.class_ids)
+        }
+
+    @property
+    def broker_config(self) -> ElemConfig:
+        return {
+            'mode': 2,  # csv
+            'basepath': os.path.join(
+                self.master_config.config['Logger']['LogDirectory'],
+                'default', 'objects_log',
+                datetime.datetime.today().strftime('%Y-%m-%d'),
+            )
         }
 
     @property

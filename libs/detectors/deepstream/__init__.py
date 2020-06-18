@@ -31,29 +31,16 @@ from gi.repository import (
     Gst,
     GLib,
 )
-from libs.detectors.deepstream._base_detector import *
 from libs.detectors.deepstream._ds_utils import *
-from libs.detectors.deepstream._pyds import *
 from libs.detectors.deepstream._ds_config import *
 from libs.detectors.deepstream._gst_engine import *
-from libs.detectors.deepstream._ds_engine import *
-from libs.detectors.deepstream._detectors import *
 
 __all__ = [
-    'BaseDetector',  # _base_detector.py
     'bin_to_pdf',  # _ds_utils.py
     'DsConfig',  # _ds_config.py
-    'DsDetector',  # _detectors.py
-    'DsEngine',  # _ds_engine.py
     'ElemConfig',  # _ds_config.py
     'find_deepstream',  # _ds_utils.py
-    'frame_meta_iterator',  # _ds_engine.py
     'GstConfig',  # _ds_config.py
-    'GstEngine',  # _ds_engine.py
-    'link_many',  # _ds_engine.py
-    'obj_meta_iterator',  # _ds_engine.py
-    'OnFrameCallback',  # _base_detector.py
-    'PYDS_INSTRUCTIONS',  # _pyds.py
-    'PYDS_PATH',  # _pyds.py
-    'pyds',  # _pyds.py
+    'GstEngine',  # _gst_engine.py
+    'link_many',  # _gst_engine.py
 ]

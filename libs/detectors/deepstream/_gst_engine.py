@@ -89,7 +89,7 @@ def link(a: Gst.Element, b: Gst.Element):
     if not a.link(b):
         raise GstLinkError(f'could not link {a.name} to {b.name}')
 
-def link_many(elements: Iterable[Gst.Element]):
+def link_many(*elements: Iterable[Gst.Element]):
     """
     Link many Gst.Element.
     
@@ -103,6 +103,7 @@ def link_many(elements: Iterable[Gst.Element]):
     for current in elements:
         if not last.link(current):
             raise GstLinkError(f'could not link {last.name} to {current.name}')
+        last = current
 
 
 class GstEngine(multiprocessing.Process):
@@ -192,7 +193,6 @@ class GstEngine(multiprocessing.Process):
         self._infer_elements = []  # type: List[Gst.Element]
         self._tracker = None  # type: Gst.Element
         self._distance = None  # type: Gst.Element
-        self._payload = None  # type: Gst.Element
         self._broker = None # type: Gst.Element
         self._osd_converter = None  # type: Gst.Element
         self._tiler = None  # type: Gst.Element
@@ -206,49 +206,6 @@ class GstEngine(multiprocessing.Process):
         # todo: make this a property with proper ipc:
         # so it can be changed after start
         self.blocking=blocking
-
-    @property
-    def results(self) -> Sequence[str]:
-        """
-        Get results waiting in the queue.
-
-        (may block, depending on self.queue_timeout)
-
-        May return None if no result ready.
-
-        Logs to WARNING level on failure to fetch result.
-        """
-        try:
-            return self._result_queue.get(block=self.blocking, timeout=self.queue_timeout)
-        except queue.Empty:
-            self.logger.warning("failed to get results from queue (queue.Empty)")
-            return None
-        except TimeoutError:
-            self.logger.info("waiting for results...")
-            return None
-
-    def _update_result_queue(self, results: str):
-        """
-        Called internally by the GStreamer process.
-
-        Update results queue with serialize payload. Should probably be called
-        by the subclass implemetation of on_buffer().
-
-        Does not block (because this would block the GLib.MainLoop).
-
-        Can fail if the queue is full in which case the results will
-        be dropped and logged to the WARNING level.
-
-        Returns:
-            bool: False on failure, True on success.
-        """
-        if self._result_queue.empty():
-            try:
-                self._result_queue.put_nowait(results)
-                return True
-            except queue.Full:
-                self.logger.warning({'dropped': results})
-                return False
 
     def on_bus_message(self, bus: Gst.Bus, message: Gst.Message, *_) -> bool:
         """
@@ -375,6 +332,9 @@ class GstEngine(multiprocessing.Process):
 
         # set properties on the element
         if props:
+            if self._debug:
+                self.logger.debug(
+                    f'{elem.name}:{props}')
             for k, v in props.items():
                 elem.set_property(k, v)
         
@@ -465,7 +425,6 @@ class GstEngine(multiprocessing.Process):
             functools.partial(self._create_element, 'tracker'),
             self._create_infer_elements,
             functools.partial(self._create_element, 'distance'),
-            functools.partial(self._create_element, 'payload'),
             functools.partial(self._create_element, 'broker'),
             functools.partial(self._create_element, 'osd_converter'),
             functools.partial(self._create_element, 'tiler'),
@@ -527,33 +486,25 @@ class GstEngine(multiprocessing.Process):
             link(self._infer_elements[0], self._tracker)
             # if there are secondary inference elements
             if self._infer_elements[1:]:
-                link_many((self._tracker, *self._infer_elements[1:]))
+                link_many(self._tracker, *self._infer_elements[1:])
                 # link the final inference element to distancing engine
                 link(self._infer_elements[-1], self._distance)
             else:
                 # link tracker directly to the distancing element
                 link(self._tracker, self._distance)
-            link(self._distance, self._payload)
-            # TODO(mdegans): rename osd_converter
-            # (this requires some changes elsewhere)
-            link(self._payload, self._osd_converter)
-            link(self._osd_converter, self._tiler)
-            link(self._tiler, self._osd)
-            link(self._osd, self._sink)
+            link_many(
+                self._distance,
+                self._broker,
+                self._osd_converter,
+                self._tiler,
+                self._osd,
+                self._sink,
+            )
         except GstLinkError as err:
             self.logger.error(f"pipeline link fail because: {err}")
             return False
         self.logger.debug('linking pipeline successful')
         return True
-
-    def on_buffer(self, pad: Gst.Pad, info: Gst.PadProbeInfo, _: None, ) -> Gst.PadProbeReturn:
-        """
-        Default source pad probe buffer callback for the sink.
-
-        Simply returns Gst.PadProbeReturn.OK, signaling the buffer
-        shuould continue down the pipeline.
-        """
-        return Gst.PadProbeReturn.OK
 
     def stop(self):
         """Stop the GstEngine process."""
@@ -631,16 +582,6 @@ class GstEngine(multiprocessing.Process):
         if not self._link_pipeline():
             self.logger.error('could not link pipeline')
             return self._quit()
-
-        # register pad probe buffer callback on the tiler
-        self.logger.debug('registering self.on_buffer() callback on osd sink pad')
-        tiler_sink_pad = self._tiler.get_static_pad('sink')
-        if not tiler_sink_pad:
-            self.logger.error('could not get osd sink pad')
-            return self._quit()
-
-        self._tiler_probe_id = tiler_sink_pad.add_probe(
-            Gst.PadProbeType.BUFFER, self.on_buffer, None)
 
         # register callback to check for the stop event when idle.
         # TODO(mdegans): test to see if a higher priority is needed.
