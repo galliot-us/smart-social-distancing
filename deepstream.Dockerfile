@@ -40,7 +40,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-gi \
         python3-gst-1.0 \
         python3-numpy \
-        python3-opencv \
         python3-pil \
         python3-pip \
         python3-protobuf \
