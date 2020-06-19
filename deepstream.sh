@@ -29,6 +29,8 @@ readonly VERSION="0.1.0"
 readonly USER_NAME="neuralet"
 # change this to override the arch (should never be necessary)
 readonly ARCH="$(arch)"
+# frontend dockerfile name
+readonly FRONTEND_DOCKERFILE="frontend.Dockerfile"
 # Dockerfile name
 readonly DOCKERFILE="deepstream.Dockerfile"
 # https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
@@ -75,11 +77,16 @@ readonly TAG_SUFFIX1="deepstream-$VERSION-$ARCH"
 readonly TAG_SUFFIX2="deepstream-$GIT_BRANCH-$ARCH"
 
 function build() {
+  readonly local FRONTEND_TAG="$GIT_BRANCH-frontend"
   set -x
-  exec docker build --pull -f $DOCKERFILE \
+  docker build -f $FRONTEND_DOCKERFILE \
+    -t "$USER_NAME/smart-social-distancing:$FRONTEND_TAG" \
+    .
+  docker build -f $DOCKERFILE \
     -t "$USER_NAME/smart-distancing:$TAG_SUFFIX1" \
     -t "$USER_NAME/smart-distancing:$TAG_SUFFIX2" \
     --build-arg CUDA_PLUGIN_TAG="$CUDA_PLUGIN_VER-$ARCH" \
+    --build-arg FRONTEND_BASE="$USER_NAME/smart-social-distancing:$FRONTEND_TAG" \
     .
 }
 

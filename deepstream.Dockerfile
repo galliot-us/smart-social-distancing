@@ -18,7 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-ARG CUDA_PLUGIN_TAG="build me with deepstream_docker_build.sh"
+ARG FRONTEND_BASE="build me with deesptream.sh"
+ARG CUDA_PLUGIN_TAG="build me with deepstream.sh"
+FROM ${FRONTEND_BASE} as frontend
 FROM registry.hub.docker.com/mdegans/gstcudaplugin:${CUDA_PLUGIN_TAG}
 
 # this can't be downloaded directly because a license needs to be accepted,
@@ -62,16 +64,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /repo
 
-COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+# copy frontend
+COPY --from=frontend /frontend/build /srv/frontend
+
+# copy code
 COPY neuralet-distancing.py README.md ${CONFIG_FILE} ./
 COPY libs ./libs/
 COPY ui ./ui/
 COPY tools ./tools/
 COPY logs ./logs/
 COPY data ./data/
-
-# copy frontend
-COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 # entrypoint with deepstream.
 EXPOSE 8000
