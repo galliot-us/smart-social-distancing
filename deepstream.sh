@@ -36,7 +36,7 @@ readonly DOCKERFILE="deepstream.Dockerfile"
 # https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
 readonly THIS_SCRIPT_BASENAME="${0##*/}"
 # change this to use a newer gst-cuda-plugin version
-readonly CUDA_PLUGIN_VER="0.3.2"
+readonly CUDA_PLUGIN_VER="0.3.3"
 # https://stackoverflow.com/questions/4774054/reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
 readonly THIS_DIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 # the primary group to use
