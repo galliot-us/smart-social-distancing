@@ -89,8 +89,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-dev \
     && apt-get autoremove -y
 
-ENTRYPOINT ["python3", "neuralet-distancing.py"]
-CMD ["--config", "config-skeleton.ini"]
+#ENTRYPOINT ["python3", "neuralet-distancing.py"]
+#CMD ["--config", "config-skeleton.ini"]
+ENTRYPOINT ["bash", "start_services.bash"]
+CMD ["config-skeleton.ini"]
+
 WORKDIR /repo
 EXPOSE 8000
 
