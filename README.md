@@ -121,6 +121,11 @@ cd smart-social-distancing/
 (sudo) ./deepstream.sh run
 ```
 
+Make sure to set your hostname to your publicly accessable hostname in deepstream.ini
+```
+PublicUrl: http://your_hostname_here:8000
+```
+
 ### Configurations
 You can read and modify the configurations in `config-jetson.ini` file for Jetson Nano and `config-skeleton.ini` file for Coral.
 
