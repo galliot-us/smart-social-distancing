@@ -25,6 +25,9 @@ def build(c, name, local=False, frontend_build_skip=False):
 @task(help={'name': '|'.join(valid_backend_names)})
 def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_build_skip=False, dev_mode=False,
         tunnel_skip=False, shell=False):
+    """
+    This command builds the frontend on gpu server (in case of --local, on local machine),
+    """
     assert name in valid_backend_names
 
     if not build_skip:
@@ -84,4 +87,4 @@ def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_bui
 @task
 def frontend(c):
     with c.cd(f'{ROOT_DIR}/frontend'):
-        c.run('npm start')
+        c.run('yarn start')
