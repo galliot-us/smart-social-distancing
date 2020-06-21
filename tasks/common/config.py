@@ -1,3 +1,12 @@
+"""
+In order to invoke tasks, you should have `tasks/overrides.yaml` config file. For taking a look at available
+configurable items and their default values, see `tasks/common/config.py`. You can start with editing this
+template (don't forget to substitute `<YOUR_DOCKERHUB_USER_NAME>` with your dockerhub username in it):
+```bash
+cp tasks/overrides.yaml.template tasks/overrides.yaml
+# now edit tasks/overrides.yaml. This file is in .gitignore
+```
+"""
 from pathlib import Path
 from . import constants
 

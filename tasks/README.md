@@ -42,14 +42,14 @@ For example, if you want to run the app using x86-openvino.Dockerfile on your lo
 inv -e develop.run --local
 ```
 
-The `-e` flag in command above echos every command before running it. In order to preview commands, without running them, run it in dry-mode 
-(using `-R`).
+The `-e` flag in command above echos every command before running it. In order to preview commands, without actually 
+running them, run it in dry-mode (using `-R`).
 
 ```bash
 inv -R develop.run --local
 ```
 
-Flags like `-e`, `-R` (dry-mode), and `-h` (help) are generic flags, available for all tasks. 
+Flags like `-e` (echo commands), `-R` (dry-mode), and `-h` (help) are generic flags, available for all tasks. 
 But flags like `--local` in the command
 above are task-specific. Task-specific flags MUST appear after the task name (e.g. `develop.run`) and the
 generic flags must come before it. 
