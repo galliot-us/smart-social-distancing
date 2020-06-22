@@ -57,7 +57,7 @@ class ConfigEngine:
     def save(self, path):
         self.lock.acquire()
         try:
-            file_obj = open(path, "w")
+            file_obj = open(path, "w+")
             self.config.write(file_obj)
             file_obj.close()
         finally:
@@ -102,7 +102,17 @@ class ConfigEngine:
         self.lock.acquire()
         try:
             self.config.set(section, option, value)
+            self.section_options_dict[section][option] = value # Change dict so that it doesn't need reload
         finally:
             self.lock.release()
-        self.save(self.config_file_path)
 
+    """
+    Receives a dictionary with the sections of the config and options to be updated.
+    Saves the new config in the .ini file
+    """
+    def update_config(self, config, save_file):
+        for section, options in config.items():
+            for option, value in options.items():
+                self.set_option_in_section(section, option, value)
+        if save_file:
+            self.save(self.config_file_path)
