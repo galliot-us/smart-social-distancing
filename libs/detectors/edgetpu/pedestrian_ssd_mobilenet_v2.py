@@ -33,7 +33,7 @@ class Detector:
             print('using %s as model' % user_model_path)
             self.model_path = user_model_path
         else:
-            base_url = 'https://raw.githubusercontent.com/neuralet/neuralet-models/master/edge-tpu/'
+            base_url = 'https://media.githubusercontent.com/media/neuralet/neuralet-models/master/edge-tpu/'
             url = base_url + self.model_name + '/' + self.model_file
 
             if not os.path.isfile(self.model_path):
