@@ -116,7 +116,7 @@ function Charts({cameras}) {
         if (!cameras) {
             return
         }
-        const url = `/static/data/${cameras[0]['id']}/objects_log/${new Date().toISOString().slice(0, 10)}.csv`;
+        const url = `${cameras[0]['storage_host']}/static/data/${cameras[0]['id']}/objects_log/${new Date().toISOString().slice(0, 10)}.csv`;
         axios.get(url, {headers}).then(response => {
             let records = Plotly.d3.csv.parse(response.data);
             let x1 = [], y1 = [], y2 = [], env_score = [];
