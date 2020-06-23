@@ -3,7 +3,6 @@ import numpy as np
 import math
 
 from libs import pubsub
-from libs.centroid_object_tracker import CentroidTracker
 from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
@@ -17,8 +16,6 @@ class Distancing:
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
         self.running_video = False
-        self.tracker = CentroidTracker(
-            max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
         self.logger = Logger(self.config)
         if self.device == 'Jetson':
             from libs.detectors.jetson.detector import Detector
@@ -156,9 +153,7 @@ class Distancing:
         this function post-process the raw boxes of object detector and calculate a distance matrix
         for detected bounding boxes.
         post processing is consist of:
-        1. omitting large boxes by filtering boxes which are biger than the 1/4 of the size the image.
-        2. omitting duplicated boxes by applying an auxilary non-maximum-suppression.
-        3. apply a simple object tracker to make the detection more robust.
+        omitting large boxes by filtering boxes which are biger than the 1/4 of the size the image.
 
         params:
         object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
@@ -170,15 +165,7 @@ class Distancing:
         distances: a NxN ndarray which i,j element is distance between i-th and l-th bounding box
 
         """
-        new_objects_list = self.ignore_large_boxes(objects_list)
-        new_objects_list = self.non_max_suppression_fast(new_objects_list,
-                                                         float(self.config.get_section_dict("PostProcessor")[
-                                                                   "NMSThreshold"]))
-        tracked_boxes = self.tracker.update(new_objects_list)
-        new_objects_list = [tracked_boxes[i] for i in tracked_boxes.keys()]
-        for i, item in enumerate(new_objects_list):
-            item["id"] = item["id"].split("-")[0] + "-" + str(i)
-
+        new_objects_list = self.ignore_large_boxes(objects_list) 
         centroids = np.array( [obj["centroid"] for obj in new_objects_list] )
         distances = self.calculate_box_distances(new_objects_list)
 
@@ -201,59 +188,6 @@ class Distancing:
             if (object_list[i]["centroid"][2] * object_list[i]["centroid"][3]) > 0.25:
                 large_boxes.append(i)
         updated_object_list = [j for i, j in enumerate(object_list) if i not in large_boxes]
-        return updated_object_list
-
-    @staticmethod
-    def non_max_suppression_fast(object_list, overlapThresh):
-
-        """
-        omitting duplicated boxes by applying an auxilary non-maximum-suppression.
-        params:
-        object_list: a list of dictionaries. each dictionary has attributes of a detected object such
-        "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
-        of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
-
-        overlapThresh: threshold of minimum IoU of to detect two box as duplicated.
-
-        returns:
-        object_list: input object list without duplicated boxes
-        """
-        # if there are no boxes, return an empty list
-        boxes = np.array([item["centroid"] for item in object_list])
-        corners = np.array([item["bbox"] for item in object_list])
-        if len(boxes) == 0:
-            return []
-        if boxes.dtype.kind == "i":
-            boxes = boxes.astype("float")
-        # initialize the list of picked indexes
-        pick = []
-        cy = boxes[:, 1]
-        cx = boxes[:, 0]
-        h = boxes[:, 3]
-        w = boxes[:, 2]
-        x1 = corners[:, 0]
-        x2 = corners[:, 2]
-        y1 = corners[:, 1]
-        y2 = corners[:, 3]
-        area = (h + 1) * (w + 1)
-        idxs = np.argsort(cy + (h / 2))
-        while len(idxs) > 0:
-            last = len(idxs) - 1
-            i = idxs[last]
-            pick.append(i)
-            xx1 = np.maximum(x1[i], x1[idxs[:last]])
-            yy1 = np.maximum(y1[i], y1[idxs[:last]])
-            xx2 = np.minimum(x2[i], x2[idxs[:last]])
-            yy2 = np.minimum(y2[i], y2[idxs[:last]])
-
-            w = np.maximum(0, xx2 - xx1 + 1)
-            h = np.maximum(0, yy2 - yy1 + 1)
-            # compute the ratio of overlap
-            overlap = (w * h) / area[idxs[:last]]
-            # delete all indexes from the index list that have
-            idxs = np.delete(idxs, np.concatenate(([last],
-                                                   np.where(overlap > overlapThresh)[0])))
-        updated_object_list = [j for i, j in enumerate(object_list) if i in pick]
         return updated_object_list
 
 
