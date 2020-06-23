@@ -1,15 +1,25 @@
 import axios from 'axios';
 import React, {useEffect, useState} from "react";
 import {makeStyles} from "@material-ui/core/styles";
-import {Card, Table, TableBody, TableCell, TableRow, Grid, Typography, IconButton} from "@material-ui/core";
+import {
+    Card,
+    Table,
+    TableBody,
+    TableCell,
+    TableRow,
+    Grid,
+    Typography,
+    IconButton,
+    CircularProgress
+} from "@material-ui/core";
 import RefreshIcon from '@material-ui/icons/Refresh';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import Plotly from 'plotly.js-cartesian-dist'
 import {mergeDeepLeft} from "ramda";
 import ContainerDimensions from "react-container-dimensions";
-// import {Player} from 'video-react';
-// import HLSSource from './components/HLSSource';
-// import "video-react/dist/video-react.css";
+import {Player, BigPlayButton} from 'video-react';
+import HLSSource from './components/HLSSource';
+import "video-react/dist/video-react.css";
 
 const Plot = createPlotlyComponent(Plotly);
 
@@ -32,15 +42,21 @@ const useStyle = makeStyles((theme) => ({
     }
 }));
 
-function CameraFeed() {
+function CameraFeed({cameras}) {
     const classes = useStyle();
+    const [time, _] = useState(new Date().toISOString()); // time is appended to live urls to prevent caching
 
     return (
         <Card className={classes.withPadding} variant="outlined">
             <Typography variant="h6" color="textSecondary">
                 Camera Feed
             </Typography>
-            <img src="/live_feed/default"/>
+            {cameras ? (
+                <Player muted={true} autoPlay={true}>
+                    <HLSSource isVideoChild src={`${cameras[0].streams[0].src}?${time}`}/>
+                    <BigPlayButton position="center" />
+                </Player>
+            ) : <CircularProgress/>}
         </Card>
     );
 }
@@ -72,14 +88,21 @@ function Status() {
     )
 }
 
-function BirdsView() {
+function BirdsView({cameras}) {
     const classes = useStyle();
+    const [time, _] = useState(new Date().toISOString()); // time is appended to live urls to prevent caching
+
     return (
         <Card variant="outlined" className={classes.withPadding}>
             <Typography variant="h6" color="textSecondary">
                 Bird's View
             </Typography>
-            <img src="/live_feed/default-birdseye"/>
+            {cameras ? (
+                <Player muted={true} autoPlay={true} fluid={false}>
+                    <HLSSource isVideoChild src={`${cameras[0].streams[1].src}?${time}`}/>
+                    <BigPlayButton position="center" />
+                </Player>
+            ) : <CircularProgress/>}
         </Card>
     );
 }
@@ -89,12 +112,10 @@ function Charts({cameras}) {
     const [data, setData] = useState(undefined)
 
     function update() {
-        console.log('update', cameras)
         const headers = {'Cache-Control': 'no-store'};
         if (!cameras) {
             return
         }
-        console.log('here')
         const url = `/static/data/${cameras[0]['id']}/objects_log/${new Date().toISOString().slice(0, 10)}.csv`;
         axios.get(url, {headers}).then(response => {
             let records = Plotly.d3.csv.parse(response.data);
@@ -111,7 +132,7 @@ function Charts({cameras}) {
         // })
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         let intervalId = setInterval(update, 15000);  // refresh chart every 15 seconds
         return () => clearInterval(intervalId);
     }, [cameras]);
@@ -196,7 +217,7 @@ export default function Live() {
     return (
         <Grid container spacing={3}>
             <Grid item xs={12} md={7}>
-                <CameraFeed/>
+                <CameraFeed cameras={cameras}/>
             </Grid>
             <Grid item container xs={12} md={5} spacing={3}>
                 {process.env.NODE_ENV === 'development' /* IN_PROGRESS */ ? (
@@ -205,7 +226,7 @@ export default function Live() {
                     </Grid>
                 ) : null}
                 <Grid item xs={12}>
-                    <BirdsView/>
+                    <BirdsView cameras={cameras} />
                 </Grid>
             </Grid>
             <Grid item xs={12}>

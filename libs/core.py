@@ -1,13 +1,17 @@
 import cv2 as cv
 import numpy as np
 import math
-
-from libs import pubsub
+import os
+import datetime
+import shutil
 from libs.centroid_object_tracker import CentroidTracker
 from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
 from ui.utils import visualization_utils
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Distancing:
@@ -43,6 +47,7 @@ class Distancing:
         self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
+        self.birds_eye_resolution = (200, 300)
 
     def __process(self, cv_image):
         """
@@ -56,7 +61,7 @@ class Distancing:
         resized_image = cv.resize(cv_image, tuple(self.image_size[:2]))
         rgb_resized_image = cv.cvtColor(resized_image, cv.COLOR_BGR2RGB)
         tmp_objects_list = self.detector.inference(rgb_resized_image)
-        [w,h] = self.resolution
+        [w, h] = self.resolution
 
         for obj in tmp_objects_list:
             box = obj["bbox"]
@@ -66,31 +71,89 @@ class Distancing:
             y1 = box[2]
             obj["centroid"] = [(x0 + x1) / 2, (y0 + y1) / 2, x1 - x0, y1 - y0]
             obj["bbox"] = [x0, y0, x1, y1]
-            obj["centroidReal"]=[(x0 + x1)*w / 2, (y0 + y1)*h / 2, (x1 - x0)*w, (y1 - y0)*h]
-            obj["bboxReal"]=[x0*w,y0*h,x1*w,y1*h]
- 
+            obj["centroidReal"] = [(x0 + x1) * w / 2, (y0 + y1) * h / 2, (x1 - x0) * w, (y1 - y0) * h]
+            obj["bboxReal"] = [x0 * w, y0 * h, x1 * w, y1 * h]
+
         objects_list, distancings = self.calculate_distancing(tmp_objects_list)
         return cv_image, objects_list, distancings
 
+    def gstreamer_writer(self, feed_name, fps, resolution):
+        """
+        This method creates and returns an OpenCV Video Writer instance. The VideoWriter expects its `.write()` method
+        to be called with a single frame image multiple times. It encodes frames into live video segments and produces
+        a video segment once it has received enough frames to produce a 5-seconds segment of live video.
+        The video segments are written on the filesystem. The target directory for writing segments is determined by
+        `video_root` variable.  In addition to writing the video segments, the VideoWriter also updates a file named
+        playlist.m3u8 in the target directory. This file contains the list of generated video segments and is updated
+        automatically.
+        This instance does not serve these video segments to the client. It is expected that the target video directory
+        is being served by a static file server and the clientside HLS video library downloads "playlist.m3u8". Then,
+        the client video player reads the link for video segments, according to HLS protocol, and downloads them from
+        static file server.
+
+        :param feed_name: Is the name for video feed. We may have multiple cameras, each with multiple video feeds (e.g. one
+        feed for visualizing bounding boxes and one for bird's eye view). Each video feed should be written into a
+        separate directory. The name for target directory is defined by this variable.
+        :param fps: The HLS video player on client side needs to know how many frames should be shown to the user per
+        second. This parameter is independent from the frame rate with which the video is being processed. For example,
+        if we set fps=60, but produce only frames (by calling `.write()`) per second, the client will see a loading
+        indicator for 5*60/30 seconds and then 5 seconds of video is played with fps 60.
+        :param resolution: A tuple of size 2 which indicates the resolution of output video.
+        """
+        encoder = self.config.get_section_dict('App')['Encoder']
+        video_root = f'/repo/data/web_gui/static/gstreamer/{feed_name}'
+
+        shutil.rmtree(video_root, ignore_errors=True)
+        os.makedirs(video_root, exist_ok=True)
+
+        playlist_root = f'/static/gstreamer/{feed_name}'
+        if not playlist_root.endswith('/'):
+            playlist_root = f'{playlist_root}/'
+        # the entire encoding pipeline, as a string:
+        pipeline = f'appsrc is-live=true !  {encoder} ! mpegtsmux ! hlssink max-files=15 ' \
+                   f'target-duration=5 ' \
+                   f'playlist-root={playlist_root} ' \
+                   f'location={video_root}/video_%05d.ts ' \
+                   f'playlist-location={video_root}/playlist.m3u8 '
+
+        out = cv.VideoWriter(
+            pipeline,
+            cv.CAP_GSTREAMER,
+            0, fps, resolution
+        )
+
+        if not out.isOpened():
+            raise RuntimeError("Could not open gstreamer output for " + feed_name)
+        return out
+
     def process_video(self, video_uri):
         input_cap = cv.VideoCapture(video_uri)
+        fps = input_cap.get(cv.CAP_PROP_FPS)
 
         if (input_cap.isOpened()):
-            print('opened video ', video_uri)
+            logger.info(f'opened video {video_uri}')
         else:
-            print('failed to load video ', video_uri)
+            logger.error(f'failed to load video {video_uri}')
             return
 
         self.running_video = True
 
+        # enable logging gstreamer Errors (https://stackoverflow.com/questions/3298934/how-do-i-view-gstreamer-debug-output)
+        os.environ['GST_DEBUG'] = "*:1"
+        out, out_birdseye = (
+            self.gstreamer_writer(feed, fps, resolution)
+            for (feed, resolution) in (
+            ('default', self.resolution),
+            ('default-birdseye', self.birds_eye_resolution)
+        )  # TODO: use camera-id
+        )
+
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
         class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-
-        send = pubsub.init_publisher('default')  # TODO hossein: replace default with camera-id in multi-camera
-        send_birds_eye = pubsub.init_publisher('default-birdseye')
+        frame_num = 0
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
-            birds_eye_window = np.zeros((300, 200, 3), dtype="uint8")
+            birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
             if np.shape(cv_image) != ():
                 cv_image, objects, distancings = self.__process(cv_image)
                 output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
@@ -113,7 +176,7 @@ class Distancing:
                 )
                 # TODO: Implement perspective view for objects
                 birds_eye_window = visualization_utils.birds_eye_view(birds_eye_window, output_dict["detection_boxes"],
-                                                           output_dict["violating_objects"])
+                                                                      output_dict["violating_objects"])
                 try:
                     fps = self.detector.fps
                 except:
@@ -141,14 +204,17 @@ class Distancing:
                 # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
                 # endregion
 
-                _, cv_image = cv.imencode(".jpeg", cv_image)
-                _, birds_eye_window = cv.imencode(".jpeg", birds_eye_window)
-                send(bytearray(cv_image))
-                send_birds_eye(bytearray(birds_eye_window))
+                out.write(cv_image)
+                out_birdseye.write(birds_eye_window)
+                frame_num += 1
+                if frame_num % 1000 == 1:
+                    logger.info(f'processed frame {frame_num} for {video_uri}')
             else:
                 continue
             self.logger.update(objects, distancings)
         input_cap.release()
+        out.release()
+        out_birdseye.release()
         self.running_video = False
 
     def calculate_distancing(self, objects_list):
@@ -179,7 +245,7 @@ class Distancing:
         for i, item in enumerate(new_objects_list):
             item["id"] = item["id"].split("-")[0] + "-" + str(i)
 
-        centroids = np.array( [obj["centroid"] for obj in new_objects_list] )
+        centroids = np.array([obj["centroid"] for obj in new_objects_list])
         distances = self.calculate_box_distances(new_objects_list)
 
         return new_objects_list, distances
@@ -256,9 +322,8 @@ class Distancing:
         updated_object_list = [j for i, j in enumerate(object_list) if i in pick]
         return updated_object_list
 
+    def calculate_distance_of_two_points_of_boxes(self, first_point, second_point):
 
-    def calculate_distance_of_two_points_of_boxes(self,first_point, second_point):
-    
         """
         This function calculates a distance l for two input corresponding points of two detected bounding boxes.
         it is assumed that each person is H = 170 cm tall in real scene to map the distances in the image (in pixels) to 
@@ -278,19 +343,19 @@ class Distancing:
         # estimate corresponding points distance
         [xc1, yc1, h1] = first_point
         [xc2, yc2, h2] = second_point
-        
+
         dx = xc2 - xc1
         dy = yc2 - yc1
-        
-        lx = dx * 170 * (1/h1 + 1/h2)/2
-        ly = dy * 170 * (1/h1 + 1/h2)/2
-        
-        l=math.sqrt(lx**2+ly**2)
-        
-        return l 
+
+        lx = dx * 170 * (1 / h1 + 1 / h2) / 2
+        ly = dy * 170 * (1 / h1 + 1 / h2) / 2
+
+        l = math.sqrt(lx ** 2 + ly ** 2)
+
+        return l
 
     def calculate_box_distances(self, nn_out):
-        
+
         """
         This function calculates a distance matrix for detected bounding boxes.
         Two methods are implemented to calculate the distances, first one estimates distance of center points of the
@@ -308,37 +373,48 @@ class Distancing:
 
         distances = []
         for i in range(len(nn_out)):
-            distance_row=[]
+            distance_row = []
             for j in range(len(nn_out)):
                 if i == j:
                     l = 0
                 else:
-                    if ( self.dist_method == 'FourCornerPointsDistance' ):
-                        lower_left_of_first_box = [nn_out[i]["bboxReal"][0],nn_out[i]["bboxReal"][1],nn_out[i]["centroidReal"][3]]
-                        lower_right_of_first_box = [nn_out[i]["bboxReal"][2],nn_out[i]["bboxReal"][1],nn_out[i]["centroidReal"][3]]
-                        upper_left_of_first_box = [nn_out[i]["bboxReal"][0],nn_out[i]["bboxReal"][3],nn_out[i]["centroidReal"][3]]
-                        upper_right_of_first_box = [nn_out[i]["bboxReal"][2],nn_out[i]["bboxReal"][3],nn_out[i]["centroidReal"][3]]
-                        
-                        lower_left_of_second_box = [nn_out[j]["bboxReal"][0],nn_out[j]["bboxReal"][1],nn_out[j]["centroidReal"][3]]
-                        lower_right_of_second_box = [nn_out[j]["bboxReal"][2],nn_out[j]["bboxReal"][1],nn_out[j]["centroidReal"][3]]
-                        upper_left_of_second_box = [nn_out[j]["bboxReal"][0],nn_out[j]["bboxReal"][3],nn_out[j]["centroidReal"][3]]
-                        upper_right_of_second_box = [nn_out[j]["bboxReal"][2],nn_out[j]["bboxReal"][3],nn_out[j]["centroidReal"][3]]
+                    if (self.dist_method == 'FourCornerPointsDistance'):
+                        lower_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][1],
+                                                   nn_out[i]["centroidReal"][3]]
+                        lower_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][1],
+                                                    nn_out[i]["centroidReal"][3]]
+                        upper_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][3],
+                                                   nn_out[i]["centroidReal"][3]]
+                        upper_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][3],
+                                                    nn_out[i]["centroidReal"][3]]
 
-                        l1 = self.calculate_distance_of_two_points_of_boxes(lower_left_of_first_box, lower_left_of_second_box)
-                        l2 = self.calculate_distance_of_two_points_of_boxes(lower_right_of_first_box, lower_right_of_second_box)
-                        l3 = self.calculate_distance_of_two_points_of_boxes(upper_left_of_first_box, upper_left_of_second_box)
-                        l4 = self.calculate_distance_of_two_points_of_boxes(upper_right_of_first_box, upper_right_of_second_box)
-                        
+                        lower_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][1],
+                                                    nn_out[j]["centroidReal"][3]]
+                        lower_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][1],
+                                                     nn_out[j]["centroidReal"][3]]
+                        upper_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][3],
+                                                    nn_out[j]["centroidReal"][3]]
+                        upper_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][3],
+                                                     nn_out[j]["centroidReal"][3]]
+
+                        l1 = self.calculate_distance_of_two_points_of_boxes(lower_left_of_first_box,
+                                                                            lower_left_of_second_box)
+                        l2 = self.calculate_distance_of_two_points_of_boxes(lower_right_of_first_box,
+                                                                            lower_right_of_second_box)
+                        l3 = self.calculate_distance_of_two_points_of_boxes(upper_left_of_first_box,
+                                                                            upper_left_of_second_box)
+                        l4 = self.calculate_distance_of_two_points_of_boxes(upper_right_of_first_box,
+                                                                            upper_right_of_second_box)
+
                         l = min(l1, l2, l3, l4)
-                    elif ( self.dist_method == 'CenterPointsDistance' ):
-                        center_of_first_box = [nn_out[i]["centroidReal"][0],nn_out[i]["centroidReal"][1],nn_out[i]["centroidReal"][3]]
-                        center_of_second_box = [nn_out[j]["centroidReal"][0],nn_out[j]["centroidReal"][1],nn_out[j]["centroidReal"][3]]
+                    elif (self.dist_method == 'CenterPointsDistance'):
+                        center_of_first_box = [nn_out[i]["centroidReal"][0], nn_out[i]["centroidReal"][1],
+                                               nn_out[i]["centroidReal"][3]]
+                        center_of_second_box = [nn_out[j]["centroidReal"][0], nn_out[j]["centroidReal"][1],
+                                                nn_out[j]["centroidReal"][3]]
 
-                        l = self.calculate_distance_of_two_points_of_boxes(center_of_first_box, center_of_second_box) 
-                distance_row.append(l)    
+                        l = self.calculate_distance_of_two_points_of_boxes(center_of_first_box, center_of_second_box)
+                distance_row.append(l)
             distances.append(distance_row)
         distances_asarray = np.asarray(distances, dtype=np.float32)
         return distances_asarray
-
-
-

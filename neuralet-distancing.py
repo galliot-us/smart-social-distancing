@@ -3,16 +3,18 @@ import argparse
 from multiprocessing import Process
 import threading
 from libs.config_engine import ConfigEngine
-import libs.pubsub
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 def start_engine(config, video_path):
-    from libs.core import Distancing as CvEngine
-    engine = CvEngine(config)
-    engine.process_video(video_path)
+    if video_path:
+        from libs.core import Distancing as CvEngine
+        engine = CvEngine(config)
+        engine.process_video(video_path)
+    else:
+        logger.warning('Skipping CVEngine as video_path is not set in config file')
 
 
 def start_web_gui(config):
@@ -25,9 +27,8 @@ def main(config):
     logging.basicConfig(level=logging.INFO)
     if isinstance(config, str):
         config = ConfigEngine(config)
-    libs.pubsub.init_shared_resources()
 
-    video_path = config.get_section_dict("App")["VideoPath"]
+    video_path = config.get_section_dict("App").get("VideoPath", None)
     process_engine = Process(target=start_engine, args=(config, video_path,))
     process_api = Process(target=start_web_gui, args=(config,))
 

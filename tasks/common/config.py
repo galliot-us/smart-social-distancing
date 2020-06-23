@@ -1,12 +1,21 @@
+"""
+In order to invoke tasks, you should have `tasks/overrides.yaml` config file. For taking a look at available
+configurable items and their default values, see `tasks/common/config.py`. You can start with editing this
+template (don't forget to substitute `<YOUR_DOCKERHUB_USER_NAME>` with your dockerhub username in it):
+```bash
+cp tasks/overrides.yaml.template tasks/overrides.yaml
+# now edit tasks/overrides.yaml. This file is in .gitignore
+```
+"""
 from pathlib import Path
 from . import constants
 
 defaults = {
     'develop': {
-        'username': NotImplemented,
+        'host_username': NotImplemented,
         'host_ports': {
             'backend': 8000,
-        }
+        },
     },
     'run': {
         # http://www.pyinvoke.org/faq.html#why-is-my-command-behaving-differently-under-invoke-versus-being-run-by-hand
@@ -14,6 +23,7 @@ defaults = {
     },
     'docker': {
         'image_name': 'neuralet/smart-social-distancing',
+        'private_image_name': NotImplemented,
         'dockerfiles': {
             constants.D_FRONTEND: 'frontend.Dockerfile',
             constants.D_X86: 'x86.Dockerfile',
@@ -21,6 +31,7 @@ defaults = {
             constants.D_CORAL_DEV_BORAD: 'coral-dev-board.Dockerfile',
             constants.D_JETSON_NANO: 'jetson-nano.Dockerfile',
             constants.D_AMD64_USBTPU: 'amd64-usbtpu.Dockerfile',
+            constants.D_JETSON_TX2: 'jetson-tx2.Dockerfile',
         },
         'tag_suffixes': {
             constants.D_FRONTEND: '-frontend',
@@ -29,6 +40,7 @@ defaults = {
             constants.D_CORAL_DEV_BORAD: '-coral-dev-board',
             constants.D_JETSON_NANO: '-jetson-nano',
             constants.D_AMD64_USBTPU: '-amd64',
+            constants.D_JETSON_TX2: '-jetson-tx2',
         },
         'default_host': {
             constants.D_FRONTEND: 'gpu',
@@ -37,6 +49,7 @@ defaults = {
             constants.D_CORAL_DEV_BORAD: 'tpu',
             constants.D_JETSON_NANO: 'jetson',
             constants.D_AMD64_USBTPU: 'gpu'
+
         },
         'custom_targets': {},
         'custom_runtimes': {
