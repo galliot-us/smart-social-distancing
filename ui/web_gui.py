@@ -48,7 +48,7 @@ class WebGUI:
             return FileResponse("/srv/frontend/index.html")
 
         @app.get("/favicon.ico")
-        async def panel():
+        async def favicon():
             return FileResponse("/srv/frontend/favicon.ico")
 
         @app.get("/")

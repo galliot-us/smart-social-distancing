@@ -101,7 +101,7 @@ class Distancing:
         :param resolution: A tuple of size 2 which indicates the resolution of output video.
         """
         encoder = self.config.get_section_dict('App')['Encoder']
-        video_root = f'/repo/data/web_gui/static/gstreamer/{feed_name}'
+        video_root = f'/repo/data/processor/static/gstreamer/{feed_name}'
 
         shutil.rmtree(video_root, ignore_errors=True)
         os.makedirs(video_root, exist_ok=True)

@@ -7,8 +7,8 @@ import os
 
 class ProcessorAPI:
     """
-    The Webgui object implements a fastapi application and acts as an interface for users.
-    Once it is created it will act as a central application for viewing outputs.
+    The ProcessorAPI object implements a fastapi application that should allow configuring, starting and stopping processing,
+    and viewing the video stream processed by this processor node.
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     :param engine_instance:  A ConfigEngine object which store all of the config parameters. Access to any parameter
@@ -33,7 +33,7 @@ class ProcessorAPI:
             from fastapi.middleware.cors import CORSMiddleware
             app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'],
                                allow_headers=['*'])
-        app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
+        app.mount("/static", StaticFiles(directory="/repo/data/processor/static"), name="static")
 
         return app
 

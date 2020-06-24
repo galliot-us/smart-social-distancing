@@ -17,7 +17,7 @@ def start_engine(config, video_path):
         logger.warning('Skipping CVEngine as video_path is not set in config file')
 
 
-def start_web_gui(config):
+def start_api(config):
     from api.processor_api import ProcessorAPI
     api = ProcessorAPI(config)
     api.start()
@@ -30,7 +30,7 @@ def main(config):
 
     video_path = config.get_section_dict("App").get("VideoPath", None)
     process_engine = Process(target=start_engine, args=(config, video_path,))
-    process_api = Process(target=start_web_gui, args=(config,))
+    process_api = Process(target=start_api, args=(config,))
 
     process_api.start()
     process_engine.start()
@@ -47,7 +47,7 @@ def main(config):
     logger.info("CV Engine terminated.")
     process_api.terminate()
     process_api.join()
-    logger.info("Web GUI terminated.")
+    logger.info("Processor API terminated.")
 
 
 if __name__ == '__main__':
