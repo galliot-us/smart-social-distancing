@@ -18,9 +18,9 @@ def start_engine(config, video_path):
 
 
 def start_web_gui(config):
-    from ui.web_gui import WebGUI
-    ui = WebGUI(config)
-    ui.start()
+    from api.processor_api import ProcessorAPI
+    api = ProcessorAPI(config)
+    api.start()
 
 
 def main(config):

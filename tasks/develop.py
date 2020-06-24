@@ -25,6 +25,27 @@ def build(c, name, local=False, frontend_build_skip=False):
 @task(help={'name': '|'.join(valid_backend_names)})
 def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_build_skip=False, dev_mode=False,
         tunnel_skip=False, shell=False):
+    """
+        This command builds and runs the app for day-to-day development. If run without optional arguments, high-level
+    process contains building the frontend docker image, building the main docker image specified by `name` argument,
+    and the running the container for it with appropriate port and volume mappings.
+        By default, it uses remote docker hosts for building images and running containers. It uses docker client's
+    remote host feature. When `DOCKER_HOST` environment variable is set, docker reads source files for building the container
+    from local host and packs them into a docker build context (`.dockerignore` file defines patterns to ignore), sends
+    the build context to the remote host and builds/runs the container on the remote host. The remote host for each
+    docker image is configurable by setting `docker.default_host` in overrieds.yaml (also see tasks/common/config.py).
+    docker is able to connect to other hosts with ssh and use the docker service in them. In order to connect to a
+    remote host using ssh, you can set `ssh://<REMOTE_NAME>` as the value for DOCKER_HOST. Replace <REMOTE_HOST> with a
+    name you have defined in ssh config file (usually located at ~/.ssh/config; see https://www.ssh.com/ssh/config/).
+        In case the default host for the frontend is different than the default host for the main docker image, this
+    script does build the frontend on the different host. The reason is that frontend build is a heave process and in
+    some cases it is not possible to build the frontend on edge devices. After building frontend image, this task transfer
+    image to the host of main docker iamge. The transfer is done by pushing the image from frontend remtoe host to dockerhub
+    and pulling it onto the main remote host. In order not to prevent conflict, the image name for the image is set by
+    each developer using this task in the overrides.yaml config file (docker.private_image_name).
+        In order to be able to see the remote app in local browser, this task creates a ssh tunnel in parallel with
+    running the main image.
+    """
     assert name in valid_backend_names
 
     if not build_skip:
@@ -84,4 +105,4 @@ def run(c, name, local=False, port=None, rm=True, build_skip=False, frontend_bui
 @task
 def frontend(c):
     with c.cd(f'{ROOT_DIR}/frontend'):
-        c.run('npm start')
+        c.run('yarn start')

@@ -8,7 +8,7 @@ from libs.centroid_object_tracker import CentroidTracker
 from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
-from ui.utils import visualization_utils
+from libs.utils import visualization_utils
 import logging
 
 logger = logging.getLogger(__name__)
