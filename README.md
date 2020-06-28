@@ -74,6 +74,8 @@ docker load -i "frontend_image.tar"
 rm frontend_image.tar
 ```
 
+* In our tests, building the frontend image on coral dev board may face some issues related to yarn's timeout, we suggest building the docker image elsewhere and move it to your board.
+
 **Run on Jetson Nano**
 * You need to have JetPack 4.3 installed on your Jetson Nano.
 
