@@ -8,10 +8,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 def start_api(config):
-    from ui.web_gui import WebGUI
-    ui = WebGUI(config)
+    from api.processor_api import ProcessorAPI
+    api = ProcessorAPI(config)
+    
     logger.info("API Started.")
-    ui.start()
+    api.start()
     logger.info("API Terminted.")
 
 def main(config):

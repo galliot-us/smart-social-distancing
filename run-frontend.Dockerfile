@@ -1,6 +1,6 @@
 FROM python:3.8-slim
 
-COPY --from=neuralet/smart-social-distancing:frontend-gst /frontend/build /srv/frontend
+COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY ui/requirements.txt /ui/
 WORKDIR /ui
@@ -10,7 +10,7 @@ COPY ui/ /ui
 COPY libs/config_engine.py /ui/
 COPY config-frontend.ini /ui/
 
-EXPOSE 8000
+#EXPOSE 8000
 
 ENTRYPOINT ["python3", "web_gui.py"]
 CMD ["--config", "config-frontend.ini"]

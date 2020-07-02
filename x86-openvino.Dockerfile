@@ -79,11 +79,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN rm -rf /opt/intel/openvino/opencv /opt/intel/openvino/python/cv2.* /opt/intel/openvino/python/python3/cv2.*
 
 ADD docker/x86-openvino/openvino_setupvars.py /opt/openvino_setupvars.py
-CMD env `python3 /opt/openvino_setupvars.py` python3 neuralet-distancing.py --config=config-x86-openvino.ini
+ENV DEV_ALLOW_ALL_ORIGINS=true
+CMD env `python3 /opt/openvino_setupvars.py` python3 start_engine.py --config=config-x86-openvino.ini
 
 WORKDIR /repo
-EXPOSE 8000
+#EXPOSE 8000
 
-COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+#COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
