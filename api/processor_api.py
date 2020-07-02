@@ -17,8 +17,8 @@ class ProcessorAPI:
 
     def __init__(self, config):
         self.config = config
-        self._host = self.config.get_section_dict("App")["Host"]
-        self._port = int(self.config.get_section_dict("App")["Port"])
+        self._host = self.config.get_section_dict("API")["Host"]
+        self._port = int(self.config.get_section_dict("API")["Port"])
         self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):

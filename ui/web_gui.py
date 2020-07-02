@@ -68,7 +68,10 @@ class WebGUI:
                      'birdseye': True},
                 ],
             }]
-
+        #@app.get("/static/")
+        #async def redirect():
+        #    response = RedirectResponse('127.0.0.1:8000/static/')
+        #    return response
         return app
 
     def start(self):
