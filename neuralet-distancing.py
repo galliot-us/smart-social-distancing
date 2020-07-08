@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 def start_engine(config, video_path):
     if video_path:
         from libs.core import Distancing as CvEngine
+        print('Before config input')
         engine = CvEngine(config)
+        print('After config input')
         engine.process_video(video_path)
     else:
         logger.warning('Skipping CVEngine as video_path is not set in config file')

@@ -126,8 +126,39 @@ class Distancing:
             raise RuntimeError("Could not open gstreamer output for " + feed_name)
         return out
 
+    def gstreamer_pipeline(
+        self,
+        capture_width=640,
+        capture_height=480,
+        display_width=640,
+        display_height=480,
+        framerate=60,
+        flip_method=0,
+    ):
+        return (
+            "nvarguscamerasrc ! "
+            "video/x-raw(memory:NVMM), "
+            "width=(int)%d, height=(int)%d, "
+            "format=(string)NV12, framerate=(fraction)%d/1 ! "
+            "nvvidconv flip-method=%d ! "
+            "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+            "videoconvert ! "
+            "video/x-raw, format=(string)BGR ! appsink"
+            % (
+                capture_width,
+                capture_height,
+                framerate,
+                flip_method,
+                display_width,
+                display_height,
+            )
+        )
+
+
     def process_video(self, video_uri):
-        input_cap = cv.VideoCapture(video_uri)
+        logger.info(f'Before Taking input')
+        input_cap = cv.VideoCapture(self.gstreamer_pipeline(flip_method=0), cv.CAP_GSTREAMER)
+        logger.info(f'After Taking input')
         fps = input_cap.get(cv.CAP_PROP_FPS)
 
         if (input_cap.isOpened()):

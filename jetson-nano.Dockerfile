@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cmake \
         curl \
         git \
+        gedit \
         gstreamer1.0-plugins-bad \
         gstreamer1.0-plugins-good \
         gstreamer1.0-plugins-ugly \
@@ -72,6 +73,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         libboost-python-dev \
         libboost-thread-dev \
+        libgtk2.0-dev \
+        python3-tk \
         pkg-config \
         python3-dev \
         python3-matplotlib \
@@ -94,11 +97,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pkg-config \
     && apt-get autoremove -y
 
-ENTRYPOINT ["python3", "neuralet-distancing.py"]
-CMD ["--config", "config-jetson.ini"]
+# ENTRYPOINT ["python3", "neuralet-distancing.py"]
+# CMD ["--config", "config-jetson.ini"]
+
 WORKDIR /repo
 EXPOSE 8000
 
 COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
+
+echo "export NO_AT_BRIDGE=1" >> ~/.bashrc
+echo "alias run_demo='python3 /repo/neuralet-distancing.py --config config-jetson.ini'" >> ~/.bashrc
+echo "alias c='clear'" >> ~/.bashrc
+echo "alias r='reset'" >> ~/.bashrc
+echo "alias h='history'" >> ~/.bashrc
+echo "alias sds='source devel/setup.bash'" >> ~/.bashrc
+echo "alias sgs='source /opt/ros/melodic/setup.bash'" >> ~/.bashrc
+echo "alias cm='catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release; catkin_make install; source devel/setup.bash'" >> ~/.bashrc
+echo "alias dep='rosdep install --from-paths src --ignore-src --rosdistro=melodic -y'" >> ~/.bashrc
+echo "alias sb='source ~/.bashrc'" >> ~/.bashrc
