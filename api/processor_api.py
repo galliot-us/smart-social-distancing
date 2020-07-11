@@ -4,6 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
 import os
+from typing import Dict
+from pydantic import BaseModel
+from typing import Optional
+from api.config_keys import Config,APP,DETECTOR,POSTPROCESSOR,LOGGER,API_
 
 class ProcessorAPI:
     """
@@ -34,6 +38,31 @@ class ProcessorAPI:
             app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'],
                                allow_headers=['*'])
         app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
+
+        @app.get("/get-config")
+        async def get_config():
+            sections = self.config.get_sections() 
+            result = {}
+            for section in sections:
+                result[section] = self.config.get_section_dict(section)
+            return result
+     
+        
+        @app.post("/set-config/")
+        async def create_item(config: Config):
+            for key in config:
+                if key[1] is not None:
+                    for option in key[1]:
+                       if option[1] is not None:
+                           section = self.config.get_section_dict(key[0])
+                           if option[0] in section:
+                               if str(section[option[0]]) != str(option[1]):
+                                   self.config.set_option_in_section(key[0], option[0], option[1])
+                                   print("config %s is set, restart required")
+                                   # TODO: restart engine with modified engine
+                           else:
+                               print("%s is not in %s section of config file",option[0],key[0])
+            return config
 
         return app
 
