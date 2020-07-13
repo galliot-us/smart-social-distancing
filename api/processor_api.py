@@ -1,9 +1,14 @@
 import time
+from threading import Thread
+from queue import Queue
+from multiprocessing.managers import BaseManager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
 import os
+
+class QueueManager(BaseManager): pass
 
 class ProcessorAPI:
     """
@@ -17,9 +22,21 @@ class ProcessorAPI:
 
     def __init__(self, config):
         self.config = config
+        self._setup_queues()
         self._host = self.config.get_section_dict("API")["Host"]
         self._port = int(self.config.get_section_dict("API")["Port"])
         self.app = self.create_fastapi_app()
+
+    def _setup_queues(self):
+        QueueManager.register('get_cmd_queue')
+        QueueManager.register('get_result_queue')
+        self._queue_host = self.config.get_section_dict("CORE")["Host"]
+        self._queue_port = int(self.config.get_section_dict("CORE")["QueuePort"])
+        auth_key = self.config.get_section_dict("CORE")["QueueAuthKey"]
+        self._queue_manager = QueueManager(address=(self._host, self._queue_port), authkey=auth_key)
+        self._queue_manager.connect()
+        self._cmd_queue = self._queue_manager.get_cmd_queue()
+        self._result_queue = self._queue_manager.get_result_queue()
 
     def create_fastapi_app(self):
         # Create and return a fastapi instance

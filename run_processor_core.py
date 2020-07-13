@@ -7,27 +7,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-def start_engine(config, video_path):
-    logger.info("Engine Started.")
+def start_core(config):
+    from libs.processor_core import ProcessorCore
+    core = ProcessorCore(config)
     
-    if video_path:
-        from libs.core import Distancing as CvEngine
-        engine = CvEngine(config)
-        engine.process_video(video_path)
-    else:
-        logger.error('video_path is not set in config file')
-    
-    logger.info("Engine terminated.")
-
+    logger.info("Core Started.")
+    core.start()
+    logger.info("Core Terminted.")
 
 def main(config):
     logging.basicConfig(level=logging.INFO)
     if isinstance(config, str):
         config = ConfigEngine(config)
 
-    video_path = config.get_section_dict("App").get("VideoPath", None)
-    start_engine(config, video_path)
+    start_core(config)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

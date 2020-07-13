@@ -1,3 +1,4 @@
+import threading
 import cv2 as cv
 import numpy as np
 import math
@@ -18,6 +19,7 @@ class Distancing:
 
     def __init__(self, config):
         self.config = config
+        self.lock = threshold.Lock()
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
         self.running_video = False
@@ -136,7 +138,9 @@ class Distancing:
             logger.error(f'failed to load video {video_uri}')
             return
 
+        self.lock.acquire()
         self.running_video = True
+        self.lock.release()
 
         # enable logging gstreamer Errors (https://stackoverflow.com/questions/3298934/how-do-i-view-gstreamer-debug-output)
         os.environ['GST_DEBUG'] = "*:1"
@@ -215,7 +219,16 @@ class Distancing:
         input_cap.release()
         out.release()
         out_birdseye.release()
+
+        self.lock.acquire()
         self.running_video = False
+        self.lock.release()
+
+    def stop_process_video(self):
+        self.lock.acquire()
+        self.running_video = False
+        self.lock.release()
+
 
     def calculate_distancing(self, objects_list):
         """
