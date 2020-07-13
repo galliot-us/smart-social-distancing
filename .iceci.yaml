@@ -15,6 +15,7 @@ steps:
 
 
 - name: build-docker-image-x86
+  runtimeProfile: amd64
   containerBuild:
     user: mrupgrade
     imageName: smart-social-distancing
