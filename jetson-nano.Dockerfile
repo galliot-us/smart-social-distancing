@@ -103,5 +103,5 @@ CMD ["--config", "config-jetson.ini"]
 WORKDIR /repo
 EXPOSE 8000
 
-COPY --from=fe /build /srv/frontend
+COPY --from=fe /frontend/build /srv/frontend
 COPY . /repo/

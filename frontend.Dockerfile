@@ -6,4 +6,4 @@ COPY frontend /frontend
 RUN yarn build
 
 FROM scratch
-COPY --from=builder /build /build
+COPY --from=builder /frontend/build /frontend/build
