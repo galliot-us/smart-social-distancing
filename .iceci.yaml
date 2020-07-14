@@ -8,8 +8,6 @@ steps:
     user: mrupgrade
     imageName: smart-social-distancing
     dockerfilePath: frontend.Dockerfile
-    cache:
-      enable: true
     tags:
     - "{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
 
@@ -20,8 +18,6 @@ steps:
     user: mrupgrade
     imageName: smart-social-distancing
     dockerfilePath: x86.Dockerfile
-    cache:
-      enable: true
     tags:
     - "{{ ICECI_GIT_TAG_OR_BRANCH }}-x86"
     buildArgs:
@@ -35,8 +31,6 @@ steps:
     user: mrupgrade
     imageName: smart-social-distancing
     dockerfilePath: jetson-nano.Dockerfile
-    cache:
-      enable: true
     tags:
     - "{{ ICECI_GIT_TAG_OR_BRANCH }}-jetson-nano"
     buildArgs:
