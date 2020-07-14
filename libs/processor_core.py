@@ -1,6 +1,7 @@
-from threading import Thread
+from multiprocessing import Process
 from queue import Queue
 from multiprocessing.managers import BaseManager
+import logging
 
 from libs.distancing import Distancing as CvEngine
 
@@ -16,7 +17,7 @@ class ProcessorCore:
         self._result_queue = Queue()
         self._setup_queues()
         self._engine = CvEngine(self.config)
-        self._serve_thread = Thread(target = self._serve)
+        self._serve_thread = Process(target = self._serve)
         self._tasks = {}
        
 
@@ -26,7 +27,7 @@ class ProcessorCore:
         self._host = self.config.get_section_dict("CORE")["Host"]
         self._queue_port = int(self.config.get_section_dict("CORE")["QueuePort"])
         auth_key = self.config.get_section_dict("CORE")["QueueAuthKey"]
-        self._queue_manager = QueueManager(address=(self._host, self._queue_port), authkey=auth_key)
+        self._queue_manager = QueueManager(address=(self._host, self._queue_port), authkey=auth_key.encode('ascii'))
         self._queue_manager.start()
 
        
@@ -42,13 +43,16 @@ class ProcessorCore:
             cmd_text = self._cmd_queue.get()
             logger.info("command received: " + cmd_text)
             if cmd_text == "restart_engine":
+                # Do everything necessary ... 
                 self._engine.stop_process_video()
+                for task in self._tasks: 
+                    task.terminate()
                 self._engine = CvEngine(self.config)
                 logger.info("engine restarted")
                 self._result_queue.put(True)
 
             elif cmd_text == "process_video_cfg":
-                self._tasks["process_video_cfg"] = Thread(target = self._engine.process_video, \
+                self._tasks["process_video_cfg"] = Process(target = self._engine.process_video, \
                                                     args=(config.get_section_dict("App").get("VideoPath"),) )
                 self._tasks["process_video_cfg"].start()
                 logger.info("started to process video ... ")

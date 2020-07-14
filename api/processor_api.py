@@ -7,6 +7,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class QueueManager(BaseManager): pass
 
@@ -33,8 +36,16 @@ class ProcessorAPI:
         self._queue_host = self.config.get_section_dict("CORE")["Host"]
         self._queue_port = int(self.config.get_section_dict("CORE")["QueuePort"])
         auth_key = self.config.get_section_dict("CORE")["QueueAuthKey"]
-        self._queue_manager = QueueManager(address=(self._host, self._queue_port), authkey=auth_key)
-        self._queue_manager.connect()
+        self._queue_manager = QueueManager(address=(self._queue_host, self._queue_port), authkey=auth_key.encode('ascii'))
+        
+        while True:
+            try:
+                self._queue_manager.connect()
+                break
+            except ConnectionRefusedError:
+                logger.warning("Waiting for core's queue to initiate ... ")
+                time.sleep(1)
+
         self._cmd_queue = self._queue_manager.get_cmd_queue()
         self._result_queue = self._queue_manager.get_result_queue()
 
@@ -52,7 +63,14 @@ class ProcessorAPI:
                                allow_headers=['*'])
         app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
 
+        @app.get("/restart-engine")
+        async def restart_engine():
+            self._cmd_queue.put("restart_engine")
+            result = self._result_queue.get()
+            return result
+        
         return app
 
     def start(self):
         uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
+
