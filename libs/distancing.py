@@ -157,7 +157,7 @@ class Distancing:
             if np.shape(cv_image) != ():
                 cv_image, objects, distancings = self.__process(cv_image)
                 output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
-
+                
                 category_index = {class_id: {
                     "id": class_id,
                     "name": "Pedestrian",
@@ -215,6 +215,9 @@ class Distancing:
         input_cap.release()
         out.release()
         out_birdseye.release()
+        self.running_video = False
+
+    def stop_process_video(self):
         self.running_video = False
 
     def calculate_distancing(self, objects_list):
