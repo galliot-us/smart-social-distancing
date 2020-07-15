@@ -5,7 +5,7 @@ steps:
 - name: build-docker-image-frontend
   runtimeProfile: nodejs
   containerBuild:
-    user: mrupgrade
+    user: neuralet
     imageName: smart-social-distancing
     dockerfilePath: frontend.Dockerfile
     tags:
@@ -15,24 +15,24 @@ steps:
 - name: build-docker-image-x86
   runtimeProfile: amd64
   containerBuild:
-    user: mrupgrade
+    user: neuralet
     imageName: smart-social-distancing
     dockerfilePath: x86.Dockerfile
     tags:
     - "{{ ICECI_GIT_TAG_OR_BRANCH }}-x86"
     buildArgs:
     - name: frontend_uri
-      value: "mrupgrade/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
+      value: "neuralet/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
 
 
 - name: build-docker-image-jetson-nano
   runtimeProfile: jetson
   containerBuild:
-    user: mrupgrade
+    user: neuralet
     imageName: smart-social-distancing
     dockerfilePath: jetson-nano.Dockerfile
     tags:
     - "{{ ICECI_GIT_TAG_OR_BRANCH }}-jetson-nano"
     buildArgs:
     - name: frontend_uri
-      value: "mrupgrade/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
+      value: "neuralet/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
