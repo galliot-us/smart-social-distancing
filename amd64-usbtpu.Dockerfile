@@ -102,4 +102,4 @@ EXPOSE 8001
 
 COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
-#COPY . /repo
+COPY . /repo

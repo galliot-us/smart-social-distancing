@@ -4,7 +4,7 @@ from typing import Optional
 
 class APP(BaseModel):
     VideoPath: Optional[str]
-    Host: Optional[str]=None
+    Host: Optional[str]
     Port: Optional[str] 
     Resolution: Optional[str]
     Encoder: Optional[str]
@@ -17,6 +17,10 @@ class DETECTOR(BaseModel):
      ClassID: Optional[str]
      MinScore: Optional[str]
 
+class CORE_(BaseModel):
+    Host: Optional[str]
+    QueuePort: Optional[str]
+    QueueAuthKey: Optional[str]
 
 class POSTPROCESSOR(BaseModel):
     MaxTrackFrame: Optional[str]
@@ -39,4 +43,4 @@ class Config(BaseModel):
     PostProcessor: Optional[POSTPROCESSOR]
     Logger: Optional[LOGGER]
     API:  Optional[API_]
-
+    CORE: Optional[CORE_]
