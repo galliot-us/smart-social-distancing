@@ -54,7 +54,7 @@ class ProcessorCore:
                 
                 # TODO: Be sure you have done proper action before this so all threads are stopped
                 self._tasks = {}
-
+                self.config.reload()
                 self._engine = CvEngine(self.config)
                 logger.info("engine restarted")
                 self._result_queue.put(True)

@@ -72,13 +72,11 @@ class ProcessorAPI:
         @app.get("/restart-engine")
         async def restart_engine():
             logger.info("restart-engine requests on api")
-            self._cmd_queue.put(Commands.RESTART)
-            logger.info("waiting for core's response...")
-            result = self._result_queue.get()
+            result = self._restart_engine()
             return result
         
         @app.get("/process-video-cfg")
-        async def restart_engine():
+        async def process_video_cfg():
             logger.info("process-video-cfg requests on api")
             self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
             logger.info("waiting for core's response...")
@@ -86,7 +84,7 @@ class ProcessorAPI:
             return result
         
         @app.get("/stop-process-video")
-        async def restart_engine():
+        async def stop_process_video():
             logger.info("stop-process-video requests on api")
             self._cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
             logger.info("waiting for core's response...")
@@ -95,6 +93,7 @@ class ProcessorAPI:
         
         @app.get("/get-config")
         async def get_config():
+            logger.info("get-config requests on api")
             sections = self.config.get_sections() 
             result = {}
             for section in sections:
@@ -103,6 +102,7 @@ class ProcessorAPI:
      
         @app.post("/set-config")
         async def create_item(config: Config):
+            logger.info("set-config requests on api")
             for key in config:
                 if key[1] is not None:
                     for option in key[1]:
@@ -111,13 +111,21 @@ class ProcessorAPI:
                            if option[0] in section:
                                if str(section[option[0]]) != str(option[1]):
                                    self.config.set_option_in_section(key[0], option[0], option[1])
-                                   print("config %s is set, restart required" %(option[0]))
-                                   # TODO: restart engine with modified engine
+                                   logger.warning("config %s is set, restart required" %(option[0]))
+                                   self._restart_engine()
+                                   self.config.reload()
                            else:
                                print("%s is not in %s section of config file" %(option[0],key[0]))
             return config
 
         return app
+
+    def _restart_engine(self):
+        self._cmd_queue.put(Commands.RESTART)
+        logger.info("waiting for core's response...")
+        result = self._result_queue.get()
+        return result
+            
 
     def start(self):
         uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
