@@ -46,6 +46,14 @@ class ConfigEngine:
                     print("exception on %s!" % option)
                     self.section_options_dict[section][option] = None
 
+    def reload(self):
+        self.lock.acquire()
+        try:
+            self._load()
+        finally:
+            self.lock.release()
+
+
     def save(self, path):
         self.lock.acquire()
         try:
@@ -56,10 +64,22 @@ class ConfigEngine:
             self.lock.release()
 
     def get_section_dict(self, section):
-        return self.section_options_dict[section]
+        section_dict = None
+        self.lock.acquire()
+        try:
+           section_dict = self.section_options_dict[section]
+        finally:
+            self.lock.release()
+        return section_dict
 
     def get_sections(self):
-        return self.config.sections()
+        self.lock.acquire()
+        sections = None
+        try:
+            sections = self.config.sections()
+        finally:
+            self.lock.release()
+        return sections 
 
     def get_boolean(self, section, option):
         result = None
@@ -76,6 +96,7 @@ class ConfigEngine:
             self.config.set(section, option, str(not val))
         finally:
             self.lock.release()
+        self.save(self.config_file_path)
 
     def set_option_in_section(self, section, option, value):
         self.lock.acquire()
