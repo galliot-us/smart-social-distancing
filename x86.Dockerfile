@@ -74,11 +74,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-dev \
     && apt-get autoremove -y
 
+ENV DEV_ALLOW_ALL_ORIGINS=true
 
-ENTRYPOINT ["python3", "neuralet-distancing.py"]
-CMD ["--config", "config-x86.ini"]
+ENTRYPOINT ["bash", "start_services.bash"]
+CMD ["config-x86.ini"]
 WORKDIR /repo
-EXPOSE 8000
+EXPOSE 8001
 
 COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
