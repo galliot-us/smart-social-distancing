@@ -80,9 +80,7 @@ RUN rm -rf /opt/intel/openvino/opencv /opt/intel/openvino/python/cv2.* /opt/inte
 
 ADD docker/x86-openvino/openvino_setupvars.py /opt/openvino_setupvars.py
 ENV DEV_ALLOW_ALL_ORIGINS=true
-CMD env `python3 /opt/openvino_setupvars.py` python3 start_engine.py --config=config-x86-openvino.ini
-
 COPY . /repo
 WORKDIR /repo
-ENTRYPOINT ["bash", "run_processor_core.py"]
-CMD ["--config", "config-x86-openvino.ini"]
+CMD env `python3 /opt/openvino_setupvars.py` bash start_services.bash config-x86-openvino.ini
+

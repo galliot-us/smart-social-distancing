@@ -9,6 +9,8 @@ import uvicorn
 import os
 import logging
 
+from share.commands import Commands
+
 logger = logging.getLogger(__name__)
 
 class QueueManager(BaseManager): pass
@@ -46,6 +48,7 @@ class ProcessorAPI:
                 logger.warning("Waiting for core's queue to initiate ... ")
                 time.sleep(1)
 
+        logger.info("Connection established to Core's queue")
         self._cmd_queue = self._queue_manager.get_cmd_queue()
         self._result_queue = self._queue_manager.get_result_queue()
 
@@ -65,7 +68,25 @@ class ProcessorAPI:
 
         @app.get("/restart-engine")
         async def restart_engine():
-            self._cmd_queue.put("restart_engine")
+            logger.info("restart-engine requests on api")
+            self._cmd_queue.put(Commands.RESTART)
+            logger.info("waiting for core's response...")
+            result = self._result_queue.get()
+            return result
+        
+        @app.get("/process-video-cfg")
+        async def restart_engine():
+            logger.info("process-video-cfg requests on api")
+            self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
+            logger.info("waiting for core's response...")
+            result = self._result_queue.get()
+            return result
+        
+        @app.get("/stop-process-video")
+        async def restart_engine():
+            logger.info("stop-process-video requests on api")
+            self._cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
+            logger.info("waiting for core's response...")
             result = self._result_queue.get()
             return result
         
