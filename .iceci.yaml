@@ -3,6 +3,8 @@ globals:
 
 steps:
 - name: build-docker-image-frontend
+  when:
+    event: ["commit", "tag", "pr"]
   runtimeProfile: nodejs
   containerBuild:
     user: neuralet
@@ -14,6 +16,8 @@ steps:
 
 - name: build-docker-image-x86
   runtimeProfile: amd64
+  when:
+    event: ["commit", "tag", "pr"]
   containerBuild:
     user: neuralet
     imageName: smart-social-distancing
@@ -27,6 +31,8 @@ steps:
 
 - name: build-docker-image-jetson-nano
   runtimeProfile: jetson
+  when:
+    event: ["commit", "tag", "pr"]
   containerBuild:
     user: neuralet
     imageName: smart-social-distancing
