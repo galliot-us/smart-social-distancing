@@ -8,7 +8,10 @@ from fastapi.responses import FileResponse, StreamingResponse
 import uvicorn
 import os
 import logging
-
+from typing import Dict
+from pydantic import BaseModel
+from typing import Optional
+from api.config_keys import Config,APP,DETECTOR,POSTPROCESSOR,LOGGER,API_
 from share.commands import Commands
 
 logger = logging.getLogger(__name__)
@@ -90,6 +93,30 @@ class ProcessorAPI:
             result = self._result_queue.get()
             return result
         
+        @app.get("/get-config")
+        async def get_config():
+            sections = self.config.get_sections() 
+            result = {}
+            for section in sections:
+                result[section] = self.config.get_section_dict(section)
+            return result
+     
+        @app.post("/set-config")
+        async def create_item(config: Config):
+            for key in config:
+                if key[1] is not None:
+                    for option in key[1]:
+                       if option[1] is not None:
+                           section = self.config.get_section_dict(key[0])
+                           if option[0] in section:
+                               if str(section[option[0]]) != str(option[1]):
+                                   self.config.set_option_in_section(key[0], option[0], option[1])
+                                   print("config %s is set, restart required" %(option[0]))
+                                   # TODO: restart engine with modified engine
+                           else:
+                               print("%s is not in %s section of config file" %(option[0],key[0]))
+            return config
+
         return app
 
     def start(self):

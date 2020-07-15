@@ -58,6 +58,9 @@ class ConfigEngine:
     def get_section_dict(self, section):
         return self.section_options_dict[section]
 
+    def get_sections(self):
+        return self.config.sections()
+
     def get_boolean(self, section, option):
         result = None
         self.lock.acquire()
@@ -80,3 +83,5 @@ class ConfigEngine:
             self.config.set(section, option, value)
         finally:
             self.lock.release()
+        self.save(self.config_file_path)
+
