@@ -8,7 +8,7 @@ from typing import Dict
 from pydantic import BaseModel
 from typing import Optional
 from api.config_keys import Config,APP,DETECTOR,POSTPROCESSOR,LOGGER,API_
-
+#api = FastAPI()
 class ProcessorAPI:
     """
     The Webgui object implements a fastapi application and acts as an interface for users.
@@ -48,7 +48,7 @@ class ProcessorAPI:
             return result
      
         
-        @app.post("/set-config/")
+        @app.post("/set-config")
         async def create_item(config: Config):
             for key in config:
                 if key[1] is not None:
@@ -58,10 +58,10 @@ class ProcessorAPI:
                            if option[0] in section:
                                if str(section[option[0]]) != str(option[1]):
                                    self.config.set_option_in_section(key[0], option[0], option[1])
-                                   print("config %s is set, restart required")
+                                   print("config %s is set, restart required" %(option[0]))
                                    # TODO: restart engine with modified engine
                            else:
-                               print("%s is not in %s section of config file",option[0],key[0])
+                               print("%s is not in %s section of config file" %(option[0],key[0]))
             return config
 
         return app

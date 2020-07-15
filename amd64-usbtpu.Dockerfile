@@ -76,6 +76,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         python3-scipy \
         python3-wget \
+        python3-pytest \
+	python3-requests \
         build-essential \
         libedgetpu1-std \
     && rm -rf /var/lib/apt/lists/* \
