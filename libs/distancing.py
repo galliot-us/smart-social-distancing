@@ -1,4 +1,3 @@
-import threading
 import cv2 as cv
 import numpy as np
 import math
@@ -22,7 +21,6 @@ class Distancing:
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
         self.running_video = False
-
         self.tracker = CentroidTracker(
             max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
         self.logger = Logger(self.config)
@@ -50,7 +48,6 @@ class Distancing:
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
-        print('Distancing object created')
 
     def __process(self, cv_image):
         """
@@ -154,13 +151,13 @@ class Distancing:
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
         class_id = int(self.config.get_section_dict('Detector')['ClassID'])
         frame_num = 0
-
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
             birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
             if np.shape(cv_image) != ():
                 cv_image, objects, distancings = self.__process(cv_image)
                 output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
+                
                 category_index = {class_id: {
                     "id": class_id,
                     "name": "Pedestrian",
@@ -209,25 +206,19 @@ class Distancing:
 
                 out.write(cv_image)
                 out_birdseye.write(birds_eye_window)
-
                 frame_num += 1
                 if frame_num % 1000 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
             else:
                 continue
-            
             self.logger.update(objects, distancings)
-    
-
         input_cap.release()
         out.release()
         out_birdseye.release()
-
         self.running_video = False
 
     def stop_process_video(self):
         self.running_video = False
-
 
     def calculate_distancing(self, objects_list):
         """
