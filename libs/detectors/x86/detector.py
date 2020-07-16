@@ -13,12 +13,24 @@ class Detector:
         self.config = config
         self.name = self.config.get_section_dict('Detector')['Name']
 
-        if self.name == 'mobilenet_ssd_v2':
-            from libs.detectors.x86 import mobilenet_ssd
-            self.net = mobilenet_ssd.Detector(self.config)
+        if self.name == 'ssd_mobilenet_v2':
+            from libs.detectors.x86 import ssd_mobilenet_v2
+            self.net = ssd_mobilenet_v2.Detector(self.config)
         elif self.name == "openvino":
             from libs.detectors.x86 import openvino
             self.net = openvino.Detector(self.config)
+        elif self.name == "pedestrian_ssd_mobilenet_v2":
+            from libs.detectors.x86 import pedestrian_ssd_mobilenet_v2
+            self.net = pedestrian_ssd_mobilenet_v2.Detector(self.config)
+        elif self.name == "pedestrian_ssdlite_mobilenet_v2":
+            from libs.detectors.x86 import pedestrian_ssdlite_mobilenet_v2
+            self.net = pedestrian_ssdlite_mobilenet_v2.Detector(self.config)
+        elif self.name == "pedestrian_ssdlite_mobilenet_v3":
+            from libs.detectors.x86 import pedestrian_ssdlite_mobilenet_v3
+            self.net = pedestrian_ssdlite_mobilenet_v3.Detector(self.config)
+        elif self.name == "pedestrian_faster_rcnn_resnet50":
+            from libs.detectors.x86 import pedestrian_faster_rcnn_resnet50
+            self.net = pedestrian_faster_rcnn_resnet50.Detector(self.config)
         else:
             raise ValueError('Not supported network named: ', self.name)
 

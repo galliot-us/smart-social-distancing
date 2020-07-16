@@ -1,27 +1,29 @@
 import pathlib
 import time
-
+import os
 import numpy as np
-
+import wget
 import tensorflow as tf
 
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
 
 def load_model(model_name):
-  base_url = 'http://download.tensorflow.org/models/object_detection/'
-  model_file = model_name + '.tar.gz'
-  model_dir = tf.keras.utils.get_file(
-    fname=model_name,
-    origin=base_url + model_file,
-    untar=True)
+    base_url = 'https://raw.githubusercontent.com/neuralet/neuralet-models/master/amd64/'
+    model_file = model_name + "/saved_model/saved_model.pb"
+    base_dir = "/repo/data/x86/"
+    model_dir = os.path.join(base_dir, model_name)
+    if not os.path.isdir(model_dir):
+        os.makedirs(os.path.join(model_dir, "saved_model"), exist_ok=True)
+        print('model does not exist under: ', model_dir, 'downloading from ', base_url + model_file)
+        wget.download(base_url + model_file, os.path.join(model_dir, "saved_model"))
 
-  model_dir = pathlib.Path(model_dir) / "saved_model"
+    model_dir = pathlib.Path(model_dir) / "saved_model"
 
-  model = tf.saved_model.load(str(model_dir))
-  model = model.signatures['serving_default']
+    model = tf.saved_model.load(str(model_dir))
+    model = model.signatures['serving_default']
 
-  return model
+    return model
 
 
 class Detector:
@@ -40,7 +42,7 @@ class Detector:
         # Frames Per Second
         self.fps = None
 
-        self.detection_model = load_model('ssd_mobilenet_v2_coco_2018_03_29')
+        self.detection_model = load_model('ped_faster_rcnn_resnet50')
 
     def inference(self, resized_rgb_image):
         """
