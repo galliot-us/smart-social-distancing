@@ -6,7 +6,7 @@
 FROM nvcr.io/nvidia/l4t-base:r32.3.1
 
 ENV TZ=US/Pacific
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && printf $TZ > /etc/timezone
 
 RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/tensorrt.tar.gz -O /opt/tensorrt.tar.gz
 RUN tar -xzf /opt/tensorrt.tar.gz -C /usr/local/lib/python3.6/dist-packages/
@@ -106,14 +106,3 @@ EXPOSE 8000
 COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
-
-echo "export NO_AT_BRIDGE=1" >> ~/.bashrc
-echo "alias run_demo='python3 /repo/neuralet-distancing.py --config config-jetson.ini'" >> ~/.bashrc
-echo "alias c='clear'" >> ~/.bashrc
-echo "alias r='reset'" >> ~/.bashrc
-echo "alias h='history'" >> ~/.bashrc
-echo "alias sds='source devel/setup.bash'" >> ~/.bashrc
-echo "alias sgs='source /opt/ros/melodic/setup.bash'" >> ~/.bashrc
-echo "alias cm='catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release; catkin_make install; source devel/setup.bash'" >> ~/.bashrc
-echo "alias dep='rosdep install --from-paths src --ignore-src --rosdistro=melodic -y'" >> ~/.bashrc
-echo "alias sb='source ~/.bashrc'" >> ~/.bashrc
