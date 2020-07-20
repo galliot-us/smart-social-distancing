@@ -94,10 +94,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pkg-config \
     && apt-get autoremove -y
 
-ENTRYPOINT ["python3", "neuralet-distancing.py"]
-CMD ["--config", "config-jetson.ini"]
+ENV DEV_ALLOW_ALL_ORIGINS=true
+
+ENTRYPOINT ["bash", "start_services.bash"]
+CMD ["config-jetson.ini"]
 WORKDIR /repo
-EXPOSE 8000
+EXPOSE 8001
 
 COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
