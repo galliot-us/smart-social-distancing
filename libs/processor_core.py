@@ -59,29 +59,14 @@ class ProcessorCore:
             cmd_code = self._cmd_queue.get()
             logger.info("command received: " + str(cmd_code))
             
-            if cmd_code == Commands.RESTART:
-                # Do everything necessary ... make sure all threads in tasks are stopped 
-                if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
-                    logger.warning("currently processing a video, stopping ...")
-                    self._engine.stop()
-                
-                # TODO: Be sure you have done proper action before this so all threads are stopped
-                self._tasks = {}
-                self.config.reload()
-                self._engine = EngineThread(self.config)
-                logger.info("engine restarted")
-                self._result_queue.put(True)
-                continue
-            
-            elif cmd_code == Commands.PROCESS_VIDEO_CFG:
+            if cmd_code == Commands.PROCESS_VIDEO_CFG:
                 if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
                     logger.warning("Already processing a video! ...")
                     self._result_queue.put(False)
                     continue
 
                 self._tasks[Commands.PROCESS_VIDEO_CFG] = True
-                if self._engine is None:
-                    self._engine = EngineThread(self.config)
+                self._engine = EngineThread(self.config)
                 self._engine.start()
 
                 logger.info("started to process video ... ")

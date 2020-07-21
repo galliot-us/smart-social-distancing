@@ -46,6 +46,10 @@ class Detector:
             else:
                 self.host_outputs.append(host_mem)
                 self.cuda_outputs.append(cuda_mem)
+                
+            del host_mem
+            del cuda_mem
+
         logger.info('allocated buffers')
         return
 
@@ -78,11 +82,21 @@ class Detector:
 
     def __del__(self):
         """ Free CUDA memories. """
+        for mem  in self.cuda_inputs:
+            mem.free()
+        for mem in self.cuda_outputs:
+            mem.free
+
         del self.stream
         del self.cuda_outputs
         del self.cuda_inputs
         self.cuda_context.pop()
         del self.cuda_context
+        del self.engine_context
+        del self.engine
+        del self.bindings
+        del self.host_inputs
+        del self.host_outputs
 
     @staticmethod
     def _preprocess_trt(img):
