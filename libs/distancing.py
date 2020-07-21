@@ -24,25 +24,7 @@ class Distancing:
         self.tracker = CentroidTracker(
             max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
         self.logger = Logger(self.config)
-        if self.device == 'Jetson':
-            from libs.detectors.jetson.detector import Detector
-            self.detector = Detector(self.config)
-        elif self.device == 'EdgeTPU':
-            from libs.detectors.edgetpu.detector import Detector
-            self.detector = Detector(self.config)
-        elif self.device == 'Dummy':
-            from libs.detectors.dummy.detector import Detector
-            self.detector = Detector(self.config)
-        elif self.device == 'x86':
-            from libs.detectors.x86.detector import Detector
-            self.detector = Detector(self.config)
-
         self.image_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
-
-        if self.device != 'Dummy':
-            print('Device is: ', self.device)
-            print('Detector is: ', self.detector.name)
-            print('image size: ', self.image_size)
 
         self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
@@ -128,6 +110,24 @@ class Distancing:
         return out
 
     def process_video(self, video_uri):
+        if self.device == 'Jetson':
+            from libs.detectors.jetson.detector import Detector
+            self.detector = Detector(self.config)
+        elif self.device == 'EdgeTPU':
+            from libs.detectors.edgetpu.detector import Detector
+            self.detector = Detector(self.config)
+        elif self.device == 'Dummy':
+            from libs.detectors.dummy.detector import Detector
+            self.detector = Detector(self.config)
+        elif self.device == 'x86':
+            from libs.detectors.x86.detector import Detector
+            self.detector = Detector(self.config)
+
+        if self.device != 'Dummy':
+            print('Device is: ', self.device)
+            print('Detector is: ', self.detector.name)
+            print('image size: ', self.image_size)
+
         input_cap = cv.VideoCapture(video_uri)
         fps = input_cap.get(cv.CAP_PROP_FPS)
 
@@ -216,10 +216,7 @@ class Distancing:
         input_cap.release()
         out.release()
         out_birdseye.release()
-
-        if self.device == 'Jetson':
-            self.detector.cleanup()
-
+        del self.detector
         self.running_video = False
 
     def stop_process_video(self):

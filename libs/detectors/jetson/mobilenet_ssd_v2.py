@@ -78,30 +78,11 @@ class Detector:
 
     def __del__(self):
         """ Free CUDA memories. """
-        try:
-            del self.stream
-            del self.cuda_context
-            del self.device
-            del self.cuda_outputs
-            del self.cuda_inputs
-        except AttributeError:
-            pass
-        except Exception as e:
-            raise e
-        self.cleanup()
-
-    def cleanup(self):
-        # and pop the context - very important!
-        try:
-            self.cuda_context.pop()
-        except cuda.LogicError:
-            pass
-        except AttributeError:
-            pass
-        except Exception as e:
-            raise e 
-        finally:
-            self.context = None
+        del self.stream
+        del self.cuda_outputs
+        del self.cuda_inputs
+        self.cuda_context.pop()
+        del self.cuda_context
 
     @staticmethod
     def _preprocess_trt(img):

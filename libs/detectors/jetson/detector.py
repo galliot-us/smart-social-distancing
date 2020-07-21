@@ -23,9 +23,9 @@ class Detector:
             self.net = mobilenet_ssd_v2.Detector(self.config)
         else:
             raise ValueError('Not supported network named: ', self.name)
-
-    def cleanup(self):
-        self.net.cleanup()
+    
+    def __del__(self):
+        del self.net
 
     def inference(self, resized_rgb_image):
         """

@@ -92,8 +92,6 @@ class ProcessorCore:
                 if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
                     self._engine.stop()
                     del self._tasks[Commands.PROCESS_VIDEO_CFG]
-                    del self._engine
-                    self._engine = None
                     logger.info("processing stopped")
                     self._result_queue.put(True)
                 else:
