@@ -46,6 +46,11 @@ cd smart-social-distancing
 
 Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
 
+The smart social distancing app consists of two components which must be run separately.
+There is the `frontend` and the `processor`.
+In the following sections we will cover how to build and run each of them depending on which device you are using.
+
+
 **Download Required Files**
 ```
 # Download a sample video file from https://megapixels.cc/oxford_town_centre/
@@ -53,18 +58,43 @@ Make sure you have `Docker` installed on your device by following [these instruc
 ```
 
 **Building the Docker image for frontend**
-(This step is optional if are not going to build any docker image)
+(This step is optional if you are not going to build any docker image)
 
-All dockerfiles in this repository copy the static files from `neuralet/smart-social-distancing:latest-frontend` to their own  image. If the `frontend` directory on your branch is not identical to
-the upstream `master` branch, you MUST build the frontend image with tag "`neuralet/smart-social-distancing:latest-frontend`" BEFORE BUILDING THE MAIN IMAGE.
+The frontend consists of 2 Dockerfiles: 
+* `frontend.Dockerfile`: Builds the React app.
+* `run-frontend.Dockerfile`: Builds a FastAPI backend which serves the React app built in the previous Dockerfile.
+
+If the `frontend` directory on your branch is not identical to the upstream `master` branch, you MUST build the frontend image with 
+tag "`neuralet/smart-social-distancing:latest-frontend`" BEFORE BUILDING THE MAIN FRONTEND IMAGE.
 Otherwise, skip this step, as we have already built the frontend for `master` branch on Dockerhub.
 
-* Building the frontend is resource intensive. If you are using a host edge device, we suggest building the docker image
-on your PC/laptop first: 
+* To build the frontend run:
+
+```bash
+docker build -f frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-frontend" .
+```
+
+* To run the frontend, run:
+
+```bash
+docker build -f run-frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-web-gui" .
+docker run -it -p <HOST_PORT>:8000 --rm neuralet/smart-social-distancing:latest-web-gui 
+```
+
+> Important: There is a `config-frontend.ini` file which tells the frontend where to find the processor container. 
+> You must set the "Processor" section of the config file with the correct IP and port of the processor.
+
+* Building the frontend is resource intensive. If you are planning to host everything on an edge device, 
+we suggest building the docker image on your PC/laptop first and then copy it to the edge device.
+However, you can always start the frontend container on a PC/laptop and the processor container on the edge device.
+
+To run the frontend on an edge device:
+
 ```
 # Run these commands on your PC/laptop:
 docker build -f frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-frontend" .
-docker save -o "frontend_image.tar" neuralet/smart-social-distancing:latest-frontend
+docker build -f run-frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-web-gui" .
+docker save -o "frontend_image.tar" neuralet/smart-social-distancing:latest-web-gui
 ```
 
 * Then, move the file `frontend_image.tar` that was just built on your PC/laptop to your edge device and load it:
@@ -72,9 +102,14 @@ docker save -o "frontend_image.tar" neuralet/smart-social-distancing:latest-fron
 # Copy "frontend_image.tar" to your edge device and run this command on your device:
 docker load -i "frontend_image.tar"
 rm frontend_image.tar
+
+# And run it:
+docker run -it -p <HOST_PORT>:8000 --rm neuralet/smart-social-distancing:latest-web-gui
 ```
 
 * In our tests, building the frontend image on coral dev board may face some issues related to yarn's timeout, we suggest building the docker image elsewhere and move it to your board.
+
+**The Next sections explain how to run the processor on different devices**
 
 **Run on Jetson Nano**
 * You need to have JetPack 4.3 installed on your Jetson Nano.
