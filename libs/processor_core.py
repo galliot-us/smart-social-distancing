@@ -79,6 +79,7 @@ class ProcessorCore:
                     del self._tasks[Commands.PROCESS_VIDEO_CFG]
                     logger.info("processing stopped")
                     self._result_queue.put(True)
+                    del self._engine
                 else:
                     logger.warning("no video is being processed")
                     self._result_queue.put(False)
