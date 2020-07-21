@@ -1,0 +1,44 @@
+globals:
+  dockerSecret: dockerhub
+
+steps:
+- name: build-docker-image-frontend
+  when:
+    event: ["commit", "tag", "pr"]
+  runtimeProfile: nodejs
+  containerBuild:
+    user: neuralet
+    imageName: smart-social-distancing
+    dockerfilePath: frontend.Dockerfile
+    tags:
+    - "{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
+
+
+- name: build-docker-image-x86
+  runtimeProfile: amd64
+  when:
+    event: ["commit", "tag", "pr"]
+  containerBuild:
+    user: neuralet
+    imageName: smart-social-distancing
+    dockerfilePath: x86.Dockerfile
+    tags:
+    - "{{ ICECI_GIT_TAG_OR_BRANCH }}-x86"
+    buildArgs:
+    - name: frontend_uri
+      value: "neuralet/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
+
+
+- name: build-docker-image-jetson-nano
+  runtimeProfile: jetson
+  when:
+    event: ["commit", "tag", "pr"]
+  containerBuild:
+    user: neuralet
+    imageName: smart-social-distancing
+    dockerfilePath: jetson-nano.Dockerfile
+    tags:
+    - "{{ ICECI_GIT_TAG_OR_BRANCH }}-jetson-nano"
+    buildArgs:
+    - name: frontend_uri
+      value: "neuralet/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"

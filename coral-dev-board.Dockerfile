@@ -81,13 +81,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-dev \
     && apt-get autoremove -y
 
+ENV DEV_ALLOW_ALL_ORIGINS=true
 
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
-ENTRYPOINT ["python3", "neuralet-distancing.py"]
-CMD ["--config", "config-skeleton.ini"]
-WORKDIR /repo
-EXPOSE 8000
-
-COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
-
 COPY . /repo
+WORKDIR /repo
+ENTRYPOINT ["bash", "start_services.bash"]
+CMD ["config-skeleton.ini"]
+
+#COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+
+
