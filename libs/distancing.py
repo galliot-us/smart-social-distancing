@@ -49,6 +49,7 @@ class Distancing:
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
 
+
     def __process(self, cv_image):
         """
         return object_list list of  dict for each obj,
@@ -207,7 +208,7 @@ class Distancing:
                 out.write(cv_image)
                 out_birdseye.write(birds_eye_window)
                 frame_num += 1
-                if frame_num % 1000 == 1:
+                if frame_num % 10 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
             else:
                 continue
@@ -215,6 +216,10 @@ class Distancing:
         input_cap.release()
         out.release()
         out_birdseye.release()
+
+        if self.device == 'Jetson':
+            self.detector.cleanup()
+
         self.running_video = False
 
     def stop_process_video(self):

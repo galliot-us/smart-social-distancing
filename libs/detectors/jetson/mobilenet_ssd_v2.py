@@ -4,8 +4,11 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import time
 from ..utils.fps_calculator import convert_infr_time_to_fps
-import pycuda.autoinit  # Required for initializing CUDA driver
+#import pycuda.autoinit  # Required for initializing CUDA driver
 
+
+import logging
+logger = logging.getLogger(__name__)
 
 class Detector:
     """
@@ -26,7 +29,7 @@ class Detector:
         with open(trt_bin_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
             return runtime.deserialize_cuda_engine(f.read())
 
-    def _create_context(self):
+    def _allocate_buffers(self):
         """
         Create some space to store intermediate activation values. 
         Since the engine holds the network definition and trained parameters, additional space is necessary.
@@ -43,10 +46,11 @@ class Detector:
             else:
                 self.host_outputs.append(host_mem)
                 self.cuda_outputs.append(cuda_mem)
-        return self.engine.create_execution_context()
+        logger.info('allocated buffers')
+        return
 
     def __init__(self, config, output_layout=7):
-        """ Initialize TensorRT plugins, engine and conetxt. """
+        """ Initialize TensorRT plugins, engine and context. """
         self.config = config
         self.model = self.config.get_section_dict('Detector')['Name']
         self.class_id = int(self.config.get_section_dict('Detector')['ClassID'])
@@ -54,7 +58,6 @@ class Detector:
         self.output_layout = output_layout
         self.trt_logger = trt.Logger(trt.Logger.INFO)
         self._load_plugins()
-        self.engine = self._load_engine()
         self.fps = None
 
         self.host_inputs = []
@@ -62,14 +65,43 @@ class Detector:
         self.host_outputs = []
         self.cuda_outputs = []
         self.bindings = []
+        self._init_cuda_stuff()
+
+    def _init_cuda_stuff(self):
+        cuda.init()
+        self.device = cuda.Device(0)  # enter your Gpu id here
+        self.cuda_context = self.device.make_context()
+        self.engine = self._load_engine()
+        self._allocate_buffers()
+        self.engine_context = self.engine.create_execution_context()
         self.stream = cuda.Stream()  # create a CUDA stream to run inference
-        self.context = self._create_context()
 
     def __del__(self):
         """ Free CUDA memories. """
-        del self.stream
-        del self.cuda_outputs
-        del self.cuda_inputs
+        try:
+            del self.stream
+            del self.cuda_context
+            del self.device
+            del self.cuda_outputs
+            del self.cuda_inputs
+        except AttributeError:
+            pass
+        except Exception as e:
+            raise e
+        self.cleanup()
+
+    def cleanup(self):
+        # and pop the context - very important!
+        try:
+            self.cuda_context.pop()
+        except cuda.LogicError:
+            pass
+        except AttributeError:
+            pass
+        except Exception as e:
+            raise e 
+        finally:
+            self.context = None
 
     @staticmethod
     def _preprocess_trt(img):
@@ -115,7 +147,7 @@ class Detector:
         t_begin = time.perf_counter()
         cuda.memcpy_htod_async(
             self.cuda_inputs[0], self.host_inputs[0], self.stream)
-        self.context.execute_async(
+        self.engine_context.execute_async(
             batch_size=1,
             bindings=self.bindings,
             stream_handle=self.stream.handle)

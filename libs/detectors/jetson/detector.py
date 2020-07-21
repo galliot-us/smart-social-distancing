@@ -1,3 +1,8 @@
+
+import logging
+logger = logging.getLogger(__name__)
+
+
 class Detector:
     """
     Detector class is a high level class for detecting object using NVIDIA jetson devices.
@@ -18,6 +23,9 @@ class Detector:
             self.net = mobilenet_ssd_v2.Detector(self.config)
         else:
             raise ValueError('Not supported network named: ', self.name)
+
+    def cleanup(self):
+        self.net.cleanup()
 
     def inference(self, resized_rgb_image):
         """
