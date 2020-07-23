@@ -76,6 +76,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         python3-scipy \
         python3-wget \
+        python3-pytest \
+	python3-requests \
         build-essential \
         libedgetpu1-std \
     && rm -rf /var/lib/apt/lists/* \
@@ -89,11 +91,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-dev \
     && apt-get autoremove -y
 
-ENTRYPOINT ["python3", "neuralet-distancing.py"]
-CMD ["--config", "config-skeleton.ini"]
-WORKDIR /repo
-EXPOSE 8000
+ENV DEV_ALLOW_ALL_ORIGINS=true
 
-COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
+#COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
 
 COPY . /repo
+WORKDIR /repo
+ENTRYPOINT ["bash", "start_services.bash"]
+CMD ["config-skeleton.ini"]

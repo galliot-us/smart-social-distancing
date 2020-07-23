@@ -4,6 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, FileResponse, StreamingResponse
 import uvicorn
 import os
+import argparse
+import logging
+from config_engine import ConfigEngine
+logger = logging.getLogger(__name__)
 
 
 class WebGUI:
@@ -20,6 +24,8 @@ class WebGUI:
         self.config = config
         self._host = self.config.get_section_dict("App")["Host"]
         self._port = int(self.config.get_section_dict("App")["Port"])
+        self.processor_host = self.config.get_section_dict("Processor")["Host"]
+        self.processor_port = self.config.get_section_dict("Processor")["Port"]
         self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):
@@ -36,7 +42,6 @@ class WebGUI:
                                allow_headers=['*'])
 
         app.mount("/panel/static", StaticFiles(directory="/srv/frontend/static"), name="panel")
-        app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
 
         @app.get("/panel/")
         async def panel():
@@ -52,17 +57,32 @@ class WebGUI:
 
         @app.get("/api/cameras/")
         async def api_cameras():
+            processor_host = f'http://{self.processor_host}:{self.processor_port}'
             return [{
                 'id': 'default',
+                'storage_host': processor_host,
                 'streams': [
-                    {'src': '/static/gstreamer/default/playlist.m3u8', 'type': 'application/x-mpegURL',
+                    {'src': processor_host + '/static/gstreamer/default/playlist.m3u8', 'type': 'application/x-mpegURL',
                      'birdseye': False},
-                    {'src': '/static/gstreamer/default-birdseye/playlist.m3u8', 'type': 'application/x-mpegURL',
+                    {'src': processor_host + '/static/gstreamer/default-birdseye/playlist.m3u8', 'type': 'application/x-mpegURL',
                      'birdseye': True},
                 ],
             }]
-
         return app
 
     def start(self):
         uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
+
+
+def main(config):
+    logging.basicConfig(level=logging.INFO)
+    if isinstance(config, str):
+        config = ConfigEngine(config)
+    ui = WebGUI(config)
+    ui.start()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', required=True)
+    args = parser.parse_args()
+    main(args.config)
