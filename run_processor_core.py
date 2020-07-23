@@ -13,7 +13,7 @@ def start_core(config):
     
     logger.info("Core Started.")
     core.start()
-    logger.info("Core Terminted.")
+    logger.info("Core Terminated.")
 
 def main(config):
     logging.basicConfig(level=logging.INFO)
