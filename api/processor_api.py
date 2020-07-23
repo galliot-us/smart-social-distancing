@@ -69,12 +69,6 @@ class ProcessorAPI:
                                allow_headers=['*'])
         app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
 
-        @app.get("/restart-engine")
-        async def restart_engine():
-            logger.info("restart-engine requests on api")
-            result = self._restart_engine()
-            return result
-        
         @app.get("/process-video-cfg")
         async def process_video_cfg():
             logger.info("process-video-cfg requests on api")
@@ -111,21 +105,13 @@ class ProcessorAPI:
                            if option[0] in section:
                                if str(section[option[0]]) != str(option[1]):
                                    self.config.set_option_in_section(key[0], option[0], option[1])
-                                   logger.warning("config %s is set, restart required" %(option[0]))
-                                   self._restart_engine()
+                                   logger.warning("config %s is set, stop/start processing is required" %(option[0]))
                                    self.config.reload()
                            else:
                                print("%s is not in %s section of config file" %(option[0],key[0]))
             return config
 
         return app
-
-    def _restart_engine(self):
-        self._cmd_queue.put(Commands.RESTART)
-        logger.info("waiting for core's response...")
-        result = self._result_queue.get()
-        return result
-            
 
     def start(self):
         uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
