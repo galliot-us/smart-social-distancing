@@ -98,4 +98,4 @@ ENV DEV_ALLOW_ALL_ORIGINS=true
 COPY . /repo
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
-CMD ["config-skeleton.ini"]
+CMD ["config-coral.ini"]

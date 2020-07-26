@@ -7,7 +7,7 @@ from api.config_keys import Config
 from api.processor_api import ProcessorAPI
 import pytest
 
-config_path='/repo/config-skeleton.ini'
+config_path='/repo/config-coral.ini'
 config = ConfigEngine(config_path)
 app_instance = ProcessorAPI(config)
 api = app_instance.app
@@ -15,7 +15,7 @@ client = TestClient(api)
 
 
 sample_config_path='/repo/api/config-sample.ini'
-config_backup_path='/repo/config-skeleton-backup.ini'
+config_backup_path='/repo/config-coral-backup.ini'
 
 # make a copy for config file
 

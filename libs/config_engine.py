@@ -12,7 +12,7 @@ class ConfigEngine:
     :param config_path: the path of config file
     """
 
-    def __init__(self, config_path='./config-skeleton.ini'):
+    def __init__(self, config_path='./config-coral.ini'):
         self.config = configparser.ConfigParser()
         self.config.optionxform = str
         self.config_file_path = config_path
