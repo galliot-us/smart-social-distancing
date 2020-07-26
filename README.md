@@ -86,7 +86,10 @@ docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-we
 > You must set the "Processor" section of the config file with the correct IP and port of the processor.
 
 ---
-***NOTE*** Building the frontend is resource intensive. If you are planning to host everything on an edge device, we suggest building the docker image on your PC/laptop first and then copy it to the edge device. However, you can always start the frontend container on a PC/laptop and the processor container on the edge device.
+***NOTE*** 
+
+Building the frontend is resource intensive. If you are planning to host everything on an edge device, we suggest building the docker image on your PC/laptop first and then copy it to the edge device. However, you can always start the frontend container on a PC/laptop and the processor container on the edge device.
+
 ---
 
 * To run the frontend on an edge device (Only possible on jetson for now):
