@@ -1,8 +1,3 @@
-# docker can be installed on the dev board following these instructions: 
-# https://docs.docker.com/install/linux/docker-ce/debian/#install-using-the-repository , step 4: arm64
-# 1) build: docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
-# 2) run: docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-coral-dev-board
-
 FROM arm64v8/debian:buster
 
 RUN apt-get update && apt-get install -y wget gnupg \
@@ -60,8 +55,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Also if you needed tensorflow: python-dev python3-dev libhdf5-dev python3-h5py python3-scipy
-# PIP - if you needed tensorflow: grpcio==1.26.0  keras==2.2.4 protobuf https://github.com/lhelontra/tensorflow-on-arm/releases/download/v2.0.0/tensorflow-2.0.0-cp37-none-linux_aarch64.whl
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libedgetpu1-std \
         pkg-config \
@@ -88,7 +81,3 @@ COPY . /repo
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-coral.ini"]
-
-#COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
-
-

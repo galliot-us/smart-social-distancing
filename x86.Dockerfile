@@ -1,7 +1,3 @@
-# Allow change the frontend path for testing things on branch
-ARG frontend_uri=neuralet/smart-social-distancing:latest-frontend
-FROM ${frontend_uri} as fe
-
 FROM tensorflow/tensorflow:latest-py3
 
 # The `python3-opencv` package isn't built with gstreamer on Ubuntu. So we need to manually build opencv.
@@ -80,11 +76,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
+COPY . /repo
+WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-x86.ini"]
-WORKDIR /repo
-EXPOSE 8001
-
-COPY --from=fe /frontend/build /srv/frontend
-
-COPY . /repo

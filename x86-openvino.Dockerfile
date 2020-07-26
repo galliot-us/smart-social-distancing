@@ -83,4 +83,3 @@ ENV DEV_ALLOW_ALL_ORIGINS=true
 COPY . /repo
 WORKDIR /repo
 CMD env `python3 /opt/openvino_setupvars.py` bash start_services.bash config-x86-openvino.ini
-
