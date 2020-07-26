@@ -85,11 +85,11 @@ docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-we
 > Important: There is a `config-frontend.ini` file which tells the frontend where to find the processor container. 
 > You must set the "Processor" section of the config file with the correct IP and port of the processor.
 
-* Building the frontend is resource intensive. If you are planning to host everything on an edge device, 
-we suggest building the docker image on your PC/laptop first and then copy it to the edge device.
-However, you can always start the frontend container on a PC/laptop and the processor container on the edge device.
+---
+***NOTE*** Building the frontend is resource intensive. If you are planning to host everything on an edge device, we suggest building the docker image on your PC/laptop first and then copy it to the edge device. However, you can always start the frontend container on a PC/laptop and the processor container on the edge device.
+---
 
-To run the frontend on an edge devic (Only possible on jetson for now):
+* To run the frontend on an edge device (Only possible on jetson for now):
 
 ```bash
 # Run this commands on your PC/laptop:
@@ -183,9 +183,13 @@ docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social
 
 ### Configurations
 You can read and modify the configurations in `config-*.ini` files, accordingly:
+
 `config-jetson.ini`: for Jetson Nano / TX2 
+
 `config-coral.ini`: for Coral dev board / usb accelerator
+
 `config-x86.ini`: for plain x86 (cpu) platforms without any acceleration
+
 `config-x86-openvino.ini`: for x86 systems accelerated with Openvion
 
 Under the `[Detector]` section, you can modify the `Min score` parameter to define the person detection threshold. You can also change the distance threshold by altering the value of `DistThreshold`.
