@@ -202,13 +202,13 @@ After you run the processor's docker on your node, no matter if your frontend do
 
 * The API supported paths are now as the following:
 
- 1- `API_IP:API_PORT/process-video-cfg`: Sends command `PROCESS_VIDEO_CFG` to core and returns the response. It starts to process the video adressed in the configuration file. If the response is `true`, it means the core is going to try to process the video (no guarantee if it will do it), and if the response is `false`, it means the process can not be started now (e.g. another process is already requested and running)
+ 1- `PROCESSOR_IP:PROCESSOR_PORT/process-video-cfg`: Sends command `PROCESS_VIDEO_CFG` to core and returns the response. It starts to process the video adressed in the configuration file. If the response is `true`, it means the core is going to try to process the video (no guarantee if it will do it), and if the response is `false`, it means the process can not be started now (e.g. another process is already requested and running)
 
- 2- `API_IP:API_PORT/stop-process-video`: Sends command `STOP_PROCESS_VIDEO` to core and returns the response. It stops processing the video at hand, returns the response `true` if it stopped or `false`, meaning it can not (e.g. no video is already being processed to stop!)
+ 2- `PROCESSOR_IP:PROCESSOR_PORT/stop-process-video`: Sends command `STOP_PROCESS_VIDEO` to core and returns the response. It stops processing the video at hand, returns the response `true` if it stopped or `false`, meaning it can not (e.g. no video is already being processed to stop!)
 
- 3- `API_IP:API_PORT/get-config`: It returns the config which is used by both processor's API and Core (it is the same so returns just a single configuration set) in json format. This is the file you have used in your Processor's Dockerfile. 
+ 3- `PROCESSOR_IP:PROCESSOR_PORT/get-config`: It returns the config which is used by both processor's API and Core (it is the same so returns just a single configuration set) in json format. This is the file you have used in your Processor's Dockerfile. 
 
- 4- `API_IP:API_PORT/set-config`: As the configuration file between Processor's API and Core is the same configuration, it sets the given set of json configurations in the config, for both API and Core and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any). NOTE that the config file given in the Dockerfile will be updated, but this will be inside your docker and will be lost after stopping you running docker. 
+ 4- `PROCESSOR_IP:PROCESSOR_PORT/set-config`: As the configuration file between Processor's API and Core is the same configuration, it sets the given set of json configurations in the config, for both API and Core and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any). NOTE that the config file given in the Dockerfile will be updated, but this will be inside your docker and will be lost after stopping you running docker. 
 
 * Usage example: 
 
