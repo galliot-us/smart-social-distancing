@@ -208,7 +208,9 @@ After you run the processor's docker on your node, no matter if your frontend do
 
  3- `PROCESSOR_IP:PROCESSOR_PORT/get-config`: It returns the config which is used by both processor's API and Core (it is the same so returns just a single configuration set) in json format. This is the file you have used in your Processor's Dockerfile. 
 
- 4- `PROCESSOR_IP:PROCESSOR_PORT/set-config`: As the configuration file between Processor's API and Core is the same configuration, it sets the given set of json configurations in the config, for both API and Core and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any). NOTE that the config file given in the Dockerfile will be updated, but this will be inside your docker and will be lost after stopping you running docker. 
+ 4- `PROCESSOR_IP:PROCESSOR_PORT/set-config`: As the configuration file between Processor's API and Core is the same configuration, it sets the given set of json configurations in the config, for both API and Core and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any). 
+
+ ***NOTE*** that the config file given in the Dockerfile will be updated, but this will be inside your docker and will be lost after stopping you running docker. 
 
 * Usage example: 
 
@@ -217,7 +219,9 @@ While the Processor's docker is up and running:
 ```bash
 curl -d '{"App": { "VideoPath" : "/repo/data/YOUR_VIDEO.mp4"} }' -H "Content-Type: application/json" -X POST http://PROCESSOR_IP:PROCESSOR_PORT/set-config 
 ```
-(of course you have to put your video under `data/` before) and then enter `http://PROCESSOR_IP:PROCESSOR_PORT/process-video-cfg` in your browser. You can see in your terminal running the docker that your video is being loaded and processed. You also can refresh your dashboard to see the output (NOTE: residual files under `data/web_gui/static/` may cause you to see previous streams and plots stored there! This needs to be issued separately, you can mannually clean that path for now)
+(of course you have to put your video under `data/` before) and then enter `http://PROCESSOR_IP:PROCESSOR_PORT/process-video-cfg` in your browser. You can see in your terminal running the docker that your video is being loaded and processed. You also can refresh your dashboard to see the output.
+
+***NOTE***: residual files under `data/web_gui/static/` may cause you to see previous streams and plots stored there! This needs to be issued separately, you can mannually clean that path for now.
 
 
 ## Issues and Contributing
