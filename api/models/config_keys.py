@@ -4,6 +4,7 @@ from humps import decamelize
 import numpy as np
 import cv2 as cv
 
+
 def to_snake(string):
     return decamelize(string)
 
@@ -38,41 +39,46 @@ class AppConfig(SnakeModel):
             return video_uri
 
 
-class DETECTOR(BaseModel):
-     Device: Optional[str]
-     Name: Optional[str]
-     ImageSize: Optional[str]
-     ModelPath: Optional[str]
-     ClassID: Optional[str]
-     MinScore: Optional[str]
+class DetectorConfig(SnakeModel):
+    Device: Optional[str]
+    Name: Optional[str]
+    ImageSize: Optional[str]
+    ModelPath: Optional[str]
+    ClassID: Optional[str]
+    MinScore: Optional[str]
 
-class CORE_(BaseModel):
-    Host: Optional[str]
-    QueuePort: Optional[str]
-    QueueAuthKey: Optional[str]
 
-class POSTPROCESSOR(BaseModel):
+class PostProcessorConfig(SnakeModel):
     MaxTrackFrame: Optional[str]
     NMSThreshold: Optional[str]
     DistThreshold: Optional[str]
     DistMethod: Optional[str]
 
-class LOGGER(BaseModel):
+
+class LoggerConfig(SnakeModel):
     Name: Optional[str]
     TimeInterval: Optional[str]
     LogDirectory: Optional[str]
 
-class API_(BaseModel):
+
+class ApiConfig(BaseModel):
     Host: Optional[str]
     Port: Optional[str]
 
+
+class CoreConfig(SnakeModel):
+    Host: Optional[str]
+    QueuePort: Optional[str]
+    QueueAuthKey: Optional[str]
+
+
 class Config(SnakeModel):
     App: Optional[AppConfig]
-    Detector: Optional[DETECTOR]
-    PostProcessor: Optional[POSTPROCESSOR]
-    Logger: Optional[LOGGER]
-    API:  Optional[API_]
-    CORE: Optional[CORE_]
+    Detector: Optional[DetectorConfig]
+    PostProcessor: Optional[PostProcessorConfig]
+    Logger: Optional[LoggerConfig]
+    CORE: Optional[CoreConfig]
+    API:  Optional[ApiConfig]
 
 
 class ConfigRequest(BaseModel):

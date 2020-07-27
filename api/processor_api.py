@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 import uvicorn
 import os
 import logging
+import humps
 
 from typing import Dict
 from pydantic import BaseModel
@@ -103,24 +104,7 @@ class ProcessorAPI:
             result = {}
             for section in sections:
                 result[section] = self.config.get_section_dict(section)
-            return result
-
-        # @app.post("/set-config")
-        # async def create_item(config: Config):
-        #     logger.info("set-config requests on api")
-        #     for key in config:
-        #         if key[1] is not None:
-        #             for option in key[1]:
-        #                if option[1] is not None:
-        #                    section = self.config.get_section_dict(key[0])
-        #                    if option[0] in section:
-        #                        if str(section[option[0]]) != str(option[1]):
-        #                            self.config.set_option_in_section(key[0], option[0], option[1])
-        #                            logger.warning("config %s is set, stop/start processing is required" %(option[0]))
-        #                            self.config.reload()
-        #                    else:
-        #                        print("%s is not in %s section of config file" %(option[0],key[0]))
-        #     return config
+            return humps.camelize(result)
 
         @app.put("/config")
         async def update_config(config_request: ConfigRequest):
@@ -130,7 +114,7 @@ class ProcessorAPI:
             
             logger.info("Updating config...")
             self.config.update_config(config, save_file)
-            # self.config.reload()
+            self.config.reload()
             
             # TODO: Restart only when necessary
             logger.info("Restarting video processor...")
