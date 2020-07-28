@@ -10,10 +10,10 @@ if [ ! -f "$videoPath" ]; then
 fi
 
 # start process video
-echo "running curl 0.0.0.0:8001/process-video-cfg "
+echo "running curl 0.0.0.0:8000/process-video-cfg "
 while true
 do
-    response=$(curl 0.0.0.0:8001/process-video-cfg)
+    response=$(curl 0.0.0.0:8000/process-video-cfg)
     if [ "$response" != true ] ; then
         echo "curl failed, trying again in 5 seconds!"
         sleep 5
