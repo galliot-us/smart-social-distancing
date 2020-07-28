@@ -30,15 +30,13 @@ export default function ProcessorCard({ processor, saveFn, index }) {
     host: processor.host || '',
     port: processor.port || '',
     videoPath: processor.videoPath || '',
-    saveOnDisk: false,
     edit: false
   });
 
   const handleOnChangeFields = (e) => {
     const newState = { ...state };
 
-    newState[e.target.name] = e.target.name === 'saveOnDisk' ? e.target.checked
-      : e.target.value;
+    newState[e.target.name] = e.target.value;
     setState(newState);
   };
 
@@ -57,7 +55,6 @@ export default function ProcessorCard({ processor, saveFn, index }) {
         host: state.host,
         port: state.port,
         videoPath: state.videoPath,
-        saveOnDisk: state.saveOnDisk
       }, index);
       setState({
         ...state,
@@ -131,21 +128,6 @@ export default function ProcessorCard({ processor, saveFn, index }) {
             </div>
           }
         </Grid>
-        {state.edit &&
-        <Grid item xs={12} md={12}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={state.saveOnDisk}
-                onChange={handleOnChangeFields}
-                name="saveOnDisk"
-                color="primary"
-              />
-            }
-            label="Save configuration on disk?"
-          />
-        </Grid>
-        }
       </CardContent>
 
     </Card>

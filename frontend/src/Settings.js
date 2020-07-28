@@ -39,11 +39,8 @@ export default function Settings() {
     try {
       const url = `http://${processor.host}:${processor.port}/config`;
       const response = await axios.put(url, {
-        save_file: processor.saveOnDisk,
-        config: {
-          app: {
-            video_path: processor.videoPath
-          }
+        app: {
+          video_path: processor.videoPath
         }
       });
       localStorage.setItem(constants.processorPortStorageKey, processor.port);
