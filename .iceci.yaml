@@ -54,7 +54,4 @@ steps:
     dockerfilePath: pytest-x86.Dockerfile
     tags:
     - "{{ ICECI_GIT_TAG_OR_BRANCH }}-pytest-x86"
-    buildArgs:
-    - name: frontend_uri
-      value: "neuralet/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
 
