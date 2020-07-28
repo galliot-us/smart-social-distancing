@@ -42,3 +42,13 @@ steps:
     buildArgs:
     - name: frontend_uri
       value: "neuralet/smart-social-distancing:{{ ICECI_GIT_TAG_OR_BRANCH }}-frontend"
+
+
+- name: build-docker-image-jetson-nano
+  runtimeProfile: amd64
+  when:
+    event: ["commit", "tag", "pr"]
+  containerBuild:
+    user: neuralet
+    imageName: smart-social-distancing
+    dockerfilePath: pytest-x86.Dockerfile
