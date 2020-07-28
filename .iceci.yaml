@@ -56,9 +56,9 @@ steps:
     - "{{ ICECI_GIT_TAG_OR_BRANCH }}-pytest-x86"
 
 - name: run-tests
-   runtimeProfile: amd64
-   when:
+  runtimeProfile: amd64
+  when:
     event: ["commit", "tag", "pr"]
-   command: |
-            docker run -it -v "$PWD":/repo "{{ ICECI_GIT_TAG_OR_BRANCH }}-pytest-x86"
+    command: |
+       docker run -it -v "$PWD":/repo "{{ ICECI_GIT_TAG_OR_BRANCH }}-pytest-x86"
 
