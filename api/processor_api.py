@@ -104,16 +104,14 @@ class ProcessorAPI:
             result = {}
             for section in sections:
                 result[section] = self.config.get_section_dict(section)
-            return humps.camelize(result)
+            return humps.decamelize(result)
 
         @app.put("/config")
-        async def update_config(config_request: ConfigRequest):
-            save_file = config_request.save_file
-            config_request = config_request.dict(exclude_unset=True, exclude_none=True)
-            config = config_request['config']
-            
+        async def update_config(config: Config):
+            config = config.dict(exclude_unset=True, exclude_none=True)
+
             logger.info("Updating config...")
-            self.config.update_config(config, save_file)
+            self.config.update_config(config)
             self.config.reload()
             
             # TODO: Restart only when necessary
@@ -127,7 +125,7 @@ class ProcessorAPI:
                     # TODO: Raise an error?
                     logger.info("Failed to restart video processor...")
                     pass
-            return config_request
+            return JSONResponse(content=humps.decamelize(config))
 
         return app
 

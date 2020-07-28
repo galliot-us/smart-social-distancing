@@ -16,7 +16,7 @@ class SnakeModel(BaseModel):
 
 
 class AppConfig(SnakeModel):
-    VideoPath: Optional[str] = Field(None, example='/repo/data/TownCentreXVID.avi')
+    VideoPath: Optional[str] = Field(None, example='/repo/data/gard1-4.mp4')
     Resolution: Optional[str] = Field(None, example='640,480')
     Encoder: Optional[str] = Field(None, example='videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast')
 
@@ -40,36 +40,36 @@ class AppConfig(SnakeModel):
 
 
 class DetectorConfig(SnakeModel):
-    Device: Optional[str]
-    Name: Optional[str]
-    ImageSize: Optional[str]
-    ModelPath: Optional[str]
-    ClassID: Optional[str]
-    MinScore: Optional[str]
+    Device: Optional[str] = Field(None, example='x86')
+    Name: Optional[str] = Field(None, example='mobilenet_ssd_v2')
+    ImageSize: Optional[str] = Field(None, example='300,300,3')
+    ModelPath: Optional[str] = Field(None, example='')
+    ClassID: Optional[str] = Field(None, example='1')
+    MinScore: Optional[str] = Field(None, example='0.25')
 
 
 class PostProcessorConfig(SnakeModel):
-    MaxTrackFrame: Optional[str]
-    NMSThreshold: Optional[str]
-    DistThreshold: Optional[str]
-    DistMethod: Optional[str]
+    MaxTrackFrame: Optional[str] = Field(None, example='5')
+    NMSThreshold: Optional[str] = Field(None, example='0.98')
+    DistThreshold: Optional[str] = Field(None, example='150')
+    DistMethod: Optional[str] = Field(None, example='CenterPointsDistance')
 
 
 class LoggerConfig(SnakeModel):
-    Name: Optional[str]
-    TimeInterval: Optional[str]
-    LogDirectory: Optional[str]
+    Name: Optional[str] = Field(None, example='csv_logger')
+    TimeInterval: Optional[str] = Field(None, example='0.5')
+    LogDirectory: Optional[str] = Field(None, example='/repo/data/processor/static/data')
 
 
 class ApiConfig(BaseModel):
-    Host: Optional[str]
-    Port: Optional[str]
+    Host: Optional[str] = Field(None, example='0.0.0.0')
+    Port: Optional[str] = Field(None, example='8000')
 
 
 class CoreConfig(SnakeModel):
-    Host: Optional[str]
-    QueuePort: Optional[str]
-    QueueAuthKey: Optional[str]
+    Host: Optional[str] = Field(None, example='0.0.0.0')
+    QueuePort: Optional[str] = Field(None, example='8010')
+    QueueAuthKey: Optional[str] = Field(None, example='shibalba')
 
 
 class Config(SnakeModel):
@@ -79,8 +79,3 @@ class Config(SnakeModel):
     Logger: Optional[LoggerConfig]
     CORE: Optional[CoreConfig]
     API:  Optional[ApiConfig]
-
-
-class ConfigRequest(BaseModel):
-    save_file: Optional[bool] = Field(False)
-    config: Config

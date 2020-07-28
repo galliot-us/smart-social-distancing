@@ -110,7 +110,7 @@ class ConfigEngine:
     Receives a dictionary with the sections of the config and options to be updated.
     Saves the new config in the .ini file
     """
-    def update_config(self, config, save_file):
+    def update_config(self, config, save_file=True):
         for section, options in config.items():
             for option, value in options.items():
                 self.set_option_in_section(section, option, value)
