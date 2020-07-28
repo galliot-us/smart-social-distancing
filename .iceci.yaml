@@ -52,3 +52,5 @@ steps:
     user: neuralet
     imageName: smart-social-distancing
     dockerfilePath: pytest-x86.Dockerfile
+    tags:
+    - "{{ ICECI_GIT_TAG_OR_BRANCH }}-pytest-x86"
