@@ -28,7 +28,5 @@ COPY ui/ /ui
 COPY libs/config_engine.py /ui/
 COPY config-frontend.ini /ui/
 
-#EXPOSE 8000
-
 ENTRYPOINT ["python3", "web_gui.py"]
 CMD ["--config", "config-frontend.ini"]

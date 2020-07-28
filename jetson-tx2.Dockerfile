@@ -1,10 +1,3 @@
-# Allow change the frontend path for testing things on branch
-ARG frontend_uri=neuralet/smart-social-distancing:latest-frontend
-FROM ${frontend_uri} as fe
-
-# See here for installing Docker for Nvidia on Jetson devices: 
-# https://github.com/NVIDIA/nvidia-docker/wiki/NVIDIA-Container-Runtime-on-Jetson
-
 FROM nvcr.io/nvidia/l4t-base:r32.3.1
 
 ENV TZ=US/Pacific
@@ -96,9 +89,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
-WORKDIR /repo
-
-COPY --from=fe /frontend/build /srv/frontend
 COPY . /repo/
+WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-jetson.ini"]

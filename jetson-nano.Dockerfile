@@ -1,12 +1,3 @@
-# Allow change the frontend path for testing things on branch
-ARG frontend_uri=neuralet/smart-social-distancing:latest-frontend
-FROM ${frontend_uri} as fe
-
-# docker can be installed on the dev board following these instructions:
-# https://docs.docker.com/install/linux/docker-ce/debian/#install-using-the-repository , step 4: arm64
-# 1) build: docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
-# 2) run: docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-jetson-nano
-
 FROM nvcr.io/nvidia/l4t-base:r32.3.1
 
 ENV TZ=US/Pacific
@@ -100,10 +91,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
+COPY . /repo/
+WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-jetson.ini"]
-WORKDIR /repo
-EXPOSE 8001
-
-COPY --from=fe /frontend/build /srv/frontend
-COPY . /repo/

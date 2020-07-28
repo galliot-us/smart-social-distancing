@@ -1,8 +1,3 @@
-# docker can be installed on the dev board following these instructions: 
-# https://docs.docker.com/install/linux/docker-ce/debian/#install-using-the-repository , step 4: x86_64 / amd64
-# 1) build: docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
-# 2) run: docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-amd64
-
 FROM amd64/debian:buster
 
 RUN apt-get update && apt-get install -y wget gnupg usbutils \
@@ -93,9 +88,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
-#COPY --from=neuralet/smart-social-distancing:latest-frontend /frontend/build /srv/frontend
-
 COPY . /repo
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
-CMD ["config-skeleton.ini"]
+CMD ["config-coral.ini"]
