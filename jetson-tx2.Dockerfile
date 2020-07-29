@@ -87,6 +87,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pycuda \
         uvicorn \
         pyhumps \
+        pytest \
     && apt-get purge -y \
         pkg-config \
     && apt-get autoremove -y

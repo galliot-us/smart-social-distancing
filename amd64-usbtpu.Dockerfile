@@ -80,6 +80,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         aiofiles \
         fastapi \
         uvicorn \
+        pytest \
 	https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_x86_64.whl \
     && apt-get purge -y \
         build-essential \

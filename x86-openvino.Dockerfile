@@ -72,6 +72,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         fastapi \
         uvicorn \
         pyhumps \
+        pytest \
     && apt-get purge -y \
         python3-dev \
     && apt-get autoremove -y

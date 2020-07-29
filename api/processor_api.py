@@ -100,7 +100,7 @@ class ProcessorAPI:
         @app.get("/get-config")
         async def get_config():
             logger.info("get-config requests on api")
-            sections = self.config.get_sections() 
+            sections = self.config.get_sections()
             result = {}
             for section in sections:
                 result[section] = self.config.get_section_dict(section)
@@ -109,6 +109,7 @@ class ProcessorAPI:
         @app.put("/config")
         async def update_config(config: Config):
             config = config.dict(exclude_unset=True, exclude_none=True)
+            print(config)
 
             logger.info("Updating config...")
             self.config.update_config(config)
