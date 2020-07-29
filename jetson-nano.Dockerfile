@@ -90,7 +90,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         fastapi \
         uvicorn \
         pyhumps \
-        pytest \
     && rm /tmp/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl \
     && apt-get purge -y \
         pkg-config \

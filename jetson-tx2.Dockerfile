@@ -87,18 +87,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         pycuda \
         uvicorn \
         pyhumps \
-        pytest \
     && apt-get purge -y \
         pkg-config \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
-<<<<<<< HEAD
-=======
-WORKDIR /repo
-
->>>>>>> Add Settings to frontend to allow setting IP of camera
 COPY . /repo/
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
