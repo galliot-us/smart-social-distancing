@@ -123,9 +123,15 @@ class ProcessorAPI:
                 self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
                 started = self._result_queue.get()
                 if not started:
-                    # TODO: Raise an error?
                     logger.info("Failed to restart video processor...")
-                    pass
+                    return JSONResponse(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        content=jsonable_encoder({
+                            'msg': 'Failed to restart video processor',
+                            'type': 'unknown error',
+                            'body': humps.decamelize(config)
+                        })
+                    )
             return JSONResponse(content=humps.decamelize(config))
 
         return app
