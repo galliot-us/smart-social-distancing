@@ -30,8 +30,8 @@ config_sample_json = humps.decamelize(config_sample_json)
 
 #@pytest.mark.order1
 def test_set_config():
-    response = client.put(
-        "/config",
+    response = client.post(
+        "/set-config",
         json=config_sample_json,
     )
     assert response.status_code == 200
@@ -43,8 +43,8 @@ def test_set_invalid_video_path():
     wrong_json['app']['video_path'] = 'wrong_path'
     expected_response = {'detail': [{'loc': ['body', 'app', 'video_path'], 'msg': 'Failed to load video. The video URI is not valid', 'type': 'value_error'}]}
     expected_response['body'] = wrong_json
-    response = client.put(
-        "/config",
+    response = client.post(
+        "/set-config",
         json=wrong_json,
     )
     assert response.status_code == 400

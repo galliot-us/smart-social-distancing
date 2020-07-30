@@ -17,8 +17,6 @@ class SnakeModel(BaseModel):
 
 class AppConfig(SnakeModel):
     VideoPath: Optional[str] = Field(None, example='/repo/data/gard1-4.mp4')
-    Host: Optional[str] = Field(None, example='0.0.0.0')
-    Port: Optional[str] = Field(None, example='8001')
     Resolution: Optional[str] = Field(None, example='640,480')
     Encoder: Optional[str] = Field(None, example='videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast')
 
@@ -43,7 +41,7 @@ class AppConfig(SnakeModel):
 
 class DetectorConfig(SnakeModel):
     Device: Optional[str] = Field(None, example='x86')
-    Name: Optional[str] = Field(None, example='mobilenet_ssd_v2')
+    Name: Optional[str] = Field(None, example='openvino')
     ImageSize: Optional[str] = Field(None, example='300,300,3')
     ModelPath: Optional[str] = Field(None, example='')
     ClassID: Optional[str] = Field(None, example='1')

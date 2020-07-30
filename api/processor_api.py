@@ -106,7 +106,7 @@ class ProcessorAPI:
                 result[section] = self.config.get_section_dict(section)
             return humps.decamelize(result)
 
-        @app.put("/config")
+        @app.post("/set-config")
         async def update_config(config: Config):
             config = config.dict(exclude_unset=True, exclude_none=True)
             print(config)
