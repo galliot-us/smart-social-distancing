@@ -37,8 +37,8 @@ export default function Settings() {
     }
 
     try {
-      const url = `http://${processor.host}:${processor.port}/config`;
-      const response = await axios.put(url, {
+      const url = `http://${processor.host}:${processor.port}/set-config`;
+      const response = await axios.post(url, {
         app: {
           video_path: processor.videoPath
         }
