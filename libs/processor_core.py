@@ -65,6 +65,7 @@ class ProcessorCore:
                     self._result_queue.put(False)
                     continue
 
+                self.config.reload()
                 self._tasks[Commands.PROCESS_VIDEO_CFG] = True
                 self._engine = EngineThread(self.config)
                 self._engine.start()
@@ -78,7 +79,6 @@ class ProcessorCore:
                     self._engine.stop()
                     del self._tasks[Commands.PROCESS_VIDEO_CFG]
                     logger.info("processing stopped")
-                    self.config.reload()
                     self._result_queue.put(True)
                     del self._engine
                 else:
