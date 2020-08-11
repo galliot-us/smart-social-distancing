@@ -31,7 +31,6 @@ class Distancing:
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
 
-
     def __process(self, cv_image):
         """
         return object_list list of  dict for each obj,
@@ -58,6 +57,9 @@ class Distancing:
             obj["bboxReal"] = [x0 * w, y0 * h, x1 * w, y1 * h]
 
         objects_list, distancings = self.calculate_distancing(tmp_objects_list)
+        anonymize = self.config.get_section_dict('PostProcessor')['Anonymize'] == "true"
+        if anonymize:
+            cv_image = self.anonymize_image(cv_image, objects_list)
         return cv_image, objects_list, distancings
 
     def gstreamer_writer(self, feed_name, fps, resolution):
@@ -158,7 +160,7 @@ class Distancing:
             if np.shape(cv_image) != ():
                 cv_image, objects, distancings = self.__process(cv_image)
                 output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
-                
+
                 category_index = {class_id: {
                     "id": class_id,
                     "name": "Pedestrian",
@@ -423,3 +425,33 @@ class Distancing:
             distances.append(distance_row)
         distances_asarray = np.asarray(distances, dtype=np.float32)
         return distances_asarray
+
+    def anonymize_image(self, img, objects_list):
+        """
+        Anonymize every instance in the frame.
+        """
+        h, w = img.shape[:2]
+        for box in objects_list:
+            xmin = max(int(box["bboxReal"][0]), 0)
+            xmax = min(int(box["bboxReal"][2]), w)
+            ymin = max(int(box["bboxReal"][1]), 0)
+            ymax = min(int(box["bboxReal"][3]), h)
+            ymax = (ymax - ymin) // 3 + ymin
+            roi = img[ymin:ymax, xmin:xmax]
+            roi = self.anonymize_face(roi)
+            img[ymin:ymax, xmin:xmax] = roi
+        return img
+
+    @staticmethod
+    def anonymize_face(image):
+        """
+        Blur an image to anonymize the person's faces.
+        """
+        (h, w) = image.shape[:2]
+        kernel_w = int(w / 3)
+        kernel_h = int(h / 3)
+        if kernel_w % 2 == 0:
+            kernel_w -= 1
+        if kernel_h % 2 == 0:
+            kernel_h -= 1
+        return cv.GaussianBlur(image, (kernel_w, kernel_h), 0)
