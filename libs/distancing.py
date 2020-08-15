@@ -37,7 +37,7 @@ class Distancing:
             except KeyError:
                 raise ValueError(
                     "The 'CalibrationFile' should be specified in config file in case of using 'CalibratedDistance' method")
-            try:
+            try: 
                 with open(calibration_file, "r") as file:
                     self.h_inv = file.readlines()[0].split(" ")[1:]
                     self.h_inv = np.array(self.h_inv, dtype="float").reshape((3, 3))
@@ -387,10 +387,13 @@ class Distancing:
         returns:
         distances: a NxN ndarray which i,j element is estimated distance between i-th and j-th bounding box in real scene (cm)
 
-        """
-        if self.dist_method == "CalibratedDistace":
+        """ 
+        if self.dist_method == "CalibratedDistance":
             world_coordinate_points = np.array([self.transform_to_world_coordinate(bbox) for bbox in nn_out])
-            distances_asarray = cdist(world_coordinate_points, world_coordinate_points)
+            if len(world_coordinate_points) == 0:
+                distances_asarray = np.array([])
+            else:
+                distances_asarray = cdist(world_coordinate_points, world_coordinate_points) 
 
         else:
             distances = []
