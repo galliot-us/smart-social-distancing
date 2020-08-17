@@ -20,6 +20,11 @@ class Distancing:
         self.config = config
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
+
+        self.classifier = None
+        self.classifier_img_size = None
+        self.face_mask_classifier = None
+
         self.running_video = False
         self.tracker = CentroidTracker(
             max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
@@ -30,7 +35,6 @@ class Distancing:
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
-
 
     def __process(self, cv_image):
         """
@@ -44,6 +48,17 @@ class Distancing:
         resized_image = cv.resize(cv_image, tuple(self.image_size[:2]))
         rgb_resized_image = cv.cvtColor(resized_image, cv.COLOR_BGR2RGB)
         tmp_objects_list = self.detector.inference(rgb_resized_image)
+
+        # mrn-mln
+        # TODO: Here extract face from posestimator, preprocess the face dict a return a list of faces [xmin,xmax,ymin,ymac]
+        # TODO: faces will be croped and resized from the pos estimator's result
+        faces = np.random.random(5, self.classifier_img_size[0], self.classifier_img_size[1],
+                                 self.classifier_img_size[
+                                     2])  # 5 is the number of detected faces this is a mock version of croped faces
+        if self.classifier is not None:
+            face_mask_results = self.classifier.inference(faces)
+            print("face-mask classifier run successfully! RESULTS: ", face_mask_results)
+
         [w, h] = self.resolution
 
         for obj in tmp_objects_list:
@@ -121,7 +136,12 @@ class Distancing:
             self.detector = Detector(self.config)
         elif self.device == 'x86':
             from libs.detectors.x86.detector import Detector
+            from libs.classifiers.x86.classifier import Classifier
             self.detector = Detector(self.config)
+            self.classifier = Classifier(self.config)
+            self.classifier_img_size = [int(i) for i in
+                                        self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
+            self.face_mask_classifier = self.config.get_section_dict('Classifier')['Name']
 
         if self.device != 'Dummy':
             print('Device is: ', self.device)
@@ -158,7 +178,7 @@ class Distancing:
             if np.shape(cv_image) != ():
                 cv_image, objects, distancings = self.__process(cv_image)
                 output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
-                
+
                 category_index = {class_id: {
                     "id": class_id,
                     "name": "Pedestrian",
