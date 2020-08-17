@@ -15,7 +15,6 @@ def load_model(model_name):
 
     # model_dir = pathlib.Path(model_dir) / "saved_model"
     model_dir = 'data/x86/face_mask'  # TODO: load automatically after providing a proper model
-
     model = tf.saved_model.load(str(model_dir), None)
     print('Classifier model signatures: ', list(model.signatures.keys()))
     model = model.signatures[
@@ -26,20 +25,23 @@ def load_model(model_name):
 
 class Classifier:
     def __init__(self, config):
-        self._config = config
+        self.config = config
         self.model_name = self.config.get_section_dict('Classifier')['Name']
         self.classifier_model = load_model(self.model_name)
         # Frames Per Second
         self.fps = None
 
-    def inference(self, resized_rgb_image):
-        input_image = np.expand_dims(resized_rgb_image, axis=0)
-        input_tensor = tf.convert_to_tensor(input_image, dtype=tf.float32)
+    def inference(self, resized_rgb_image:list):
+        
+        if resized_rgb_image == []:
+            return resized_rgb_image
+        # iinput_image = np.expand_dims(resized_rgb_image, axis=0) 
+        input_tensor = tf.convert_to_tensor(resized_rgb_image, dtype=tf.float32)
         t_begin = time.perf_counter()
-        output_dict = self.detection_model(input_tensor)
+        output_dict = self.classifier_model(input_tensor)
         inference_time = time.perf_counter() - t_begin  # Seconds
         # Calculate Frames rate (fps)
         self.fps = convert_infr_time_to_fps(inference_time)
 
-        result = np.argmax(output_dict['scores'].numpy())  # returns class id
+        result = list(np.argmax(output_dict['scores'].numpy(), axis=1))  # returns class id
         return result
