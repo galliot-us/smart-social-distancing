@@ -36,7 +36,7 @@ class Classifier:
         input_image = np.expand_dims(resized_rgb_image, axis=0)
         input_tensor = tf.convert_to_tensor(input_image, dtype=tf.float32)
         t_begin = time.perf_counter()
-        output_dict = self.detection_model(input_tensor)
+        output_dict = self.classifier_model(input_tensor)
         inference_time = time.perf_counter() - t_begin  # Seconds
         # Calculate Frames rate (fps)
         self.fps = convert_infr_time_to_fps(inference_time)
