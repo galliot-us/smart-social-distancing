@@ -19,6 +19,10 @@ class Detector:
         elif self.name == "openvino":
             from libs.detectors.x86 import openvino
             self.net = openvino.Detector(self.config)
+        elif self.name == "openpifpaf":
+            from libs.detectors.x86 import openpifpaf
+            self.net = openpifpaf.Detector(self.config)
+
         else:
             raise ValueError('Not supported network named: ', self.name)
 
