@@ -52,9 +52,9 @@ class Distancing:
         # mrn-mln
         # TODO: Here extract face from posestimator, preprocess the face dict a return a list of faces [xmin,xmax,ymin,ymac]
         # TODO: faces will be croped and resized from the pos estimator's result
-        faces = np.random.random(size=[5, self.classifier_img_size[0], self.classifier_img_size[1],
+        faces = list(np.random.random(size=[5, self.classifier_img_size[0], self.classifier_img_size[1],
                                  self.classifier_img_size[
-                                     2]])  # 5 is the number of detected faces this is a mock version of croped faces
+                                     2]]))  # 5 is the number of detected faces this is a mock version of croped faces
         if self.classifier is not None:
             face_mask_results = self.classifier.inference(faces)
             print("face-mask classifier run successfully! RESULTS: ", face_mask_results)
