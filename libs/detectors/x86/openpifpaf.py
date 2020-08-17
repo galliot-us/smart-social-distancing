@@ -1,5 +1,6 @@
 import openpifpaf
 import torch
+import numpy as np
 import time
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 import PIL
@@ -58,9 +59,9 @@ class Detector:
         result = []
         for i, pred in enumerate(predictions):
             pred = pred.data
-            pred = pred[pred[:, 2] > .2]
-            xs = pred[:, 0]
-            ys = pred[:, 1]
+            pred_visible = pred[pred[:, 2] > .2]
+            xs = pred_visible[:, 0]
+            ys = pred_visible[:, 1]
             x_min = int(xs.min())
             x_max = int(xs.max())
             y_min = int(ys.min())
@@ -71,8 +72,23 @@ class Detector:
             xmax = int(min(x_max + .15 * w, self.w))
             ymin = int(max(y_min - .2 * h, 0))
             ymax = int(min(y_max + .05 * h, self.h))
+            bbox_dict = {"id": "1-" + str(i), "bbox": [ymin / self.h, xmin / self.w, ymax / self.h, xmax / self.w],
+                         "score": 0.9}
+            # extracting face bounding box
+            if np.all(pred[[0, 1, 2, 5, 6], -1] > 0.15):
+                x_min_face = int(pred[6, 0])
+                x_max_face = int(pred[5, 0])
+                y_max_face = int((pred[5, 1] + pred.data[6, 1]) / 2)
+                y_eyes = int((pred[1, 1] + pred.data[2, 1]) / 2)
+                y_min_face = 2 * y_eyes - y_max_face
+                if (y_max_face - y_min_face > 0) and (x_max_face - x_min_face > 0):
+                    h_crop = y_max_face - y_min_face
+                    x_min_face = int(max(0, x_min_face - 0.1 * h_crop))
+                    y_min_face = int(max(0, y_min_face - 0.1 * h_crop))
+                    x_max_face = int(min(w, x_min_face + 1.1 * h_crop))
+                    y_max_face = int(min(h, y_min_face + 1.1 * h_crop))
+                    bbox_dict["face"] = [y_min_face / self.h, x_min_face / self.w, y_max_face / self.h, x_max_face / self.w]
 
-            result.append({"id": "1-" + str(i), "bbox": [ymin / self.h, xmin / self.w, ymax / self.h, xmax / self.w],
-                           "score": 0.9})
+            result.append(bbox_dict)
 
         return result
