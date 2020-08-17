@@ -76,7 +76,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
-COPY . /repo
+#COPY . /repo
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-x86.ini"]
