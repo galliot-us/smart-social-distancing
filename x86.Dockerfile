@@ -74,6 +74,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-dev \
     && apt-get autoremove -y
 
+RUN apt-get update && apt-get install -y python3-dev && pip3 install torch==1.5 torchvision==0.6.0 openpifpaf
+
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
 #COPY . /repo
