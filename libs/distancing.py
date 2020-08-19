@@ -48,21 +48,27 @@ class Distancing:
         resized_image = cv.resize(cv_image, tuple(self.image_size[:2]))
         rgb_resized_image = cv.cvtColor(resized_image, cv.COLOR_BGR2RGB)
         tmp_objects_list = self.detector.inference(rgb_resized_image)
-
-        # mrn-mln
-        # TODO: Here extract face from posestimator, preprocess the face dict a return a list of faces [xmin,xmax,ymin,ymac]
-        # TODO: faces will be croped and resized from the pos estimator's result
-        faces = list(np.random.random(size=[5, self.classifier_img_size[0], self.classifier_img_size[1],
-                                 self.classifier_img_size[
-                                     2]]))  # 5 is the number of detected faces this is a mock version of croped faces
+        
         if self.classifier is not None:
+            faces = []
+            for itm in tmp_objects_list:
+                face_bbox = itm['face']  # [ymax, xmax, ymin, xmin]
+                if face_bbox is not None:
+                    xmin, xmax  = np.multiply([face_bbox[3], face_bbox[1]], self.resolution[0])
+                    ymin, ymax  = np.multiply([face_bbox[2], face_bbox[0]], self.resolution[1])
+                    croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)), int(xmin):int(xmin) + (int(xmax) - int(xmin))]
+                    croped_face = np.array(croped_face)
+                    faces.append(croped_face)
             face_mask_results = self.classifier.inference(faces)
-            print("face-mask classifier run successfully! RESULTS: ", face_mask_results)
-
-        exit()
+       
         [w, h] = self.resolution
-
+        idx = 0
         for obj in tmp_objects_list:
+            if self.xlassifier is not None and obj['face'] is not None:
+                obj['face_label'] = face_mask_results[idx]
+            else:
+                obj['face_label'] = -1
+            idx = idx + 1
             box = obj["bbox"]
             x0 = box[1]
             y0 = box[0]
