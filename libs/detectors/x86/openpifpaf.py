@@ -78,15 +78,15 @@ class Detector:
             if np.all(pred[[0, 1, 2, 5, 6], -1] > 0.15):
                 x_min_face = int(pred[6, 0])
                 x_max_face = int(pred[5, 0])
-                y_max_face = int((pred[5, 1] + pred.data[6, 1]) / 2)
-                y_eyes = int((pred[1, 1] + pred.data[2, 1]) / 2)
+                y_max_face = int((pred[5, 1] + pred[6, 1]) / 2)
+                y_eyes = int((pred[1, 1] + pred[2, 1]) / 2)
                 y_min_face = 2 * y_eyes - y_max_face
                 if (y_max_face - y_min_face > 0) and (x_max_face - x_min_face > 0):
                     h_crop = y_max_face - y_min_face
                     x_min_face = int(max(0, x_min_face - 0.1 * h_crop))
                     y_min_face = int(max(0, y_min_face - 0.1 * h_crop))
-                    x_max_face = int(min(w, x_min_face + 1.1 * h_crop))
-                    y_max_face = int(min(h, y_min_face + 1.1 * h_crop))
+                    x_max_face = int(min(self.w, x_min_face + 1.1 * h_crop))
+                    y_max_face = int(min(self.h, y_min_face + 1.1 * h_crop))
                     bbox_dict["face"] = [y_min_face / self.h, x_min_face / self.w, y_max_face / self.h, x_max_face / self.w]
 
             result.append(bbox_dict)
