@@ -48,23 +48,29 @@ class Distancing:
         resized_image = cv.resize(cv_image, tuple(self.image_size[:2]))
         rgb_resized_image = cv.cvtColor(resized_image, cv.COLOR_BGR2RGB)
         tmp_objects_list = self.detector.inference(rgb_resized_image)
-        
+
+        # Get the classifier result for detected face
         if self.classifier is not None:
             faces = []
             for itm in tmp_objects_list:
-                face_bbox = itm['face']  # [ymax, xmax, ymin, xmin]
+                face_bbox = itm['face']  # TODO: [ymax, xmax, ymin, xmin] there is a bug from openpifpaf face detector
                 if face_bbox is not None:
-                    xmin, xmax  = np.multiply([face_bbox[3], face_bbox[1]], self.resolution[0])
-                    ymin, ymax  = np.multiply([face_bbox[2], face_bbox[0]], self.resolution[1])
-                    croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)), int(xmin):int(xmin) + (int(xmax) - int(xmin))]
-                    croped_face = np.array(croped_face)
+                    xmin, xmax = np.multiply([face_bbox[3], face_bbox[1]], self.resolution[0])
+                    ymin, ymax = np.multiply([face_bbox[2], face_bbox[0]], self.resolution[1])
+                    croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)),
+                                  int(xmin):int(xmin) + (int(xmax) - int(xmin))]
+
+                    # Resizing input image
+                    croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
+                    # Normalizing input image to [0.0-1.0]
+                    croped_face = np.array(croped_face) / 255.0
                     faces.append(croped_face)
             face_mask_results = self.classifier.inference(faces)
-       
+
         [w, h] = self.resolution
         idx = 0
         for obj in tmp_objects_list:
-            if self.xlassifier is not None and obj['face'] is not None:
+            if self.classifier is not None and obj['face'] is not None:
                 obj['face_label'] = face_mask_results[idx]
             else:
                 obj['face_label'] = -1
@@ -148,7 +154,6 @@ class Distancing:
             self.classifier = Classifier(self.config)
             self.classifier_img_size = [int(i) for i in
                                         self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
-            self.face_mask_classifier = self.config.get_section_dict('Classifier')['Name']
 
         if self.device != 'Dummy':
             print('Device is: ', self.device)
