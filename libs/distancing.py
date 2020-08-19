@@ -53,10 +53,10 @@ class Distancing:
         if self.classifier is not None:
             faces = []
             for itm in tmp_objects_list:
-                face_bbox = itm['face']  # TODO: [ymax, xmax, ymin, xmin] there is a bug from openpifpaf face detector
+                face_bbox = itm['face']  # [ymin, xmin, ymax, xmax]
                 if face_bbox is not None:
-                    xmin, xmax = np.multiply([face_bbox[3], face_bbox[1]], self.resolution[0])
-                    ymin, ymax = np.multiply([face_bbox[2], face_bbox[0]], self.resolution[1])
+                    xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
+                    ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
                     croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)),
                                   int(xmin):int(xmin) + (int(xmax) - int(xmin))]
 
