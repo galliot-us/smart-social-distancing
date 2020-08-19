@@ -26,7 +26,7 @@ def load_model(model_name):
 
 class Detector:
     """
-    Perform object detection with the given model. The model is a quantized tflite
+    Perform object detection with the given model. The model is a protobuf (.pb)
     file which if the detector can not find it at the path it will download it
     from neuralet repository automatically.
 
