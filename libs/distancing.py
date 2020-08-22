@@ -52,28 +52,32 @@ class Distancing:
         # Get the classifier result for detected face
         if self.classifier is not None:
             faces = []
+            # TODO: muck faces
+            # faces = np.random.random(size=[3, self.classifier_img_size[0], self.classifier_img_size[1], self.classifier_img_size[2]])
             for itm in tmp_objects_list:
-                face_bbox = itm['face']  # [ymin, xmin, ymax, xmax]
-                if face_bbox is not None:
-                    xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
-                    ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
-                    croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)),
-                                  int(xmin):int(xmin) + (int(xmax) - int(xmin))]
+                if 'face' in itm.keys():
+                    face_bbox = itm['face']  # [ymin, xmin, ymax, xmax]
+                    if face_bbox is not None:
+                        xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
+                        ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
+                        croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)),
+                                      int(xmin):int(xmin) + (int(xmax) - int(xmin))]
 
-                    # Resizing input image
-                    croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
-                    # Normalizing input image to [0.0-1.0]
-                    croped_face = np.array(croped_face) / 255.0
-                    faces.append(croped_face)
-            face_mask_results = self.classifier.inference(faces)
+                        # Resizing input image
+                        croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
+                        # Normalizing input image to [0.0-1.0]
+                        croped_face = np.array(croped_face) / 255.0
+                        faces.append(croped_face)
+                    face_mask_results = self.classifier.inference(faces)
 
         [w, h] = self.resolution
         idx = 0
         for obj in tmp_objects_list:
-            if self.classifier is not None and obj['face'] is not None:
-                obj['face_label'] = face_mask_results[idx]
-            else:
-                obj['face_label'] = -1
+            if self.classifier is not None and 'face' in obj.keys():
+                if obj['face'] is not None:
+                    obj['face_label'] = face_mask_results[idx]
+                else:
+                    obj['face_label'] = -1
             idx = idx + 1
             box = obj["bbox"]
             x0 = box[1]
@@ -143,7 +147,11 @@ class Distancing:
             self.detector = Detector(self.config)
         elif self.device == 'EdgeTPU':
             from libs.detectors.edgetpu.detector import Detector
+            from libs.classifiers.edgetpu.classifier import Classifier
+            self.classifier = Classifier(self.config)
             self.detector = Detector(self.config)
+            self.classifier_img_size = [int(i) for i in
+                                                            self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
         elif self.device == 'Dummy':
             from libs.detectors.dummy.detector import Detector
             self.detector = Detector(self.config)
