@@ -16,22 +16,25 @@ class Classifier:
         self.model_name = self.config.get_section_dict('Classifier')['Name']
         # Frames Per Second
         self.fps = None
-        self.model_file = 'N/A'
+        self.model_file = 'mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite'  # TODO: remove after testing
         self.model_path = '/repo/data/edgetpu/' + self.model_file
 
         # Get the model .tflite file path from the config.
         # If there is no .tflite file in the path it will be downloaded automatically from base_url
-        user_model_path = self.config.get_section_dict('Classifier')['ModelPath']
-        if len(user_model_path) > 0:
-            print('using %s as model' % user_model_path)
-            self.model_path = user_model_path
-        else:
-            base_url = 'N/A'
-            url = base_url + self.model_name + '/' + self.model_file
 
-            if not os.path.isfile(self.model_path):
-                print('model does not exist under: ', self.model_path, 'downloading from ', url)
-                wget.download(url, self.model_path)
+        # -_- -_- TODO: uncomment when a proper face-mask classifier is available -_- -_-
+        # user_model_path = self.config.get_section_dict('Classifier')['ModelPath']
+        # if len(user_model_path) > 0:
+        #     print('using %s as model' % user_model_path)
+        #     self.model_path = user_model_path
+        # else:
+        #     base_url = 'N/A'
+        #     url = base_url + self.model_name + '/' + self.model_file
+        #
+        #     if not os.path.isfile(self.model_path):
+        #         print('model does not exist under: ', self.model_path, 'downloading from ', url)
+        #         wget.download(url, self.model_path)
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
 
         # Load TFLite model and allocate tensors
         self.interpreter = Interpreter(self.model_path, experimental_delegates=[load_delegate("libedgetpu.so.1")])
