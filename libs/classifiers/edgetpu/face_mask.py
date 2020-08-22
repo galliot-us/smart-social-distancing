@@ -5,7 +5,7 @@ import wget
 
 from tflite_runtime.interpreter import load_delegate
 from tflite_runtime.interpreter import Interpreter
-from ..utils.fps_calculator import convert_infr_time_to_fps
+from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
 
 class Classifier:
@@ -48,15 +48,23 @@ class Classifier:
         # self.score_threshold = float(self.config.get_section_dict('')['MinScore'])
 
     def inference(self, resized_rgb_image):
-        input_image = np.expand_dims(resized_rgb_image, axis=0)
         # Fill input tensor with input_image
-        self.interpreter.set_tensor(self.input_details[0]["index"], input_image)
+        if resized_rgb_image == []:
+            return resized_rgb_image
+        resized_rgb_image = resized_rgb_image * 255.0
+        resized_rgb_image = np.array(resized_rgb_image, dtype=np.uint8)
+        result = []
+        
         t_begin = time.perf_counter()
-        self.interpreter.invoke()
+        for img in resized_rgb_image:
+            input_image = np.expand_dims(img, axis=0)
+            self.interpreter.set_tensor(self.input_details[0]["index"], input_image)
+            self.interpreter.invoke()
+            out = self.interpreter.get_tensor(self.output_details[0]["index"])
+            result.append(int(np.argmax(out)))
+            
         inference_time = time.perf_counter() - t_begin  # Second
         self.fps = convert_infr_time_to_fps(inference_time)
         # The function `get_tensor()` returns a copy of the tensor data.
         # Use `tensor()` in order to get a pointer to the tensor.
-
-        result = []
         return result
