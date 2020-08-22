@@ -52,7 +52,7 @@ class Classifier:
         The interpreter instance provides corresponding class id output which is used for creating result
 
         Args:
-            resized_rgb_image: Float numpy array with shape (no_images, img_height, img_width, channels)
+            resized_rgb_image:  List of images with shape (no_images, img_height, img_width, channels)
 
         Returns:
             result: List of class id for each input image [0, 0, 1, 1, 0]
