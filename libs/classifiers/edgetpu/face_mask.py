@@ -65,12 +65,12 @@ class Classifier:
         """
         if resized_rgb_image == []:
             return resized_rgb_image
-        resized_rgb_image = resized_rgb_image * 255.0
-        resized_rgb_image = np.array(resized_rgb_image, dtype=np.uint8)
         result = []
         
         t_begin = time.perf_counter()
         for img in resized_rgb_image:
+            img = img * 255.0
+            img = np.array(img, dtype=np.uint8)
             input_image = np.expand_dims(img, axis=0)
             self.interpreter.set_tensor(self.input_details[0]["index"], input_image)
             self.interpreter.invoke()
