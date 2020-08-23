@@ -48,7 +48,6 @@ class Distancing:
         resized_image = cv.resize(cv_image, tuple(self.image_size[:2]))
         rgb_resized_image = cv.cvtColor(resized_image, cv.COLOR_BGR2RGB)
         tmp_objects_list = self.detector.inference(rgb_resized_image)
-
         # Get the classifier result for detected face
         if self.classifier is not None:
             faces = []
@@ -69,16 +68,15 @@ class Distancing:
                         croped_face = np.array(croped_face) / 255.0
                         faces.append(croped_face)
                     face_mask_results = self.classifier.inference(faces)
-
         [w, h] = self.resolution
         idx = 0
         for obj in tmp_objects_list:
             if self.classifier is not None and 'face' in obj.keys():
                 if obj['face'] is not None:
                     obj['face_label'] = face_mask_results[idx]
+                    idx = idx + 1
                 else:
                     obj['face_label'] = -1
-            idx = idx + 1
             box = obj["bbox"]
             x0 = box[1]
             y0 = box[0]
