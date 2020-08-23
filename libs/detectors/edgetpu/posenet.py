@@ -1,4 +1,5 @@
 import os
+import collections
 import numpy as np
 from PIL import Image
 import time
@@ -26,6 +27,25 @@ class Detector:
         self.class_id = int(self.config.get_section_dict('Detector')['ClassID'])
         self.score_threshold = float(self.config.get_section_dict('Detector')['MinScore'])
         self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
+        self.keypoints = (
+	      'nose',
+	      'left eye',
+	      'right eye',
+	      'left ear',
+	      'right ear',
+	      'left shoulder',
+	      'right shoulder',
+	      'left elbow',
+	      'right elbow',
+	      'left wrist',
+	      'right wrist',
+	      'left hip',
+	      'right hip',
+	      'left knee',
+	      'right knee',
+	      'left ankle',
+	      'right ankle'
+	    ) 
 
     def inference(self, resized_rgb_image):
         """
@@ -43,9 +63,10 @@ class Detector:
         self.fps = convert_infr_time_to_fps(inference_time)
         result = []
         for i, pose in enumerate(poses):  # number of boxes
-            if pose.score > self.score_threshold:
+            if pose.score > self.score_threshold:	
+                pose_dict = collections.OrderedDict(sorted(pose.keypoints.items(), key=lambda x: self.keypoints.index(x[0])))
                 keypoints = np.array(
-                    [[keypoint.yx[1], keypoint.yx[0], keypoint.score] for _, keypoint in pose.keypoints.items()])
+                    [[keypoint.yx[1], keypoint.yx[0], keypoint.score] for _, keypoint in pose_dict.items()])
                 pred = keypoints[keypoints[:, 2] > .2]
                 xs = pred[:, 0]
                 ys = pred[:, 1]
@@ -59,9 +80,23 @@ class Detector:
                 xmax = int(min(x_max + .15 * w, self.w))
                 ymin = int(max(y_min - .1 * h, 0))
                 ymax = int(min(y_max + .1 * h, self.h))
+                bbox_dict = {"id": "1-" + str(i), "bbox": [ymin / self.h, xmin / self.w, ymax / self.h, xmax / self.w],
+                                    "score": 0.9, "face": None} 
+                # extracting face bounding box
+                if np.all(keypoints[[0, 1, 2, 5, 6], -1] > 0.15):
+                    x_min_face = int(keypoints[6, 0])
+                    x_max_face = int(keypoints[5, 0])
+                    y_max_face = int((keypoints[5, 1] + keypoints[6, 1]) / 2)
+                    y_eyes = int((keypoints[1, 1] + keypoints[2, 1]) / 2)
+                    y_min_face = 2 * y_eyes - y_max_face
+                    if (y_max_face - y_min_face > 0) and (x_max_face - x_min_face > 0):
+                        h_crop = y_max_face - y_min_face
+                        x_min_face = int(max(0, x_min_face - 0.1 * h_crop))
+                        y_min_face = int(max(0, y_min_face - 0.1 * h_crop))
+                        x_max_face = int(min(self.w, x_min_face + 1.1 * h_crop))
+                        y_max_face = int(min(self.h, y_min_face + 1.1 * h_crop))
+                        bbox_dict["face"] = [y_min_face / self.h, x_min_face / self.w, y_max_face / self.h, x_max_face / self.w]
 
-                result.append(
-                    {"id": "0-" + str(i), "bbox": [ymin / self.h, xmin / self.w, ymax / self.h, xmax / self.w],
-                     "score": 0.9})
+                result.append(bbox_dict)
 
         return result
