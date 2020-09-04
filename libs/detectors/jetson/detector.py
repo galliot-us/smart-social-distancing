@@ -18,7 +18,7 @@ class Detector:
         self.fps = None
         # Get model name from the config
         self.name = self.config.get_section_dict('Detector')['Name']
-        if self.name == 'ssd_mobilenet_v2_coco':
+        if self.name == 'ssd_mobilenet_v2_coco' or self.name == "ssd_mobilenet_v2_pedestrian_softbio":
             from . import mobilenet_ssd_v2
             self.net = mobilenet_ssd_v2.Detector(self.config)
         else:

@@ -55,6 +55,7 @@ In the following sections we will cover how to build and run each of them depend
 **Download Required Files**
 ```bash
 # Download a sample video file from multiview object tracking dataset
+# The video is complied from this dataset: https://researchdatafinder.qut.edu.au/display/n27416
 ./download_sample_video.sh
 ```
 
