@@ -1,23 +1,21 @@
 from fastapi.testclient import TestClient
 import os
 import sys
-sys.path.append("..")
 from libs.config_engine import ConfigEngine
+from libs.processor_core import ProcessorCore
+
 from api.config_keys import Config 
 from api.processor_api import ProcessorAPI
 import pytest
 
-config_path='/repo/config-coral.ini'
+config_path='/repo/config-x86.ini'
 config = ConfigEngine(config_path)
+core = ProcessorCore(config)
 app_instance = ProcessorAPI(config)
 api = app_instance.app
 client = TestClient(api)
 
-
 sample_config_path='/repo/api/config-sample.ini'
-config_backup_path='/repo/config-coral-backup.ini'
-
-# make a copy for config file
 
 # read sample config file
 config_sample = ConfigEngine(sample_config_path)
