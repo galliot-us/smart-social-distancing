@@ -2,16 +2,20 @@ import time
 from threading import Thread
 from queue import Queue
 from multiprocessing.managers import BaseManager
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Header, status, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 import uvicorn
 import os
 import logging
+import humps
+
 from typing import Dict
 from pydantic import BaseModel
 from typing import Optional
-from api.config_keys import Config,APP,DETECTOR,POSTPROCESSOR,LOGGER,API_
+from api.models.config_keys import *
 from share.commands import Commands
 
 logger = logging.getLogger(__name__)
@@ -20,8 +24,8 @@ class QueueManager(BaseManager): pass
 
 class ProcessorAPI:
     """
-    The Webgui object implements a fastapi application and acts as an interface for users.
-    Once it is created it will act as a central application for viewing outputs.
+    The ProcessorAPI object implements a fastapi application that should allow configuring, starting and stopping processing,
+    and viewing the video stream processed by this processor node.
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     :param engine_instance:  A ConfigEngine object which store all of the config parameters. Access to any parameter
@@ -59,6 +63,13 @@ class ProcessorAPI:
         # Create and return a fastapi instance
         app = FastAPI()
 
+        @app.exception_handler(RequestValidationError)
+        async def validation_exception_handler(request: Request, exc: RequestValidationError):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
+            )
+
         if os.environ.get('DEV_ALLOW_ALL_ORIGINS', False):
             # This option allows React development server (which is served on another port, like 3000) to proxy requests
             # to this server.
@@ -67,7 +78,8 @@ class ProcessorAPI:
             from fastapi.middleware.cors import CORSMiddleware
             app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'],
                                allow_headers=['*'])
-        app.mount("/static", StaticFiles(directory="/repo/data/web_gui/static"), name="static")
+
+        app.mount("/static", StaticFiles(directory="/repo/data/processor/static"), name="static")
 
         @app.get("/process-video-cfg")
         async def process_video_cfg():
@@ -88,31 +100,40 @@ class ProcessorAPI:
         @app.get("/get-config")
         async def get_config():
             logger.info("get-config requests on api")
-            sections = self.config.get_sections() 
+            sections = self.config.get_sections()
             result = {}
             for section in sections:
                 result[section] = self.config.get_section_dict(section)
-            return result
-     
+            return humps.decamelize(result)
+
         @app.post("/set-config")
-        async def create_item(config: Config):
-            logger.info("set-config requests on api")
-            for key in config:
-                if key[1] is not None:
-                    for option in key[1]:
-                       if option[1] is not None:
-                           section = self.config.get_section_dict(key[0])
-                           if option[0] in section:
-                               if str(section[option[0]]) != str(option[1]):
-                                   self.config.set_option_in_section(key[0], option[0], option[1])
-                                   logger.warning("config %s is set, stop/start processing is required" %(option[0]))
-                                   self.config.reload()
-                           else:
-                               print("%s is not in %s section of config file" %(option[0],key[0]))
-            return config
+        async def update_config(config: Config):
+            config = config.dict(exclude_unset=True, exclude_none=True)
+
+            logger.info("Updating config...")
+            self.config.update_config(config)
+            self.config.reload()
+            
+            # TODO: Restart only when necessary
+            logger.info("Restarting video processor...")
+            self._cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
+            stopped = self._result_queue.get()
+            if stopped:
+                self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
+                started = self._result_queue.get()
+                if not started:
+                    logger.info("Failed to restart video processor...")
+                    return JSONResponse(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        content=jsonable_encoder({
+                            'msg': 'Failed to restart video processor',
+                            'type': 'unknown error',
+                            'body': humps.decamelize(config)
+                        })
+                    )
+            return JSONResponse(content=humps.decamelize(config))
 
         return app
 
     def start(self):
         uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
-

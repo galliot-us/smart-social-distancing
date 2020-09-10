@@ -70,6 +70,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         aiofiles \
         fastapi \
         uvicorn \
+        pyhumps \
+        pytest \
     && apt-get purge -y \
         python3-dev \
     && apt-get autoremove -y
