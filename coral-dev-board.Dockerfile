@@ -55,7 +55,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
+COPY api/requirements.txt /
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        tzdata \
         libedgetpu1-std \
         pkg-config \
         python3-dev \
@@ -65,22 +68,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-scipy \
         python3-wget \
     && rm -rf /var/lib/apt/lists/* \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 && pip install \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 && pip install -r /requirements.txt \
         https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_aarch64.whl \
-        aiofiles \
-        fastapi \
-        uvicorn \
-        pyhumps \
     && apt-get purge -y \
         python3-dev \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
-
-RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
-    https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
-    /project-posenet/install_requirements.sh && sh /project-posenet/install_requirements.sh
-ENV PYTHONPATH=$PYTHONPATH:/project-posenet
+ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
+ENV AWS_CONFIG_FILE=/repo/.aws/config
 
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
 COPY . /repo

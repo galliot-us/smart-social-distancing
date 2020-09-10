@@ -1,6 +1,7 @@
 __pycache__/
 /tasks/overrides.yaml
 /data
+oauth2_cred.json
 *~
 *.swp
 .ToDo
@@ -11,3 +12,4 @@ __pycache__/
 *.uff
 *.avi
 .idea/
+.aws

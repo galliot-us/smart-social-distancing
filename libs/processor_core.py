@@ -1,38 +1,26 @@
-from threading import Thread
+import multiprocessing as mp
 from queue import Queue
 from multiprocessing.managers import BaseManager
 import logging
 from share.commands import Commands
-from libs.distancing import Distancing as CvEngine
+from queue import Empty
+import schedule
+from libs.engine_threading import run_video_processing
+from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
 
 class QueueManager(BaseManager): pass
 
-class EngineThread(Thread):
-    def __init__(self, config):
-        Thread.__init__(self)
-        self.engine = None
-        self.config = config
-
-    def run(self):
-        self.engine = CvEngine(self.config)
-        self.engine.process_video(self.config.get_section_dict("App").get("VideoPath"))
-    
-    def stop(self):
-        self.engine.stop_process_video()
-        self.join()
-
-
 class ProcessorCore:
 
     def __init__(self, config):
-        self.config = config 
+        self.config = config
         self._cmd_queue = Queue()
         self._result_queue = Queue()
         self._setup_queues()
         self._tasks = {}
-        self._engine = None
+        self._engines = []
 
     def _setup_queues(self):
         QueueManager.register('get_cmd_queue', callable=lambda: self._cmd_queue)
@@ -46,50 +34,93 @@ class ProcessorCore:
         self._result_queue = self._queue_manager.get_result_queue()
         logger.info("Core's queue has been initiated")
 
-       
     def start(self):
         logging.info("Starting processor core")
         self._serve()
         logging.info("processor core has been terminated.")
-       
+
+    def _setup_scheduled_tasks(self):
+        logger.info("Setup scheduled tasks")
+        sources = self.config.get_video_sources()
+        for src in sources:
+            if src['should_send_notifications']:
+                interval = src['notify_every_minutes']
+                threshold = src['violation_threshold']
+
+                schedule.every(interval).minutes.do(run_check_violations, threshold, self.config, src['section'],
+                    src['id'], interval) \
+                    .tag("notification-task")
+            else:
+                logger.info(f"should not send notification for camera {src['id']}")
 
     def _serve(self):
+        logger.info("Core is listening for commands ... ")
         while True:
-            logger.info("Core is listening for commands ... ")
-            cmd_code = self._cmd_queue.get()
-            logger.info("command received: " + str(cmd_code))
-            
-            if cmd_code == Commands.PROCESS_VIDEO_CFG:
-                if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
-                    logger.warning("Already processing a video! ...")
-                    self._result_queue.put(False)
-                    continue
+            try:
+                cmd_code = self._cmd_queue.get(timeout=10)
+                logger.info("command received: " + str(cmd_code))
+                self._handle_command(cmd_code)
+            except Empty:
+                # Run pending tasks
+                schedule.run_pending()
 
-                self.config.reload()
-                self._tasks[Commands.PROCESS_VIDEO_CFG] = True
-                self._engine = EngineThread(self.config)
-                self._engine.start()
+    def _handle_command(self, cmd_code):
+        if cmd_code == Commands.PROCESS_VIDEO_CFG:
+            if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
+                logger.warning("Already processing a video! ...")
+                self._result_queue.put(False)
+                return
 
-                logger.info("started to process video ... ")
+            self.config.reload()
+            self._setup_scheduled_tasks()
+            self._tasks[Commands.PROCESS_VIDEO_CFG] = True
+
+            self._start_processing()
+
+            logger.info("started to process video ... ")
+            self._result_queue.put(True)
+        elif cmd_code == Commands.STOP_PROCESS_VIDEO :
+            if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
+                self._stop_processing()
+                logger.info("Stop scheduled tasks")
+                schedule.clear('notification-task')
+
+                del self._tasks[Commands.PROCESS_VIDEO_CFG]
+                logger.info("processing stopped")
                 self._result_queue.put(True)
-                continue
-            
-            elif cmd_code == Commands.STOP_PROCESS_VIDEO :
-                if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
-                    self._engine.stop()
-                    del self._tasks[Commands.PROCESS_VIDEO_CFG]
-                    logger.info("processing stopped")
-                    self._result_queue.put(True)
-                    del self._engine
-                else:
-                    logger.warning("no video is being processed")
-                    self._result_queue.put(False)
-
-                continue
-
             else:
-                logger.warning("Invalid core command " + str(cmd_code))
-                self._result_queue.put("invalid_cmd_code")
-                continue
+                logger.warning("no video is being processed")
+                self._result_queue.put(False)
+        else:
+            logger.warning("Invalid core command " + str(cmd_code))
+            self._result_queue.put("invalid_cmd_code")
 
+    def _start_processing(self):
+        sources = self.config.get_video_sources()
+        processes = int(self.config.get_section_dict("App")["MaxProcesses"])
+        if len(sources) < processes:
+            processes = len(sources)
+        tasks_per_process = len(sources) // processes
+        processes_with_additional_task = len(sources) % processes
 
+        index = 0
+        engines = []
+        for p_index in range(processes):
+            extra = 1 if p_index < processes_with_additional_task else 0
+            p_src = sources[index:(index + tasks_per_process + extra)]
+            index += tasks_per_process + extra
+            recv_conn, send_conn = mp.Pipe(False)
+            p = mp.Process(target=run_video_processing, args=(self.config, recv_conn, p_src))
+            p.start()
+            engines.append((send_conn, p))
+        self._engines = engines
+
+    def _stop_processing(self):
+        for (conn, proc) in self._engines:
+            conn.send(True)
+            # Terminate the process by waiting at most 2 seconds until we force terminate it.
+            proc.join(2)
+            if proc.exitcode is None:
+                proc.terminate()
+            del proc
+        self._engines = []

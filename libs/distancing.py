@@ -2,13 +2,14 @@ import cv2 as cv
 import numpy as np
 import math
 import os
-import datetime
 import shutil
+import time
 from libs.centroid_object_tracker import CentroidTracker
 from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
 from libs.utils import visualization_utils
+from libs.uploaders.s3_uploader import S3Uploader
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,20 +17,29 @@ logger = logging.getLogger(__name__)
 
 class Distancing:
 
-    def __init__(self, config):
+    def __init__(self, config, camera_id):
         self.config = config
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
         self.running_video = False
         self.tracker = CentroidTracker(
             max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
-        self.logger = Logger(self.config)
+        self.camera_id = camera_id
+        self.logger = Logger(self.config, camera_id)
         self.image_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
 
         self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
+
+        self.screenshot_period = float(
+            self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60  # config.ini uses minutes as unit
+        self.bucket_screenshots = config.get_section_dict("App")["ScreenshotS3Bucket"]
+        self.uploader = S3Uploader(self.config)
+        self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
+        if not os.path.exists(self.screenshot_path):
+            os.makedirs(self.screenshot_path)
 
     def __process(self, cv_image):
         """
@@ -131,7 +141,7 @@ class Distancing:
             print('image size: ', self.image_size)
 
         input_cap = cv.VideoCapture(video_uri)
-        fps = input_cap.get(cv.CAP_PROP_FPS)
+        fps = max(25, input_cap.get(cv.CAP_PROP_FPS))
 
         if (input_cap.isOpened()):
             logger.info(f'opened video {video_uri}')
@@ -146,14 +156,15 @@ class Distancing:
         out, out_birdseye = (
             self.gstreamer_writer(feed, fps, resolution)
             for (feed, resolution) in (
-            ('default', self.resolution),
-            ('default-birdseye', self.birds_eye_resolution)
-        )  # TODO: use camera-id
+            (self.camera_id, self.resolution),
+            (self.camera_id + '-birdseye', self.birds_eye_resolution)
+        )
         )
 
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
         class_id = int(self.config.get_section_dict('Detector')['ClassID'])
         frame_num = 0
+        start_time = time.time()
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
             birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
@@ -210,8 +221,16 @@ class Distancing:
                 out.write(cv_image)
                 out_birdseye.write(birds_eye_window)
                 frame_num += 1
-                if frame_num % 10 == 1:
+                if frame_num % 100 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
+
+                # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period has occured
+                if (self.screenshot_period > 0) and (time.time() > start_time + self.screenshot_period) and (
+                    len(violating_objects) > 0):
+                    start_time = time.time()
+                    self.capture_violation(f"{start_time}_violation.jpg", cv_image)
+
+                self.save_screenshot(cv_image)
             else:
                 continue
             self.logger.update(objects, distancings)
@@ -229,7 +248,7 @@ class Distancing:
         this function post-process the raw boxes of object detector and calculate a distance matrix
         for detected bounding boxes.
         post processing is consist of:
-        1. omitting large boxes by filtering boxes which are biger than the 1/4 of the size the image.
+        1. omitting large boxes by filtering boxes which are bigger than the 1/4 of the size the image.
         2. omitting duplicated boxes by applying an auxilary non-maximum-suppression.
         3. apply a simple object tracker to make the detection more robust.
 
@@ -333,13 +352,13 @@ class Distancing:
 
         """
         This function calculates a distance l for two input corresponding points of two detected bounding boxes.
-        it is assumed that each person is H = 170 cm tall in real scene to map the distances in the image (in pixels) to 
-        physical distance measures (in meters). 
+        it is assumed that each person is H = 170 cm tall in real scene to map the distances in the image (in pixels) to
+        physical distance measures (in meters).
 
         params:
         first_point: (x, y, h)-tuple, where x,y is the location of a point (center or each of 4 corners of a bounding box)
-        and h is the height of the bounding box. 
-        second_point: same tuple as first_point for the corresponding point of other box 
+        and h is the height of the bounding box.
+        second_point: same tuple as first_point for the corresponding point of other box
 
         returns:
         l:  Estimated physical distance (in centimeters) between first_point and second_point.
@@ -455,3 +474,13 @@ class Distancing:
         if kernel_h % 2 == 0:
             kernel_h -= 1
         return cv.GaussianBlur(image, (kernel_w, kernel_h), 0)
+
+    # TODO: Make this an async task?
+    def capture_violation(self, file_name, cv_image):
+        self.uploader.upload_cv_image(self.bucket_screenshots, cv_image, file_name, self.camera_id)
+
+    def save_screenshot(self, cv_image):
+        dir_path = f'{self.screenshot_path}/default.jpg'
+        if not os.path.exists(dir_path):
+            logger.info(f"Saving default screenshot for {self.camera_id}")
+            cv.imwrite(f'{self.screenshot_path}/default.jpg', cv_image)

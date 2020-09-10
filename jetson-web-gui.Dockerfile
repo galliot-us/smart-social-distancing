@@ -24,6 +24,7 @@ COPY ui/requirements.txt /ui/
 WORKDIR /ui
 
 RUN python3 -m pip install -r requirements.txt
+
 COPY ui/ /ui
 COPY libs/config_engine.py /ui/
 COPY config-frontend.ini /ui/

@@ -58,7 +58,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
+COPY api/requirements.txt /
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        tzdata \
         pkg-config \
         python3-dev \
         python3-numpy \
@@ -67,13 +70,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-scipy \
         python3-wget \
     && rm -rf /var/lib/apt/lists/* \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install \
-        aiofiles \
-        fastapi \
-        uvicorn \
-        pyhumps \
-        pytest \
-        requests \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install -r /requirements.txt \
     && apt-get purge -y \
         python3-dev \
     && apt-get autoremove -y
@@ -83,6 +80,9 @@ RUN rm -rf /opt/intel/openvino/opencv /opt/intel/openvino/python/cv2.* /opt/inte
 
 ADD docker/x86-openvino/openvino_setupvars.py /opt/openvino_setupvars.py
 ENV DEV_ALLOW_ALL_ORIGINS=true
+ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
+ENV AWS_CONFIG_FILE=/repo/.aws/config
+
 COPY . /repo
 WORKDIR /repo
 CMD env `python3 /opt/openvino_setupvars.py` bash start_services.bash config-x86-openvino.ini
