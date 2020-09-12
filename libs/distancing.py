@@ -375,7 +375,7 @@ class Distancing:
 
         """
         This function calculates a distance matrix for detected bounding boxes.
-        Three methods are implemented to calculate the distances,first one estimates distance with a calibration matrix
+        Three methods are implemented to calculate the distances, the first one estimates distance with a calibration matrix
         which transform the points to the 3-d world coordinate, the second one estimates distance of center points of the
         boxes and the third one uses minimum distance of each of 4 points of bounding boxes.
 
