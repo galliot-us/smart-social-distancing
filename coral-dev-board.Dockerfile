@@ -70,11 +70,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         aiofiles \
         fastapi \
         uvicorn \
+        pyhumps \
     && apt-get purge -y \
         python3-dev \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
+
+RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
+    https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
+    /project-posenet/install_requirements.sh && sh /project-posenet/install_requirements.sh
+ENV PYTHONPATH=$PYTHONPATH:/project-posenet
 
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
 COPY . /repo

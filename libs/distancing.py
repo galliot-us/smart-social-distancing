@@ -70,6 +70,9 @@ class Distancing:
             obj["bboxReal"] = [x0 * w, y0 * h, x1 * w, y1 * h]
 
         objects_list, distancings = self.calculate_distancing(tmp_objects_list)
+        anonymize = self.config.get_section_dict('PostProcessor')['Anonymize'] == "true"
+        if anonymize:
+            cv_image = self.anonymize_image(cv_image, objects_list)
         return cv_image, objects_list, distancings
 
     def gstreamer_writer(self, feed_name, fps, resolution):
@@ -96,7 +99,7 @@ class Distancing:
         :param resolution: A tuple of size 2 which indicates the resolution of output video.
         """
         encoder = self.config.get_section_dict('App')['Encoder']
-        video_root = f'/repo/data/web_gui/static/gstreamer/{feed_name}'
+        video_root = f'/repo/data/processor/static/gstreamer/{feed_name}'
 
         shutil.rmtree(video_root, ignore_errors=True)
         os.makedirs(video_root, exist_ok=True)
@@ -461,3 +464,33 @@ class Distancing:
         floor_world_point = np.matmul(self.h_inv, floor_point)
         floor_world_point = floor_world_point[:-1] / floor_world_point[-1]
         return floor_world_point
+      
+    def anonymize_image(self, img, objects_list):
+        """
+        Anonymize every instance in the frame.
+        """
+        h, w = img.shape[:2]
+        for box in objects_list:
+            xmin = max(int(box["bboxReal"][0]), 0)
+            xmax = min(int(box["bboxReal"][2]), w)
+            ymin = max(int(box["bboxReal"][1]), 0)
+            ymax = min(int(box["bboxReal"][3]), h)
+            ymax = (ymax - ymin) // 3 + ymin
+            roi = img[ymin:ymax, xmin:xmax]
+            roi = self.anonymize_face(roi)
+            img[ymin:ymax, xmin:xmax] = roi
+        return img
+
+    @staticmethod
+    def anonymize_face(image):
+        """
+        Blur an image to anonymize the person's faces.
+        """
+        (h, w) = image.shape[:2]
+        kernel_w = int(w / 3)
+        kernel_h = int(h / 3)
+        if kernel_w % 2 == 0:
+            kernel_w -= 1
+        if kernel_h % 2 == 0:
+            kernel_h -= 1
+        return cv.GaussianBlur(image, (kernel_w, kernel_h), 0)

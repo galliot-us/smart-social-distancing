@@ -80,6 +80,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         aiofiles \
         fastapi \
         uvicorn \
+        pyhumps \
+        pytest \
 	https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_x86_64.whl \
     && apt-get purge -y \
         build-essential \
@@ -87,6 +89,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
+
+RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
+    https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
+    /project-posenet/install_requirements.sh && sh /project-posenet/install_requirements.sh
+ENV PYTHONPATH=$PYTHONPATH:/project-posenet
 
 COPY . /repo
 WORKDIR /repo

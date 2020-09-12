@@ -1,3 +1,6 @@
+# See here for installing Docker for Nvidia on Jetson devices: 
+# https://github.com/NVIDIA/nvidia-docker/wiki/NVIDIA-Container-Runtime-on-Jetson
+
 FROM nvcr.io/nvidia/l4t-base:r32.3.1
 
 ENV TZ=US/Pacific
@@ -83,6 +86,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         fastapi \
         pycuda \
         uvicorn \
+        pyhumps \
     && apt-get purge -y \
         pkg-config \
     && apt-get autoremove -y
