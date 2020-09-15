@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+from scipy.spatial.distance import cdist
 import math
 import os
 import shutil
@@ -32,6 +33,18 @@ class Distancing:
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
+        if self.dist_method == "CalibratedDistance":
+            try:
+                calibration_file = self.config.get_section_dict("App")["CalibrationFile"]
+            except KeyError:
+                raise ValueError(
+                    "The 'CalibrationFile' should be specified in config file in case of using 'CalibratedDistance' method")
+            try: 
+                with open(calibration_file, "r") as file:
+                    self.h_inv = file.readlines()[0].split(" ")[1:]
+                    self.h_inv = np.array(self.h_inv, dtype="float").reshape((3, 3))
+            except FileNotFoundError:
+                raise FileNotFoundError("The specified 'CalibrationFile' does not exist")
 
         self.screenshot_period = float(
             self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60  # config.ini uses minutes as unit
@@ -384,8 +397,9 @@ class Distancing:
 
         """
         This function calculates a distance matrix for detected bounding boxes.
-        Two methods are implemented to calculate the distances, first one estimates distance of center points of the
-        boxes and second one uses minimum distance of each of 4 points of bounding boxes.
+        Three methods are implemented to calculate the distances, the first one estimates distance with a calibration matrix
+        which transform the points to the 3-d world coordinate, the second one estimates distance of center points of the
+        boxes and the third one uses minimum distance of each of 4 points of bounding boxes.
 
         params:
         object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
@@ -395,56 +409,81 @@ class Distancing:
         returns:
         distances: a NxN ndarray which i,j element is estimated distance between i-th and j-th bounding box in real scene (cm)
 
-        """
+        """ 
+        if self.dist_method == "CalibratedDistance":
+            world_coordinate_points = np.array([self.transform_to_world_coordinate(bbox) for bbox in nn_out])
+            if len(world_coordinate_points) == 0:
+                distances_asarray = np.array([])
+            else:
+                distances_asarray = cdist(world_coordinate_points, world_coordinate_points) 
 
-        distances = []
-        for i in range(len(nn_out)):
-            distance_row = []
-            for j in range(len(nn_out)):
-                if i == j:
-                    l = 0
-                else:
-                    if (self.dist_method == 'FourCornerPointsDistance'):
-                        lower_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][1],
+        else:
+            distances = []
+            for i in range(len(nn_out)):
+                distance_row = []
+                for j in range(len(nn_out)):
+                    if i == j:
+                        l = 0
+                    else:
+                        if (self.dist_method == 'FourCornerPointsDistance'):
+                            lower_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][1],
+                                                       nn_out[i]["centroidReal"][3]]
+                            lower_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][1],
+                                                        nn_out[i]["centroidReal"][3]]
+                            upper_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][3],
+                                                       nn_out[i]["centroidReal"][3]]
+                            upper_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][3],
+                                                        nn_out[i]["centroidReal"][3]]
+
+                            lower_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][1],
+                                                        nn_out[j]["centroidReal"][3]]
+                            lower_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][1],
+                                                         nn_out[j]["centroidReal"][3]]
+                            upper_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][3],
+                                                        nn_out[j]["centroidReal"][3]]
+                            upper_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][3],
+                                                         nn_out[j]["centroidReal"][3]]
+
+                            l1 = self.calculate_distance_of_two_points_of_boxes(lower_left_of_first_box,
+                                                                                lower_left_of_second_box)
+                            l2 = self.calculate_distance_of_two_points_of_boxes(lower_right_of_first_box,
+                                                                                lower_right_of_second_box)
+                            l3 = self.calculate_distance_of_two_points_of_boxes(upper_left_of_first_box,
+                                                                                upper_left_of_second_box)
+                            l4 = self.calculate_distance_of_two_points_of_boxes(upper_right_of_first_box,
+                                                                                upper_right_of_second_box)
+
+                            l = min(l1, l2, l3, l4)
+                        elif (self.dist_method == 'CenterPointsDistance'):
+                            center_of_first_box = [nn_out[i]["centroidReal"][0], nn_out[i]["centroidReal"][1],
                                                    nn_out[i]["centroidReal"][3]]
-                        lower_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][1],
-                                                    nn_out[i]["centroidReal"][3]]
-                        upper_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][3],
-                                                   nn_out[i]["centroidReal"][3]]
-                        upper_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][3],
-                                                    nn_out[i]["centroidReal"][3]]
-
-                        lower_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][1],
+                            center_of_second_box = [nn_out[j]["centroidReal"][0], nn_out[j]["centroidReal"][1],
                                                     nn_out[j]["centroidReal"][3]]
-                        lower_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][1],
-                                                     nn_out[j]["centroidReal"][3]]
-                        upper_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][3],
-                                                    nn_out[j]["centroidReal"][3]]
-                        upper_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][3],
-                                                     nn_out[j]["centroidReal"][3]]
 
-                        l1 = self.calculate_distance_of_two_points_of_boxes(lower_left_of_first_box,
-                                                                            lower_left_of_second_box)
-                        l2 = self.calculate_distance_of_two_points_of_boxes(lower_right_of_first_box,
-                                                                            lower_right_of_second_box)
-                        l3 = self.calculate_distance_of_two_points_of_boxes(upper_left_of_first_box,
-                                                                            upper_left_of_second_box)
-                        l4 = self.calculate_distance_of_two_points_of_boxes(upper_right_of_first_box,
-                                                                            upper_right_of_second_box)
-
-                        l = min(l1, l2, l3, l4)
-                    elif (self.dist_method == 'CenterPointsDistance'):
-                        center_of_first_box = [nn_out[i]["centroidReal"][0], nn_out[i]["centroidReal"][1],
-                                               nn_out[i]["centroidReal"][3]]
-                        center_of_second_box = [nn_out[j]["centroidReal"][0], nn_out[j]["centroidReal"][1],
-                                                nn_out[j]["centroidReal"][3]]
-
-                        l = self.calculate_distance_of_two_points_of_boxes(center_of_first_box, center_of_second_box)
-                distance_row.append(l)
-            distances.append(distance_row)
-        distances_asarray = np.asarray(distances, dtype=np.float32)
+                            l = self.calculate_distance_of_two_points_of_boxes(center_of_first_box, center_of_second_box)
+                    distance_row.append(l)
+                distances.append(distance_row)
+            distances_asarray = np.asarray(distances, dtype=np.float32)
         return distances_asarray
 
+    def transform_to_world_coordinate(self, bbox):
+        """
+        This function will transform the center of the bottom line of a bounding box from image coordinate to world
+        coordinate via a homography matrix
+        Args:
+            bbox: a dictionary of a  coordinates of a detected instance with "id",
+            "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and "bboxReal" (a tuple
+            of the (xmin,ymin,xmax,ymax) coordinate of the box) keys
+
+        Returns:
+            A numpy array of (X,Y) of transformed point
+
+        """
+        floor_point = np.array([int((bbox["bboxReal"][0] + bbox["bboxReal"][2]) / 2), bbox["bboxReal"][3], 1])
+        floor_world_point = np.matmul(self.h_inv, floor_point)
+        floor_world_point = floor_world_point[:-1] / floor_world_point[-1]
+        return floor_world_point
+      
     def anonymize_image(self, img, objects_list):
         """
         Anonymize every instance in the frame.
