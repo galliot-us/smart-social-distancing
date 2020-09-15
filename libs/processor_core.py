@@ -43,12 +43,14 @@ class ProcessorCore:
         logger.info("Setup scheduled tasks")
         sources = self.config.get_video_sources()
         for src in sources:
-            if src['should_send_notifications']:
+            should_send_email_notifications = src['should_send_email_notifications']
+            should_send_slack_notifications = src['should_send_slack_notifications']
+            if should_send_email_notifications or should_send_slack_notifications:
                 interval = src['notify_every_minutes']
                 threshold = src['violation_threshold']
 
                 schedule.every(interval).minutes.do(run_check_violations, threshold, self.config, src['section'],
-                    src['id'], interval) \
+                    src['id'], interval, should_send_email_notifications, should_send_slack_notifications) \
                     .tag("notification-task")
             else:
                 logger.info(f"should not send notification for camera {src['id']}")

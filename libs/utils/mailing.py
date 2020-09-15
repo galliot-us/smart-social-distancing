@@ -27,7 +27,7 @@ class MailService:
     def send_violation_notification(self, source_name, num_violations):
         source_info = self.config.get_section_dict(source_name)
         if "Emails" not in source_info or source_info["Emails"].strip() == "":
-            self.logger.info("No notification sent because no email was added for selected source")
+            self.logger.info("No notification was emailed because no email was added for selected source")
             return
         to = source_info["Emails"].split(',')
         cam_name = source_info["Name"]

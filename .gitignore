@@ -13,3 +13,4 @@ oauth2_cred.json
 *.avi
 .idea/
 .aws
+slack_token

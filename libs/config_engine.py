@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import configparser
 import threading
+from distutils.util import strtobool
 
 
 class ConfigEngine:
@@ -142,8 +143,15 @@ class ConfigEngine:
                         src['emails'] = section['Emails'].split(',')
                     src['notify_every_minutes'] = int(section['NotifyEveryMinutes'])
                     src['violation_threshold'] = int(section['ViolationThreshold'])
-                    src['should_send_notifications'] = 'emails' in src and src['notify_every_minutes'] > 0 and \
-                                                       src['violation_threshold'] > 0
+                    if src['notify_every_minutes'] > 0 and src['violation_threshold'] > 0:
+                        src['should_send_email_notifications'] = 'emails' in src
+                        app_config = self.config["App"]
+                        src['should_send_slack_notifications'] = bool(bool(app_config["SlackCredentialsFile"]) and
+                                                                      bool(app_config["SlackChannel"]) and
+                                                                      strtobool(app_config['EnableSlackNotifications']))
+                    else:
+                        src['should_send_email_notifications'] = False
+                        src['should_send_slack_notifications'] = False
                     sources.append(src)
             return sources
         except:
