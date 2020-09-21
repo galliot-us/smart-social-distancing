@@ -168,7 +168,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/r
 docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-skeleton.ini":/repo/config-skeleton.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-coral.ini":/repo/config-coral.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
 ```
 
 ##### Run on AMD64 node with a connected Coral USB Accelerator
@@ -177,7 +177,7 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD
 docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-skeleton.ini":/repo/config-skeleton.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-coral.ini":/repo/config-coral.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
 ```
 
 ##### Run on x86
