@@ -89,7 +89,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get purge -y \
         build-essential \
         python3-dev \
-        pyhumps \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
