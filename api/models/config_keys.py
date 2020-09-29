@@ -59,8 +59,8 @@ class DetectorConfig(SnakeModel):
 class PostProcessorConfig(SnakeModel):
     MaxTrackFrame: Optional[str] = Field(None, example='5')
     NMSThreshold: Optional[str] = Field(None, example='0.98')
+    DefaultDistMethod: Optional[str] = Field(None, example='CenterPointsDistance')
     DistThreshold: Optional[str] = Field(None, example='150')
-    DistMethod: Optional[str] = Field(None, example='CenterPointsDistance')
 
 
 class LoggerConfig(SnakeModel):
@@ -90,7 +90,8 @@ class SourceConfigDTO(BaseModel):
     notifyEveryMinutes: Optional[int] = Field(0, example=15)
     violationThreshold: Optional[int] = Field(0, example=100)
     image: Optional[str] = Field("", example='Base64 image')
-
+    distMethod: Optional[str] = Field(None, example='CenterPointsDistance')
+    calibrationFile: Optional[str] = Field("", example='/repo/data/processor/static/data/cam1/homography_matrix/h_inverse.txt')
 
 class ConfigDTO(BaseModel):
     cameras: List[SourceConfigDTO]

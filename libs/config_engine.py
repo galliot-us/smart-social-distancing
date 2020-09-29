@@ -143,6 +143,8 @@ class ConfigEngine:
                         src['emails'] = section['Emails'].split(',')
                     src['notify_every_minutes'] = int(section['NotifyEveryMinutes'])
                     src['violation_threshold'] = int(section['ViolationThreshold'])
+                    src['calibration_file'] = section['CalibrationFile']
+                    src['dist_method'] = section['DistMethod']
                     if src['notify_every_minutes'] > 0 and src['violation_threshold'] > 0:
                         src['should_send_email_notifications'] = 'emails' in src
                         app_config = self.config["App"]

@@ -13,6 +13,9 @@ import logging
 import humps
 import numpy as np
 from starlette.exceptions import HTTPException
+from pydantic import conlist
+from pathlib import Path
+from functools import reduce
 
 from api.models.config_keys import *
 from api.reports import reports_api
@@ -77,6 +80,18 @@ class ProcessorAPI:
                     }
                 }
 
+        class ConfigHomographyMatrix(BaseModel):
+            pts_source: conlist(conlist(float, min_items=2, max_items=2), min_items=4, max_items=4)
+            pts_destination: conlist(conlist(float, min_items=2, max_items=2), min_items=4, max_items=4)
+
+            class Config:
+                schema_extra = {
+                    'example': {
+                        'pts_source': [[0., 0.], [0., 1.], [1., 1.], [1., 0.]],
+                        'pts_destination': [[130., 310.], [45., 420.], [275., 420.], [252., 310.]]
+                    }
+                }
+
         # Create and return a fastapi instance
         app = FastAPI()
 
@@ -137,16 +152,43 @@ class ProcessorAPI:
                         'Emails': camera.emails,
                         'Tags': camera.tags,
                         'NotifyEveryMinutes': str(camera.notifyEveryMinutes),
-                        'ViolationThreshold': str(camera.violationThreshold)
+                        'ViolationThreshold': str(camera.violationThreshold),
+                        'DistMethod': camera.distMethod,
+                        'CalibrationFile': camera.calibrationFile
                     }
                 )
             return config_dict
 
-        def verify_path(camera_id):
-            dir_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
+        def verify_path(base, camera_id):
+            dir_path = os.path.join(base, camera_id)
             if not os.path.exists(dir_path):
                 raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
             return dir_path
+
+        def update_config_file(config_dict):
+            logger.info("Updating config...")
+            self.config.update_config(config_dict)
+            self.config.reload()
+
+        def restart_processor():
+            logger.info("Restarting video processor...")
+            self._cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
+            stopped = self._result_queue.get()
+            if stopped:
+                self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
+                started = self._result_queue.get()
+                if not started:
+                    logger.info("Failed to restart video processor...")
+                    return False
+            return True
+
+        def compute_and_save_inv_homography_matrix(points: ConfigHomographyMatrix, destination: str):
+            Path(os.path.dirname(destination)).mkdir(parents=True, exist_ok=True)
+            h, _ = cv.findHomography(np.float32(points.pts_source), np.float32(points.pts_destination))
+            h_inv = np.linalg.inv(h).flatten()
+            h_inv = ' '.join(map(str, h_inv))
+            with open(destination, 'w') as f:
+                f.write('h_inv: ' + h_inv)
 
         @app.get("/process-video-cfg")
         async def process_video_cfg():
@@ -176,32 +218,23 @@ class ProcessorAPI:
         @app.put("/config")
         async def update_config(config: ConfigDTO):
             config_dict = map_to_config_file_format(config)
-            logger.info("Updating config...")
-            self.config.update_config(config_dict)
-            self.config.reload()
-
+            update_config_file(config_dict)
             # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
-            logger.info("Restarting video processor...")
-            self._cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
-            stopped = self._result_queue.get()
-            if stopped:
-                self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
-                started = self._result_queue.get()
-                if not started:
-                    logger.info("Failed to restart video processor...")
-                    return JSONResponse(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        content=jsonable_encoder({
-                            'msg': 'Failed to restart video processor',
-                            'type': 'unknown error',
-                            'body': humps.decamelize(config)
-                        })
-                    )
+            success = restart_processor()
+            if not success:
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content=jsonable_encoder({
+                        'msg': 'Failed to restart video processor',
+                        'type': 'unknown error on the config file',
+                        'body': humps.decamelize(config)
+                    })
+                )
             return JSONResponse(content=humps.decamelize(config))
 
         @app.get("/{camera_id}/image", response_model=ImageModel)
         async def get_camera_image(camera_id):
-            dir_path = verify_path(camera_id)
+            dir_path = verify_path(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
             with open(f'{dir_path}/default.jpg', "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read())
             return {
@@ -210,7 +243,7 @@ class ProcessorAPI:
 
         @app.put("/{camera_id}/image")
         async def replace_camera_image(camera_id, body: ImageModel):
-            dir_path = verify_path(camera_id)
+            dir_path = verify_path(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
             try:
                 decoded_image = base64.b64decode(body.image.split(',')[1])
                 nparr = np.fromstring(decoded_image, np.uint8)
@@ -218,6 +251,34 @@ class ProcessorAPI:
                 cv.imwrite(f"{dir_path}/default.jpg", cv_image)
             except Exception:
                 return HTTPException(status_code=400, detail="Invalid image format")
+
+        @app.post("/{camera_id}/homography_matrix")
+        async def config_calibrated_distance(camera_id, body: ConfigHomographyMatrix):
+            sources = self.config.get_video_sources()
+            dir_source = list(filter(lambda source: source['id'] == camera_id, sources))
+            if dir_source is None or len(dir_source) != 1:
+                raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
+            dir_source = dir_source[0]
+            dir_path = dir_source['calibration_file']
+            compute_and_save_inv_homography_matrix(points=body, destination=dir_path)
+
+            sections = self.config.get_sections()
+            config_dict = {}
+            for section in sections:
+                config_dict[section] = self.config.get_section_dict(section)
+            config_dict[dir_source['section']]['DistMethod'] = 'CalibratedDistance'
+            update_config_file(config_dict)
+            success = restart_processor()
+            if not success:
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content=jsonable_encoder({
+                        'msg': 'Failed to restart video processor',
+                        'type': 'unknown error on the config file',
+                        'body': humps.decamelize(config_dict)
+                    })
+                )
+            return JSONResponse(content=humps.decamelize(config_dict))
 
         return app
 
