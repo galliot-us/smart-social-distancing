@@ -183,10 +183,6 @@ docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:lat
 docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
-
-
-
-
 ### Configurations
 You can read and modify the configurations in `config-*.ini` files, accordingly:
 
