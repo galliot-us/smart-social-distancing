@@ -123,7 +123,7 @@ class ConfigEngine:
             for option, value in options.items():
                 self.set_option_in_section(section, option, value)
         for section in self.config.sections():
-            if section.startswith('Source') and section not in current_sections:
+            if len(current_sections) and section.startswith('Source') and section not in current_sections:
                 self.config.remove_section(section)
         if save_file:
             self.save(self.config_file_path)
@@ -148,8 +148,7 @@ class ConfigEngine:
                     if src['notify_every_minutes'] > 0 and src['violation_threshold'] > 0:
                         src['should_send_email_notifications'] = 'emails' in src
                         app_config = self.config["App"]
-                        src['should_send_slack_notifications'] = bool(bool(app_config["SlackCredentialsFile"]) and
-                                                                      bool(app_config["SlackChannel"]) and
+                        src['should_send_slack_notifications'] = bool(bool(app_config["SlackChannel"]) and
                                                                       strtobool(app_config['EnableSlackNotifications']))
                     else:
                         src['should_send_email_notifications'] = False

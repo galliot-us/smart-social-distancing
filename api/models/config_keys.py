@@ -90,7 +90,7 @@ class SourceConfigDTO(BaseModel):
     notifyEveryMinutes: Optional[int] = Field(0, example=15)
     violationThreshold: Optional[int] = Field(0, example=100)
     image: Optional[str] = Field("", example='Base64 image')
-    distMethod: Optional[str] = Field(None, example='CenterPointsDistance')
+    distMethod: Optional[str] = Field("", example='CenterPointsDistance')
     calibrationFile: Optional[str] = Field("", example='/repo/data/processor/static/data/cam1/homography_matrix/h_inverse.txt')
 
 class ConfigDTO(BaseModel):

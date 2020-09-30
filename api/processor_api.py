@@ -1,4 +1,5 @@
 import base64
+
 import time
 from multiprocessing.managers import BaseManager
 from fastapi import FastAPI, status, Request
@@ -89,6 +90,17 @@ class ProcessorAPI:
                     'example': {
                         'pts_source': [[0., 0.], [0., 1.], [1., 1.], [1., 0.]],
                         'pts_destination': [[130., 310.], [45., 420.], [275., 420.], [252., 310.]]
+                    }
+                }
+
+        class SlackConfig(BaseModel):
+            user_token: str
+            channel: Optional[str]
+
+            class Config:
+                schema_extra = {
+                    'example': {
+                        'user_token': 'xxxx-ffff...'
                     }
                 }
 
@@ -190,6 +202,49 @@ class ProcessorAPI:
             with open(destination, 'w') as f:
                 f.write('h_inv: ' + h_inv)
 
+        def write_user_token(token):
+            logger.info("Writing user access token")
+            with open("slack_token.txt", "w+") as slack_token:
+                slack_token.write(token)
+
+        def enable_slack(token_config):
+            write_user_token(token_config.user_token)
+            logger.info("Enabling slack notification on processor's config")
+            config_dict = dict()
+            config_dict["App"] = dict({"EnableSlackNotifications": "yes", "SlackChannel": token_config.channel})
+            self.config.update_config(config_dict)
+            success = restart_processor()
+
+            return handle_config_response(config_dict, success)
+
+        def is_slack_configured():
+            with open("slack_token.txt", "r") as user_token:
+                value = user_token.read()
+                if value:
+                    return True
+                return False
+
+        def add_slack_channel_to_config(channel):
+            logger.info("Adding slack's channel on processor's config")
+            config_dict = dict()
+            config_dict["App"] = dict({"SlackChannel": channel})
+            self.config.update_config(config_dict)
+            success = restart_processor()
+
+            return handle_config_response(config_dict, success)
+
+        def handle_config_response(config, success):
+            if not success:
+                return JSONResponse(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    content=jsonable_encoder({
+                        'msg': 'Failed to restart video processor',
+                        'type': 'unknown error on the config file',
+                        'body': humps.decamelize(config)
+                    })
+                )
+            return JSONResponse(content=humps.decamelize(config))
+
         @app.get("/process-video-cfg")
         async def process_video_cfg():
             logger.info("process-video-cfg requests on api")
@@ -221,16 +276,7 @@ class ProcessorAPI:
             update_config_file(config_dict)
             # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
             success = restart_processor()
-            if not success:
-                return JSONResponse(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    content=jsonable_encoder({
-                        'msg': 'Failed to restart video processor',
-                        'type': 'unknown error on the config file',
-                        'body': humps.decamelize(config)
-                    })
-                )
-            return JSONResponse(content=humps.decamelize(config))
+            return handle_config_response(config, success)
 
         @app.get("/{camera_id}/image", response_model=ImageModel)
         async def get_camera_image(camera_id):
@@ -269,16 +315,26 @@ class ProcessorAPI:
             config_dict[dir_source['section']]['DistMethod'] = 'CalibratedDistance'
             update_config_file(config_dict)
             success = restart_processor()
-            if not success:
-                return JSONResponse(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    content=jsonable_encoder({
-                        'msg': 'Failed to restart video processor',
-                        'type': 'unknown error on the config file',
-                        'body': humps.decamelize(config_dict)
-                    })
-                )
-            return JSONResponse(content=humps.decamelize(config_dict))
+
+            return handle_config_response(config_dict, success)
+
+        @app.get("/slack/is-enabled")
+        def is_slack_enabled():
+            return {
+                "enabled": is_slack_configured()
+            }
+
+        @app.delete("/slack/revoke")
+        def revoke_slack():
+            write_user_token("")
+
+        @app.post("/slack/add-channel")
+        def add_slack_channel(channel: str):
+            add_slack_channel_to_config(channel)
+
+        @app.post("/slack/enable")
+        def enable(body: SlackConfig):
+            enable_slack(body)
 
         return app
 

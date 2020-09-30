@@ -1,14 +1,15 @@
+import configparser
 import os
 import logging
 from slack import WebClient
+
 
 class SlackService:
     def __init__(self, config):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.slack_credentials_file = config.get_section_dict("App")["SlackCredentialsFile"]
-        with open(self.slack_credentials_file, 'r') as f:
-            self.slack_token = f.readline()
+        with open("slack_token.txt", "r") as slack_token:
+            self.slack_token = slack_token.read()
         self.slack_client = WebClient(token=self.slack_token)
         self.channel = config.get_section_dict("App")["SlackChannel"]
         self.username = "lanthorn"
