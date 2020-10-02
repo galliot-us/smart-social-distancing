@@ -1,0 +1,10 @@
+aiofiles
+boto3
+fastapi
+pandas
+pyhumps
+pytest
+requests
+schedule
+uvicorn
+yagmail

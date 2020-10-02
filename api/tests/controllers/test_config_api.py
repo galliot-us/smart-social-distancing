@@ -6,20 +6,15 @@ import pytest
 import humps
 import copy
 
-config_path='/repo/config-coral.ini'
-config = ConfigEngine(config_path)
+config_sample_path='/repo/api/models/data/config-sample.ini'
+config = ConfigEngine(config_sample_path)
 app_instance = ProcessorAPI(config)
 api = app_instance.app
 client = TestClient(api)
 
 
-sample_config_path='/repo/api/config-sample.ini'
-config_backup_path='/repo/config-coral-backup.ini'
-
-# make a copy for config file
-
 # read sample config file
-config_sample = ConfigEngine(sample_config_path)
+config_sample = ConfigEngine(config_sample_path)
 sections = config_sample.get_sections()
 config_sample_json = {}
 
@@ -30,8 +25,8 @@ config_sample_json = humps.decamelize(config_sample_json)
 
 #@pytest.mark.order1
 def test_set_config():
-    response = client.post(
-        "/set-config",
+    response = client.put(
+        "/config",
         json=config_sample_json,
     )
     assert response.status_code == 200
@@ -43,8 +38,8 @@ def test_set_invalid_video_path():
     wrong_json['app']['video_path'] = 'wrong_path'
     expected_response = {'detail': [{'loc': ['body', 'app', 'video_path'], 'msg': 'Failed to load video. The video URI is not valid', 'type': 'value_error'}]}
     expected_response['body'] = wrong_json
-    response = client.post(
-        "/set-config",
+    response = client.put(
+        "/config",
         json=wrong_json,
     )
     assert response.status_code == 400
@@ -52,12 +47,12 @@ def test_set_invalid_video_path():
 
 #@pytest.mark.order3
 def test_get_config():
-    config = ConfigEngine(config_path)
+    config = ConfigEngine(config_sample_path)
     app_instance = ProcessorAPI(config)
     api = app_instance.app
     client = TestClient(api)
 
-    response_get = client.get("/get-config")
+    response_get = client.get("/config")
 
     assert response_get.status_code == 200
     assert response_get.json() == config_sample_json

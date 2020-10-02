@@ -5,9 +5,6 @@
 
 FROM nvcr.io/nvidia/l4t-base:r32.3.1
 
-ENV TZ=US/Pacific
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
 RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/tensorrt.tar.gz -O /opt/tensorrt.tar.gz
 RUN tar -xzf /opt/tensorrt.tar.gz -C /usr/local/lib/python3.6/dist-packages/
 
@@ -66,10 +63,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxrender-dev \
     && apt-get autoremove -y
 
+# https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
+ARG DEBIAN_FRONTEND=noninteractive
+
+COPY api/requirements.txt /
 
 # Installing pycuda using already-built wheel is a lot faster
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
+        tzdata \
         libboost-python-dev \
         libboost-thread-dev \
         pkg-config \
@@ -84,18 +86,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf $(which gcc) /usr/local/bin/gcc-aarch64-linux-gnu \
     && ln -sf $(which g++) /usr/local/bin/g++-aarch64-linux-gnu \
     && wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl -O /tmp/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install -r requirements.txt \
         /tmp/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl \
-        aiofiles \
-        fastapi \
-        uvicorn \
-        pyhumps \
     && rm /tmp/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl \
     && apt-get purge -y \
         pkg-config \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
+ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
+ENV AWS_CONFIG_FILE=/repo/.aws/config
 
 COPY . /repo/
 WORKDIR /repo

@@ -17,7 +17,7 @@ class ConfigEngine:
         self.config.optionxform = str
         self.config_file_path = config_path
         self.lock = threading.Lock()
-        # For dynamic and cross-chapter flexible parameters: 
+        # For dynamic and cross-chapter flexible parameters:
         self.config._interpolation = configparser.ExtendedInterpolation()
         self.section_options_dict = {}
         self._load()
@@ -53,11 +53,10 @@ class ConfigEngine:
         finally:
             self.lock.release()
 
-
     def save(self, path):
         self.lock.acquire()
         try:
-            file_obj = open(path, "w+")
+            file_obj = open(path, "w")
             self.config.write(file_obj)
             file_obj.close()
         finally:
@@ -67,7 +66,7 @@ class ConfigEngine:
         section_dict = None
         self.lock.acquire()
         try:
-           section_dict = self.section_options_dict[section]
+            section_dict = self.section_options_dict[section]
         finally:
             self.lock.release()
         return section_dict
@@ -79,7 +78,7 @@ class ConfigEngine:
             sections = self.config.sections()
         finally:
             self.lock.release()
-        return sections 
+        return sections
 
     def get_boolean(self, section, option):
         result = None
@@ -88,6 +87,7 @@ class ConfigEngine:
             result = self.config.getboolean(section, option)
         finally:
             self.lock.release()
+        return result
 
     def toggle_boolean(self, section, option):
         self.lock.acquire()
@@ -101,8 +101,11 @@ class ConfigEngine:
     def set_option_in_section(self, section, option, value):
         self.lock.acquire()
         try:
-            self.config.set(section, option, value)
-            self.section_options_dict[section][option] = value # Change dict so that it doesn't need reload
+            if self.config.has_section(section):
+                self.config.set(section, option, value)
+            else:
+                self.config.add_section(section)
+                self.config.set(section, option, value)
         finally:
             self.lock.release()
 
@@ -110,9 +113,39 @@ class ConfigEngine:
     Receives a dictionary with the sections of the config and options to be updated.
     Saves the new config in the .ini file
     """
+
     def update_config(self, config, save_file=True):
+        current_sections = []
         for section, options in config.items():
+            if section.startswith('Source'):
+                current_sections.append(section)
             for option, value in options.items():
                 self.set_option_in_section(section, option, value)
+        for section in self.config.sections():
+            if section.startswith('Source') and section not in current_sections:
+                self.config.remove_section(section)
         if save_file:
             self.save(self.config_file_path)
+
+    def get_video_sources(self):
+        try:
+            sources = []
+            for title, section in self.config.items():
+                if title.startswith('Source_'):
+                    src = {'section': title}
+                    src['name'] = section['Name']
+                    src['id'] = section['Id']
+                    src['url'] = section['VideoPath']
+                    if 'Tags' in section and section['Tags'].strip() != "":
+                        src['tags'] = section['Tags'].split(',')
+                    if 'Emails' in section and section['Emails'].strip() != "":
+                        src['emails'] = section['Emails'].split(',')
+                    src['notify_every_minutes'] = int(section['NotifyEveryMinutes'])
+                    src['violation_threshold'] = int(section['ViolationThreshold'])
+                    src['should_send_notifications'] = 'emails' in src and src['notify_every_minutes'] > 0 and \
+                                                       src['violation_threshold'] > 0
+                    sources.append(src)
+            return sources
+        except:
+            # Sources are invalid in config file. What should we do?
+            raise RuntimeError("Sources invalid in config file")

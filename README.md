@@ -14,7 +14,7 @@ You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 
 
 We encourage the community to join us in building a practical solution to keep people safe while allowing them to get back to their jobs. You can read more about the project motivation and roadmap here: https://docs.google.com/presentation/d/13EEt4JfdkYSqpPLpotx9taBHpNW6WtfXo2SfwFU_aQ0/edit?usp=sharing
 
-Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to covid19project@neuralet.com if you have any questions. 
+Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to covid19project@neuralet.com if you have any questions.
 
 
 ## Getting Started
@@ -23,7 +23,7 @@ You can read the [Smart Social Distancing tutorial](https://neuralet.com/docs/tu
 
 ### Prerequisites
 
-**Hardware**  
+**Hardware**
 A host edge device. We currently support the following:
 * NVIDIA Jetson Nano
 * NVIDIA Jetson TX2
@@ -52,21 +52,21 @@ There is the `frontend` and the `processor`.
 In the following sections we will cover how to build and run each of them depending on which device you are using.
 
 
-**Download Required Files**
+#### Download Required Files
 ```bash
 # Download a sample video file from multiview object tracking dataset
 # The video is complied from this dataset: https://researchdatafinder.qut.edu.au/display/n27416
 ./download_sample_video.sh
 ```
 
-**Building the Docker image for frontend**
+#### Web App
 (This step is optional if you are not going to build any docker image)
 
-The frontend consists of 2 Dockerfiles: 
+The frontend consists of 2 Dockerfiles:
 * `frontend.Dockerfile`: Builds the React app.
 * `web-gui.Dockerfile`: Builds a FastAPI backend which serves the React app built in the previous Dockerfile.
 
-If the `frontend` directory on your branch is not identical to the upstream `master` branch, you MUST build the frontend image with 
+If the `frontend` directory on your branch is not identical to the upstream `master` branch, you MUST build the frontend image with
 tag "`neuralet/smart-social-distancing:latest-frontend`" BEFORE BUILDING THE MAIN FRONTEND IMAGE.
 Otherwise, skip this step, as we have already built the frontend for `master` branch on Dockerhub.
 
@@ -80,14 +80,14 @@ docker build -f frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-
 
 ```bash
 docker build -f web-gui.Dockerfile -t "neuralet/smart-social-distancing:latest-web-gui" .
-docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-web-gui 
+docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-web-gui
 ```
 
-> Important: There is a `config-frontend.ini` file which tells the frontend where to find the processor container. 
+> Important: There is a `config-frontend.ini` file which tells the frontend where to find the processor container.
 > You must set the "Processor" section of the config file with the correct IP and port of the processor.
 
 ---
-***NOTE*** 
+***NOTE***
 
 Building the frontend is resource intensive. If you are planning to host everything on an edge device, we suggest building the docker image on your PC/laptop first and then copy it to the edge device. However, you can always start the frontend container on a PC/laptop and the processor container on the edge device.
 
@@ -116,9 +116,25 @@ docker build -f jetson-web-gui.Dockerfile -t "neuralet/smart-social-distancing:l
 docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-web-gui-jetson
 ```
 
-**The Next sections explain how to run the processor on different devices**
+#### Processor
 
-**Run on Jetson Nano**
+##### Optional Parameters
+This is a list of optional parameters for the `docker run` commands.
+They are included in the examples of this section.
+
+**Logging in the system's timezone**
+
+By default all docker containers use **UTC** as timezone, passing the flag ``` -e TZ=`./timezone.sh` ``` will make the container run on your system's timezone.
+
+You may hardcode a value rather than using the `timezone.sh` script, such as `US/Pacific`. Changing the processor's timezone allows to have better control of when the `reports` are generated and the hours to correlate to the place where the processor is running.
+
+Please note that the bash script may require permissions to execute `chmod +777 timezone.sh`
+
+**Persisting changes on the config.ini file**
+
+Adding the respective `config.ini` as a volume (as for example `-v "$PWD/config-jetson.ini":/repo/config-jetson.ini`). Will allow for syncing changes of said file.
+
+##### Run on Jetson Nano
 * You need to have JetPack 4.3 installed on your Jetson Nano.
 
 ```bash
@@ -129,10 +145,10 @@ docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-we
 docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-jetson.ini":/repo/config-jetson.ini neuralet/smart-social-distancing:latest-jetson-nano
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-jetson.ini":/repo/config-jetson.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
 ```
 
-**Run on Jetson TX2**
+##### Run on Jetson TX2
 * You need to have JetPack 4.3 installed on your Jetson TX2.
 
 ```bash
@@ -143,37 +159,40 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/r
 docker build -f jetson-tx2.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-tx2" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-jetson.ini":/repo/config-jetson.ini neuralet/smart-social-distancing:latest-jetson-tx2
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-jetson.ini":/repo/config-jetson.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-tx2
 ```
 
-**Run on Coral Dev Board**
+##### Run on Coral Dev Board
 ```bash
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-skeleton.ini":/repo/config-skeleton.ini neuralet/smart-social-distancing:latest-coral-dev-board
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-coral.ini":/repo/config-coral.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
 ```
 
-**Run on AMD64 node with a connected Coral USB Accelerator**
+##### Run on AMD64 node with a connected Coral USB Accelerator
 ```bash
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-skeleton.ini":/repo/config-skeleton.ini neuralet/smart-social-distancing:latest-amd64
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-coral.ini":/repo/config-coral.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
 ```
 
-**Run on x86**
+##### Run on x86
 ```bash
+# Unless you use the OpenPifPaf model, download the model first:
+./download_x86_model.sh
+
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.ini":/repo/config-x86.ini neuralet/smart-social-distancing:latest-x86_64
+docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.ini":/repo/config-x86.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
 ```
 
-**Run on x86 using OpenVino**
+##### Run on x86 using OpenVino
 ```bash
 # download model first
 ./download_openvino_model.sh
@@ -182,24 +201,24 @@ docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.i
 docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86-openvino.ini":/repo/config-x86-openvino.ini neuralet/smart-social-distancing:latest-x86_64_openvino
+docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86-openvino.ini":/repo/config-x86-openvino.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
 ### Configurations
 You can read and modify the configurations in `config-*.ini` files, accordingly:
 
-`config-jetson.ini`: for Jetson Nano / TX2 
+`config-jetson.ini`: for Jetson Nano / TX2
 
 `config-coral.ini`: for Coral dev board / usb accelerator
 
 `config-x86.ini`: for plain x86 (cpu) platforms without any acceleration
 
-`config-x86-openvino.ini`: for x86 systems accelerated with Openvion
+`config-x86-openvino.ini`: for x86 systems accelerated with Openvino
 
 Under the `[Detector]` section, you can modify the `Min score` parameter to define the person detection threshold. You can also change the distance threshold by altering the value of `DistThreshold`.
 
 ### API usage
-After you run the processor's docker on your node, no matter if your frontend docker is running or not, you can use the Processor's API to control the Processor's Core, where all the process is getting done. 
+After you run the processor's docker on your node, no matter if your frontend docker is running or not, you can use the Processor's API to control the Processor's Core, where all the process is getting done.
 
 * The API supported paths are now as the following:
 
@@ -207,18 +226,18 @@ After you run the processor's docker on your node, no matter if your frontend do
 
  2- `PROCESSOR_IP:PROCESSOR_PORT/stop-process-video`: Sends command `STOP_PROCESS_VIDEO` to core and returns the response. It stops processing the video at hand, returns the response `true` if it stopped or `false`, meaning it can not (e.g. no video is already being processed to stop!)
 
- 3- `PROCESSOR_IP:PROCESSOR_PORT/get-config`: It returns the config which is used by both processor's API and Core (it is the same so returns just a single configuration set) in json format. This is the file you have used in your Processor's Dockerfile. 
+ 3- `PROCESSOR_IP:PROCESSOR_PORT/get-config`: It returns the config which is used by both processor's API and Core (it is the same so returns just a single configuration set) in json format. This is the file you have used in your Processor's Dockerfile.
 
- 4- `PROCESSOR_IP:PROCESSOR_PORT/set-config`: As the configuration file between Processor's API and Core is the same configuration, it sets the given set of json configurations in the config, for both API and Core and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any). 
+ 4- `PROCESSOR_IP:PROCESSOR_PORT/set-config`: As the configuration file between Processor's API and Core is the same configuration, it sets the given set of json configurations in the config, for both API and Core and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any).
 
- ***NOTE*** that the config file given in the Dockerfile will be updated, but this will be inside your docker and will be lost after stopping you running docker. 
+ ***NOTE*** that the config file given in the Dockerfile will be updated, but this will be inside your docker and will be lost after stopping you running docker.
 
-* Usage example: 
+* Usage example:
 
 While the Processor's docker is up and running:
 
 ```bash
-curl -d '{"App": { "VideoPath" : "/repo/data/YOUR_VIDEO.mp4"} }' -H "Content-Type: application/json" -X POST http://PROCESSOR_IP:PROCESSOR_PORT/set-config 
+curl -d '{"App": { "VideoPath" : "/repo/data/YOUR_VIDEO.mp4"} }' -H "Content-Type: application/json" -X POST http://PROCESSOR_IP:PROCESSOR_PORT/set-config
 ```
 (of course you have to put your video under `data/` before) and then enter `http://PROCESSOR_IP:PROCESSOR_PORT/process-video-cfg` in your browser. You can see in your terminal running the docker that your video is being loaded and processed. You also can refresh your dashboard to see the output.
 
