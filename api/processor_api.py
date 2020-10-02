@@ -339,4 +339,16 @@ class ProcessorAPI:
         return app
 
     def start(self):
-        uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
+        kwargs = {
+            "host": self._host, 
+            "port": self._port, 
+            "log_level": "info", 
+            "access_log": False,
+        }
+        if self.config.get_boolean("API", "SSLEnabled"):
+            # HTTPs is enabled
+            kwargs.update({
+                "ssl_keyfile": f"{self.config.get_section_dict('API')['SSLKeyFile']}",
+                "ssl_certfile": f"{self.config.get_section_dict('API')['SSLCertificateFile']}"
+            })
+        uvicorn.run(self.app, **kwargs)

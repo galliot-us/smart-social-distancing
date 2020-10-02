@@ -1,6 +1,7 @@
 __pycache__/
 /tasks/overrides.yaml
 /data
+/certificates
 oauth2_cred.json
 *~
 *.swp
