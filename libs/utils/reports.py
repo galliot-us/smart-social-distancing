@@ -45,18 +45,20 @@ class ReportsService:
         hours = list(range(0, 24))
         detected_objects = np.zeros(24)
         violating_objects = np.zeros(24)
-        iters = 0
-        for date in date_range:
-            file_path = os.path.join(dir_path, f"report_{date.strftime('%Y-%m-%d')}.csv")
-            if os.path.exists(file_path):
-                iters += 1
-                df = pd.read_csv(file_path).drop(['Number'], axis=1)
-                detected_objects = detected_objects + df['DetectedObjects'].to_numpy()
-                violating_objects = violating_objects + df['ViolatingObjects'].to_numpy()
 
-        if iters != 0:
-            detected_objects = detected_objects/iters
-            violating_objects = violating_objects/iters
+        if os.path.exists(os.path.join(dir_path, 'report.csv')):
+            iters = 0
+            for date in date_range:
+                file_path = os.path.join(dir_path, f"report_{date.strftime('%Y-%m-%d')}.csv")
+                if os.path.exists(file_path):
+                    iters += 1
+                    df = pd.read_csv(file_path).drop(['Number'], axis=1)
+                    detected_objects = detected_objects + df['DetectedObjects'].to_numpy()
+                    violating_objects = violating_objects + df['ViolatingObjects'].to_numpy()
+
+            if iters != 0:
+                detected_objects = detected_objects/iters
+                violating_objects = violating_objects/iters
 
         report = {
             'hours': hours,
@@ -85,17 +87,20 @@ class ReportsService:
 
         log_dir = os.getenv('LogDirectory')
         file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
-        df = pd.read_csv(file_path).drop(['Number'], axis=1)
-        df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path).drop(['Number'], axis=1)
+            df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
 
-        mask = (df['Date'] >= pd.to_datetime(from_date)) & (df['Date'] <= pd.to_datetime(to_date))
-        filtered_reports = df.loc[mask]
-        filtered_reports['Date'] = filtered_reports['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
-        filtered_reports = filtered_reports.set_index('Date').T
+            mask = (df['Date'] >= pd.to_datetime(from_date)) & (df['Date'] <= pd.to_datetime(to_date))
+            filtered_reports = df.loc[mask]
+            filtered_reports['Date'] = filtered_reports['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+            filtered_reports = filtered_reports.set_index('Date').T
 
-        # Dictionary union. Favour the actual results over the initialized ones
-        merged_report = dict(base_results, **filtered_reports.to_dict())
-        merged_report = {datetime.strptime(key, '%Y-%m-%d'): merged_report[key] for key in merged_report}
+            # Dictionary union. Favour the actual results over the initialized ones
+            merged_report = dict(base_results, **filtered_reports.to_dict())
+            merged_report = {datetime.strptime(key, '%Y-%m-%d'): merged_report[key] for key in merged_report}
+        else:
+            merged_report = {datetime.strptime(key, '%Y-%m-%d'): base_results[key] for key in base_results}
 
         dates = []
         detected_objects = []
@@ -195,6 +200,9 @@ class ReportsService:
     def peak_hour_violations(self, camera_id):
         log_dir = os.getenv('LogDirectory')
         dir_path = os.path.join(log_dir, camera_id, "objects_log")
+        if not os.path.exists(os.path.join(dir_path, 'report.csv')):
+            return 0
+
         files = glob.glob(f"{dir_path}/report_*.csv")
         violating_objects = np.zeros(24)
         for file_path in files:
@@ -207,17 +215,21 @@ class ReportsService:
     def average_violations(self, camera_id):
         log_dir = os.getenv('LogDirectory')
         file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        if not os.path.exists(file_path):
+            return 0.0
         df = pd.read_csv(file_path).drop(['Number'], axis=1)
         return round(df['ViolatingObjects'].mean(), 1)
 
     def camera_with_most_violations(self):
         log_dir = os.getenv('LogDirectory')
-        cameras = os.listdir(log_dir)
+        cameras = [directory for directory in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, directory))]
         cameras_violations = {}
         for camera_id in cameras:
             file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path).drop(['Number'], axis=1)
                 cameras_violations[camera_id] = df['ViolatingObjects'].mean()
+            else:
+                cameras_violations[camera_id] = 0
 
         return max(cameras_violations, key=cameras_violations.get)

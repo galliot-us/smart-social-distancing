@@ -79,13 +79,6 @@ def validate_existence(camera_id):
     dir_path = os.path.join(os.getenv('LogDirectory'), camera_id, "objects_log")
     if not os.path.exists(dir_path):
         raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
-    if not os.path.exists(os.path.join(dir_path, 'report.csv')):
-        raise HTTPException(status_code=404, detail=f'Data has not been yet gathered for camera with id "{camera_id}"')
-
-def validate_existence_of_any_report():
-    reports = list(Path(os.path.join(os.getenv('LogDirectory'))).rglob('report.csv'))
-    if not reports:
-        raise HTTPException(status_code=404, detail='There are no reports for any camera')
 
 @reports_api.get("/{camera_id}/hourly", response_model=HourlyReport)
 def get_hourly_report(camera_id,
@@ -151,7 +144,6 @@ def get_average_violations(camera_id):
 
 @reports_api.get('/camera_with_most_violations')
 def get_camera_with_most_violations():
-    validate_existence_of_any_report()
     return {
         'cam_id': reports.camera_with_most_violations()
     }
