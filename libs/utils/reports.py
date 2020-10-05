@@ -222,9 +222,7 @@ class ReportsService:
 
     def camera_with_most_violations(self):
         log_dir = os.getenv('LogDirectory')
-        cameras = os.listdir(log_dir)
-        if '.keep' in cameras:
-            cameras.remove('.keep')
+        cameras = [directory for directory in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, directory))]
         cameras_violations = {}
         for camera_id in cameras:
             file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
