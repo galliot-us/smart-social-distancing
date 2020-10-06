@@ -45,7 +45,6 @@ class ReportsService:
         hours = list(range(0, 24))
         detected_objects = np.zeros(24)
         violating_objects = np.zeros(24)
-
         if os.path.exists(os.path.join(dir_path, 'report.csv')):
             iters = 0
             for date in date_range:
@@ -100,8 +99,7 @@ class ReportsService:
             merged_report = dict(base_results, **filtered_reports.to_dict())
             merged_report = {datetime.strptime(key, '%Y-%m-%d'): merged_report[key] for key in merged_report}
         else:
-            merged_report = {datetime.strptime(key, '%Y-%m-%d'): base_results[key] for key in base_results}
-
+            merged_report = { datetime.strptime(key, '%Y-%m-%d'): base_results[key] for key in base_results }
         dates = []
         detected_objects = []
         violating_objects = []
@@ -217,6 +215,10 @@ class ReportsService:
         file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
         if not os.path.exists(file_path):
             return 0.0
+<<<<<<< HEAD
+=======
+
+>>>>>>> LP-273: Send empty reports when there is no data for a camera instead of 404 (#56)
         df = pd.read_csv(file_path).drop(['Number'], axis=1)
         return round(df['ViolatingObjects'].mean(), 1)
 
