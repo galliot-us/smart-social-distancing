@@ -1,5 +1,3 @@
-import configparser
-import os
 import logging
 from slack import WebClient
 
@@ -48,4 +46,8 @@ class SlackService:
 
     def violation_report(self, cam_id, cam_name, number):
         msg = f"We found {number} violations in {cam_id}: {cam_name} camera"
+        self.post_message_to_channel(msg, self.channel)
+
+    def daily_report(self, cam_id, cam_name, number,):
+        msg = f"Yesterday we found {number} violations in {cam_id}: {cam_name} camera."
         self.post_message_to_channel(msg, self.channel)

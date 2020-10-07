@@ -153,6 +153,8 @@ class ConfigEngine:
                     else:
                         src['should_send_email_notifications'] = False
                         src['should_send_slack_notifications'] = False
+                    src['daily_report'] = self.config.getboolean(title, 'DailyReport')
+                    src['daily_report_time'] = section.get('DailyReportTime') or '06:00'
                     sources.append(src)
             return sources
         except:

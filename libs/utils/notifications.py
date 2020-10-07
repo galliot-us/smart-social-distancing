@@ -6,6 +6,7 @@ from threading import Thread
 from .mailing import MailService
 from ..notifications.slack_notifications import SlackService
 
+
 # Some vars are only used to pass through to mail service/ Maybe this could be refactored.
 def check_violations(threshold, config, source_name, camera_id, interval, should_send_email, should_send_slack):
     log_dir = config.get_section_dict("Logger")["LogDirectory"]
@@ -29,6 +30,7 @@ def check_violations(threshold, config, source_name, camera_id, interval, should
         if should_send_slack:
             slack_service = SlackService(config)
             slack_service.violation_report(camera_id, camera_name, violations)
+
 
 def run_check_violations(threshold, config, source_name, camera_id, interval, should_send_email, should_send_slack):
     job_thread = Thread(target=check_violations, args=[threshold, config, source_name, camera_id, interval, should_send_email, should_send_slack])

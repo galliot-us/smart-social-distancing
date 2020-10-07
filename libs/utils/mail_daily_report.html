@@ -1,7 +1,18 @@
 <!DOCTYPE html>
 
 <head>
+  <style>
 
+    .hour-violations table{
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+    }
+    .hour-violations td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+  </style>
 </head>
 
 <body>
@@ -42,7 +53,18 @@
           <td valign="top" class="m_5283153553260840980mcnTextContent"
               style="padding: 0 18px 9px;word-break:break-word;color:#080e2a;font-family:Helvetica;font-size:16px;line-height:150%;text-align:left">
             <h1 style="display:block;margin:0;padding:0;color:#080e2a;font-size:26px;line-height:125%;letter-spacing:normal;text-align:left">
-              We found {detections} violations in <strong>{camera} camera</strong></h1>
+              Yesterday we found {detections} violations in <strong>{camera} camera.</strong>
+            </h1>
+
+            <div class="hour-violations">
+              <table>
+                <tr>
+                  <th>Hour</th>
+                  <th># of Violations</th>
+                </tr>
+                {violations_per_hour}
+              </table>
+            </div>            
           </td>
         </tr>
         <tr>

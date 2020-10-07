@@ -6,13 +6,14 @@ import argparse
 import csv
 import schedule
 import time
-import sys
 import ast
 import numpy as np
 import logging
 
 from datetime import date, datetime, timedelta
 from libs.config_engine import ConfigEngine
+from libs.notifications.slack_notifications import SlackService
+from libs.utils.mailing import MailService
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,26 @@ def create_daily_report(config):
             np.save(heatmap_file, heatmap_grid)
 
 
+def send_daily_report_notification(config, source):
+    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+    objects_log_directory = os.path.join(log_directory, source['id'], "objects_log")
+    yesterday = str(date.today() - timedelta(days=1))
+    daily_csv = os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')
+    violations_per_hour = []
+    with open(daily_csv, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            violations_per_hour.append(int(row['ViolatingObjects']))
+    if sum(violations_per_hour):
+        if source['should_send_email_notifications']:
+            ms = MailService(config)
+            ms.send_daily_report(source['section'], sum(violations_per_hour), violations_per_hour)
+        if source['should_send_slack_notifications']:
+            camera_name = config.get_section_dict(source['section'])['Name']
+            slack_service = SlackService(config)
+            slack_service.daily_report(source['id'], camera_name, sum(violations_per_hour))
+
+
 def main(config):
     logging.basicConfig(level=logging.INFO)
     if isinstance(config, str):
@@ -95,6 +116,11 @@ def main(config):
         logger.info("Reporting enabled!")
 
     schedule.every().day.at("00:01").do(create_daily_report, config=config)
+    sources = config.get_video_sources()
+    for src in sources:
+        if src['daily_report']:
+            schedule.every().day.at(src['daily_report_time']).do(
+                send_daily_report_notification, config=config, source=src)
 
     while True:
         schedule.run_pending()

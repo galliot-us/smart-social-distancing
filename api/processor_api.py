@@ -16,7 +16,6 @@ import numpy as np
 from starlette.exceptions import HTTPException
 from pydantic import conlist
 from pathlib import Path
-from functools import reduce
 
 from api.models.config_keys import *
 from api.reports import reports_api
@@ -25,7 +24,8 @@ from share.commands import Commands
 logger = logging.getLogger(__name__)
 
 
-class QueueManager(BaseManager): pass
+class QueueManager(BaseManager):
+    pass
 
 
 class ProcessorAPI:
@@ -134,7 +134,6 @@ class ProcessorAPI:
             if "withImage" in options:
                 dir_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
                 image = base64.b64encode(cv.imread(f'{dir_path}/default.jpg'))
-
             return {
                 "id": camera_id,
                 "name": camera.get("Name"),
@@ -142,6 +141,7 @@ class ProcessorAPI:
                 "emails": camera.get("Emails"),
                 "violationThreshold": camera.get("ViolationThreshold"),
                 "notifyEveryMinutes": camera.get("NotifyEveryMinutes"),
+                "dailyReport": camera.get("DailyReport"),
                 "image": image
             }
 
@@ -166,7 +166,8 @@ class ProcessorAPI:
                         'NotifyEveryMinutes': str(camera.notifyEveryMinutes),
                         'ViolationThreshold': str(camera.violationThreshold),
                         'DistMethod': camera.distMethod,
-                        'CalibrationFile': camera.calibrationFile
+                        'CalibrationFile': camera.calibrationFile,
+                        'DailyReport': str(camera.dailyReport),
                     }
                 )
             return config_dict
@@ -340,9 +341,9 @@ class ProcessorAPI:
 
     def start(self):
         kwargs = {
-            "host": self._host, 
-            "port": self._port, 
-            "log_level": "info", 
+            "host": self._host,
+            "port": self._port,
+            "log_level": "info",
             "access_log": False,
         }
         if self.config.get_boolean("API", "SSLEnabled"):
