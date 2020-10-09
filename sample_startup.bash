@@ -12,8 +12,14 @@ fi
 # start process video
 echo "running curl 0.0.0.0:8000/process-video-cfg "
 while true
-do
-    response=$(curl 0.0.0.0:8000/process-video-cfg)
+do  
+    if sslEnabled=$(cat $config | grep -i "SSLEnabled = " | grep -i "true\|yes\|1"); then
+        url=https://0.0.0.0:8000/process-video-cfg
+    else
+        url=0.0.0.0:8000/process-video-cfg
+    fi
+    # FIXME LP-317 : Remove the -k flag using the certificate already created
+    response=$(curl -k $url)
     if [ "$response" != true ] ; then
         echo "curl failed, trying again in 5 seconds!"
         sleep 5
