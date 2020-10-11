@@ -10,7 +10,7 @@ class Classifier:
         self.config = config
         self.name = self.config.get_section_dict('Classifier')['Name']
 
-        if self.name == 'face_mask':
+        if self.name == 'OFMClassifier':
             from libs.classifiers.x86 import face_mask
             self.net = face_mask.Classifier(self.config)
         else:
@@ -18,5 +18,5 @@ class Classifier:
 
     def inference(self, resized_rgb_image):
         self.fps = self.net.fps
-        output = self.net.inference(resized_rgb_image)
-        return output
+        output, scores = self.net.inference(resized_rgb_image)
+        return output, scores

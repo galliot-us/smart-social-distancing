@@ -44,7 +44,7 @@ class Distancing:
             except KeyError:
                 raise ValueError(
                     "The 'CalibrationFile' should be specified in config file in case of using 'CalibratedDistance' method")
-            try: 
+            try:
                 with open(calibration_file, "r") as file:
                     self.h_inv = file.readlines()[0].split(" ")[1:]
                     self.h_inv = np.array(self.h_inv, dtype="float").reshape((3, 3))
@@ -58,7 +58,6 @@ class Distancing:
         self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
         if not os.path.exists(self.screenshot_path):
             os.makedirs(self.screenshot_path)
-
 
     def __process(self, cv_image):
         """
@@ -75,8 +74,6 @@ class Distancing:
         # Get the classifier result for detected face
         if self.classifier is not None:
             faces = []
-            # TODO: muck faces
-            # faces = np.random.random(size=[3, self.classifier_img_size[0], self.classifier_img_size[1], self.classifier_img_size[2]])
             for itm in tmp_objects_list:
                 if 'face' in itm.keys():
                     face_bbox = itm['face']  # [ymin, xmin, ymax, xmax]
@@ -88,10 +85,12 @@ class Distancing:
 
                         # Resizing input image
                         croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
+                        croped_face = cv.cvtColor(croped_face, cv.COLOR_BGR2RGB)
                         # Normalizing input image to [0.0-1.0]
                         croped_face = np.array(croped_face) / 255.0
                         faces.append(croped_face)
-                    face_mask_results = self.classifier.inference(faces)
+            faces = np.array(faces)
+            face_mask_results, scores = self.classifier.inference(faces)
         [w, h] = self.resolution
         idx = 0
         for obj in tmp_objects_list:
@@ -176,7 +175,7 @@ class Distancing:
             self.classifier = Classifier(self.config)
             self.detector = Detector(self.config)
             self.classifier_img_size = [int(i) for i in
-                                                            self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
+                                        self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
         elif self.device == 'Dummy':
             from libs.detectors.dummy.detector import Detector
             self.detector = Detector(self.config)
@@ -279,7 +278,7 @@ class Distancing:
 
                 # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period has occured
                 if (self.screenshot_period > 0) and (time.time() > start_time + self.screenshot_period) and (
-                    len(violating_objects) > 0):
+                        len(violating_objects) > 0):
                     start_time = time.time()
                     self.capture_violation(f"{start_time}_violation.jpg", cv_image)
 
@@ -449,13 +448,13 @@ class Distancing:
         returns:
         distances: a NxN ndarray which i,j element is estimated distance between i-th and j-th bounding box in real scene (cm)
 
-        """ 
+        """
         if self.dist_method == "CalibratedDistance":
             world_coordinate_points = np.array([self.transform_to_world_coordinate(bbox) for bbox in nn_out])
             if len(world_coordinate_points) == 0:
                 distances_asarray = np.array([])
             else:
-                distances_asarray = cdist(world_coordinate_points, world_coordinate_points) 
+                distances_asarray = cdist(world_coordinate_points, world_coordinate_points)
 
         else:
             distances = []
@@ -500,7 +499,8 @@ class Distancing:
                             center_of_second_box = [nn_out[j]["centroidReal"][0], nn_out[j]["centroidReal"][1],
                                                     nn_out[j]["centroidReal"][3]]
 
-                            l = self.calculate_distance_of_two_points_of_boxes(center_of_first_box, center_of_second_box)
+                            l = self.calculate_distance_of_two_points_of_boxes(center_of_first_box,
+                                                                               center_of_second_box)
                     distance_row.append(l)
                 distances.append(distance_row)
             distances_asarray = np.asarray(distances, dtype=np.float32)
@@ -523,7 +523,7 @@ class Distancing:
         floor_world_point = np.matmul(self.h_inv, floor_point)
         floor_world_point = floor_world_point[:-1] / floor_world_point[-1]
         return floor_world_point
-      
+
     def anonymize_image(self, img, objects_list):
         """
         Anonymize every instance in the frame.
