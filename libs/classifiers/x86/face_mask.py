@@ -11,12 +11,12 @@ class Classifier:
     Perform image classification with the given model. The model is a .h5 file
     which if the classifier can not find it at the path it will download it
     from neuralet repository automatically.
-    :param config: Is a Config instance which provides necessary parameters.
+    :param config: Is a ConfigEngine instance which provides necessary parameters.
     """
 
     def __init__(self, config):
         self.config = config
-        self.model_path = self.config.CLASSIFIER_MODEL_PATH
+        self.model_path = self.config.get_section_dict('Classifier')['ModelPath']
 
         if len(self.model_path) > 0:
             print('using %s as model' % self.model_path)
@@ -31,7 +31,7 @@ class Classifier:
             if not os.path.exists(model_dir):
                 os.mkdir(model_dir)
 
-            model_dir = os.path.join(model_dir, self.config.CLASSIFIER_NAME)
+            model_dir = os.path.join(model_dir, self.config.get_section_dict('Classifier')['Name'])
             if not os.path.exists(model_dir):
                 os.mkdir(model_dir)
 
