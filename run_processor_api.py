@@ -13,7 +13,7 @@ def start_api(config):
     
     logger.info("API Started.")
     api.start()
-    logger.info("API Terminted.")
+    logger.info("API Terminated.")
 
 def main(config):
     logging.basicConfig(level=logging.INFO)

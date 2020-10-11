@@ -1,3 +1,8 @@
+# docker can be installed on the dev board following these instructions:
+# https://docs.docker.com/install/linux/docker-ce/debian/#install-using-the-repository , step 4: x86_64 / amd64
+# 1) build: docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
+# 2) run: docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-amd64
+
 FROM amd64/debian:buster
 
 RUN apt-get update && apt-get install -y wget gnupg usbutils \
@@ -63,7 +68,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
+COPY api/requirements.txt /
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
+        tzdata \
         pkg-config \
         python3-dev \
         python3-numpy \
@@ -76,10 +84,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         libedgetpu1-std \
     && rm -rf /var/lib/apt/lists/* \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install \
-        aiofiles \
-        fastapi \
-        uvicorn \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install -r /requirements.txt \
 	https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_x86_64.whl \
     && apt-get purge -y \
         build-essential \
@@ -87,6 +92,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
+ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
+ENV AWS_CONFIG_FILE=/repo/.aws/config
 
 RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
     https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
