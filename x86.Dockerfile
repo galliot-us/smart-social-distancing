@@ -80,7 +80,7 @@ ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
 
-#COPY . /repo
+COPY . /repo
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-x86.ini"]
