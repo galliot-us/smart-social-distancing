@@ -15,10 +15,11 @@ import humps
 import numpy as np
 from starlette.exceptions import HTTPException
 from pydantic import conlist
-from pathlib import Path
 
 from api.models.config_keys import *
 from api.reports import reports_api
+from libs.utils.camera_calibration import (get_camera_calibration_path, compute_and_save_inv_homography_matrix,
+                                           ConfigHomographyMatrix)
 from share.commands import Commands
 
 logger = logging.getLogger(__name__)
@@ -78,18 +79,6 @@ class ProcessorAPI:
                 schema_extra = {
                     'example': {
                         'image': 'data:image/jpg;base64,iVBORw0KG...'
-                    }
-                }
-
-        class ConfigHomographyMatrix(BaseModel):
-            pts_source: conlist(conlist(float, min_items=2, max_items=2), min_items=4, max_items=4)
-            pts_destination: conlist(conlist(float, min_items=2, max_items=2), min_items=4, max_items=4)
-
-            class Config:
-                schema_extra = {
-                    'example': {
-                        'pts_source': [[0., 0.], [0., 1.], [1., 1.], [1., 0.]],
-                        'pts_destination': [[130., 310.], [45., 420.], [275., 420.], [252., 310.]]
                     }
                 }
 
@@ -166,7 +155,6 @@ class ProcessorAPI:
                         'NotifyEveryMinutes': str(camera.notifyEveryMinutes),
                         'ViolationThreshold': str(camera.violationThreshold),
                         'DistMethod': camera.distMethod,
-                        'CalibrationFile': camera.calibrationFile,
                         'DailyReport': str(camera.dailyReport),
                     }
                 )
@@ -194,14 +182,6 @@ class ProcessorAPI:
                     logger.info("Failed to restart video processor...")
                     return False
             return True
-
-        def compute_and_save_inv_homography_matrix(points: ConfigHomographyMatrix, destination: str):
-            Path(os.path.dirname(destination)).mkdir(parents=True, exist_ok=True)
-            h, _ = cv.findHomography(np.float32(points.pts_source), np.float32(points.pts_destination))
-            h_inv = np.linalg.inv(h).flatten()
-            h_inv = ' '.join(map(str, h_inv))
-            with open(destination, 'w') as f:
-                f.write('h_inv: ' + h_inv)
 
         def write_user_token(token):
             logger.info("Writing user access token")
@@ -306,9 +286,8 @@ class ProcessorAPI:
             if dir_source is None or len(dir_source) != 1:
                 raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
             dir_source = dir_source[0]
-            dir_path = dir_source['calibration_file']
+            dir_path = get_camera_calibration_path(self.config, camera_id)
             compute_and_save_inv_homography_matrix(points=body, destination=dir_path)
-
             sections = self.config.get_sections()
             config_dict = {}
             for section in sections:

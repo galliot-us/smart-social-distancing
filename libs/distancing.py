@@ -10,6 +10,7 @@ from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
 from libs.utils import visualization_utils
+from libs.utils.camera_calibration import get_camera_calibration_path
 from libs.uploaders.s3_uploader import S3Uploader
 import logging
 
@@ -45,12 +46,8 @@ class Distancing:
         self.birds_eye_resolution = (200, 300)
 
         if self.dist_method == "CalibratedDistance":
-            try:
-                calibration_file = self.config.get_section_dict(source)["CalibrationFile"]
-            except KeyError:
-                logger.error("The 'CalibrationFile' should be specified in config file in case of using 'CalibratedDistance' method")
-                logger.info(f"Falling back using {self.default_dist_method}")
-                self.dist_method = self.default_dist_method
+            calibration_file = get_camera_calibration_path(
+                self.config, self.config.get_section_dict(source)["Id"])
             try:
                 with open(calibration_file, "r") as file:
                     self.h_inv = file.readlines()[0].split(" ")[1:]
