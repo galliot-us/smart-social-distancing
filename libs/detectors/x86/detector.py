@@ -2,7 +2,7 @@
 
 class Detector:
     """
-    Detector class is a high level class for detecting object using edgetpu devices.
+    Detector class is a high level class for detecting object using x86 devices.
     When an instance of the Detector is created you can call inference method and feed your
     input image in order to get the detection results.
 

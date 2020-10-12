@@ -95,6 +95,11 @@ ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
 
+RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
+    https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
+    /project-posenet/install_requirements.sh && sh /project-posenet/install_requirements.sh
+ENV PYTHONPATH=$PYTHONPATH:/project-posenet
+
 COPY . /repo
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
