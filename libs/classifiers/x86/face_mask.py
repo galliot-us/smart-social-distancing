@@ -21,7 +21,7 @@ class Classifier:
         if len(self.model_path) > 0:
             print('using %s as model' % self.model_path)
         else:
-            self.model_path = 'repo/data/x86'
+            self.model_path = '/repo/data/x86'
             url = 'https://github.com/neuralet/neuralet-models/raw/master/amd64/OFMClassifier/OFMClassifier.h5'
             model_file = 'OFMClassifier.h5'
             self.model_path = os.path.join(self.model_path, model_file)
