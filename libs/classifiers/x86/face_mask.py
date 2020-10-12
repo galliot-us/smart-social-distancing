@@ -21,21 +21,10 @@ class Classifier:
         if len(self.model_path) > 0:
             print('using %s as model' % self.model_path)
         else:
+            self.model_path = 'repo/data/x86'
             url = 'https://github.com/neuralet/neuralet-models/raw/master/amd64/OFMClassifier/OFMClassifier.h5'
             model_file = 'OFMClassifier.h5'
-            model_dir = 'data'
-            if not os.path.exists(model_dir):
-                os.mkdir(model_dir)
-
-            model_dir = os.path.join(model_dir, 'x86')
-            if not os.path.exists(model_dir):
-                os.mkdir(model_dir)
-
-            model_dir = os.path.join(model_dir, self.config.get_section_dict('Classifier')['Name'])
-            if not os.path.exists(model_dir):
-                os.mkdir(model_dir)
-
-            self.model_path = os.path.join(model_dir, model_file)
+            self.model_path = os.path.join(self.model_path, model_file)
             if not os.path.isfile(self.model_path):
                 print("model does not exist under: ", self.model_path, 'downloading from ', url)
                 wget.download(url, self.model_path)
@@ -44,21 +33,21 @@ class Classifier:
         # Frames Per Second
         self.fps = None
 
-    def inference(self, resized_rgb_image) -> list:
+    def inference(self, resized_rgb_images) -> list:
         """
         Inference function sets input tensor to input image and gets the output.
         The interpreter instance provides corresponding class id output which is used for creating result
         Args:
-            resized_rgb_image: Array of images with shape (no_images, img_height, img_width, channels)
+            resized_rgb_images: Array of images with shape (no_images, img_height, img_width, channels)
         Returns:
             result: List of class id for each input image. ex: [0, 0, 1, 1, 0]
             scores: The classification confidence for each class. ex: [.99, .75, .80, 1.0]
         """
-        if np.shape(resized_rgb_image)[0] == 0:
+        if np.shape(resized_rgb_images)[0] == 0:
             return [], []
-        # input_image = np.expand_dims(resized_rgb_image, axis=0)
+        # input_image = np.expand_dims(resized_rgb_images, axis=0)
         t_begin = time.perf_counter()
-        output_dict = self.classifier_model.predict(resized_rgb_image)
+        output_dict = self.classifier_model.predict(resized_rgb_images)
         inference_time = time.perf_counter() - t_begin  # Seconds
         # Calculate Frames rate (fps)
         self.fps = convert_infr_time_to_fps(inference_time)

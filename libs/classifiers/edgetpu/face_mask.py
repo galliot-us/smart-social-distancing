@@ -20,7 +20,7 @@ class Classifier:
     def __init__(self, config):
         self.config = config
         self.model_name = "OFMClassifier_edgetpu.tflite"
-        self.model_path = 'libs/classifiers/edgetpu/' + self.model_name
+        self.model_path = '/repo/data/edgetpu/' + self.model_name
         self.fps = None
         if not os.path.isfile(self.model_path):
             url = "https://raw.githubusercontent.com/neuralet/neuralet-models/master/edge-tpu/OFMClassifier/OFMClassifier_edgetpu.tflite"
@@ -34,22 +34,22 @@ class Classifier:
         self.input_details = self.interpreter.get_input_details()
         self.output_details = self.interpreter.get_output_details()
 
-    def inference(self, resized_rgb_image) -> list:
+    def inference(self, resized_rgb_images) -> list:
         """
         Inference function sets input tensor to input image and gets the output.
         The interpreter instance provides corresponding class id output which is used for creating result
         Args:
-            resized_rgb_image: Array of images with shape (no_images, img_height, img_width, channels)
+            resized_rgb_images: Array of images with shape (no_images, img_height, img_width, channels)
         Returns:
             result: List of class id for each input image. ex: [0, 0, 1, 1, 0]
             scores: The classification confidence for each class. ex: [.99, .75, .80, 1.0]
         """
-        if np.shape(resized_rgb_image)[0] == 0:
-            return resized_rgb_image
-        resized_rgb_image = (resized_rgb_image * 255).astype("uint8")
+        if np.shape(resized_rgb_images)[0] == 0:
+            return [], []
+        resized_rgb_images = (resized_rgb_images * 255).astype("uint8")
         result = []
         net_results = []
-        for img in resized_rgb_image:
+        for img in resized_rgb_images:
             img = np.expand_dims(img, axis=0)
             self.interpreter.set_tensor(self.input_details[0]["index"], img)
             t_begin = time.perf_counter()
