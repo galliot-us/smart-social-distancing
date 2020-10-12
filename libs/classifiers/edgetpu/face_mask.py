@@ -63,6 +63,6 @@ class Classifier:
         # TODO: optimized without for
         scores = []
         for i, itm in enumerate(net_results):
-            scores.append(1)
-
+            scores.append((itm[result[i]] - 1)/255.0)
+        
         return result, scores
