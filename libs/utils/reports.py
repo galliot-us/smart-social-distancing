@@ -216,10 +216,6 @@ class ReportsService:
         file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
         if not os.path.exists(file_path):
             return 0.0
-<<<<<<< HEAD
-=======
-
->>>>>>> LP-273: Send empty reports when there is no data for a camera instead of 404 (#56)
         df = pd.read_csv(file_path).drop(['Number'], axis=1)
         return round(df['ViolatingObjects'].mean(), 1)
 
