@@ -162,12 +162,13 @@ class ReportsService:
         }
         return report
 
-    def heatmap(self, camera_id, from_date, to_date):
+    def heatmap(self, camera_id, from_date, to_date, report_type):
         """Returns the sum of the heatmaps for a specified range of dates
         Args:
             camera_id (str): id of an existing camera
             from_date (date): start of the date range
             to_date (date): end of the date range
+            report_type (str): { 'violations', 'detections' }
 
         Returns:
             result (dict): {
@@ -179,7 +180,7 @@ class ReportsService:
         heatmap_resolution = os.getenv('HeatmapResolution').split(",")
         heatmap_x = int(heatmap_resolution[0])
         heatmap_y = int(heatmap_resolution[1])
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "heatmap_")
+        file_path = os.path.join(log_dir, camera_id, "objects_log", f"{report_type}_heatmap_")
 
         date_range = pd.date_range(start=from_date, end=to_date)
         heatmap_total = np.zeros((heatmap_x, heatmap_y))

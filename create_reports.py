@@ -18,11 +18,31 @@ from libs.utils.mailing import MailService
 logger = logging.getLogger(__name__)
 
 
-def create_daily_report(config):
-    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
     heatmap_resolution = config.get_section_dict("Logger")["HeatmapResolution"].split(",")
     heatmap_x = int(heatmap_resolution[0])
     heatmap_y = int(heatmap_resolution[1])
+    heatmap_grid = np.zeros((heatmap_x, heatmap_y))
+
+    with open(yesterday_csv, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            detections = ast.literal_eval(row['Detections'])
+            if column == 'Violations':
+                violations_indexes = ast.literal_eval(row['ViolationsIndexes'])
+                # Get bounding boxes of violations
+                detections = [detections[object_id] for object_id in violations_indexes]
+
+            for detection in detections:
+                bbox = detection.get('bbox')
+                x = int((np.floor((bbox[0] + bbox[2]) * heatmap_x / 2)).item())
+                y = int((np.floor((bbox[1] + bbox[3]) * heatmap_y / 2)).item())
+                heatmap_grid[x][y] += 1 / (1 + heatmap_grid[x][y])
+        np.save(heatmap_file, heatmap_grid)
+
+
+def create_daily_report(config):
+    log_directory = config.get_section_dict("Logger")["LogDirectory"]
     sources = config.get_video_sources()
     for src in sources:
         # A directory inside the log_directory that stores object log files.
@@ -32,8 +52,8 @@ def create_daily_report(config):
         yesterday_csv = os.path.join(objects_log_directory, yesterday + '.csv')
         daily_csv = os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')
         report_csv = os.path.join(objects_log_directory, 'report.csv')
-        heatmap_file = os.path.join(objects_log_directory, 'heatmap_' + yesterday)
-        heatmap_grid = np.zeros((heatmap_x, heatmap_y))
+        detection_heatmap_file = os.path.join(objects_log_directory, 'detections_heatmap_' + yesterday)
+        violation_heatmap_file = os.path.join(objects_log_directory, 'violations_heatmap_' + yesterday)
 
         if os.path.isfile(daily_csv):
             logger.warn("Report was already generated!")
@@ -72,16 +92,8 @@ def create_daily_report(config):
                 {'Date': yesterday, 'Number': totals[0], 'DetectedObjects': totals[1], 'ViolatingObjects': totals[2],
                  'DetectedFaces': totals[3], 'UsingFacemask': totals[4]})
 
-        with open(yesterday_csv, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                detections = ast.literal_eval(row['Detections'])
-                for detection in detections:
-                    bbox = detection.get('bbox')
-                    x = int((np.floor((bbox[0] + bbox[2]) * heatmap_x / 2)).item())
-                    y = int((np.floor((bbox[1] + bbox[3]) * heatmap_y / 2)).item())
-                    heatmap_grid[x][y] += 1 / (1 + heatmap_grid[x][y])
-            np.save(heatmap_file, heatmap_grid)
+        create_heatmap_report(config, yesterday_csv, detection_heatmap_file, 'Detections')
+        create_heatmap_report(config, yesterday_csv, violation_heatmap_file, 'Violations')
 
 
 def send_daily_report_notification(config, source):

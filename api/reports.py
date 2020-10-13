@@ -3,7 +3,7 @@ import os
 from datetime import date, timedelta
 from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from libs.utils.reports import ReportsService
 from pathlib import Path
 
@@ -75,10 +75,12 @@ def validate_dates(from_date, to_date):
     if from_date > to_date:
         raise HTTPException(status_code=400, detail='Invalid range of dates')
 
+
 def validate_existence(camera_id):
     dir_path = os.path.join(os.getenv('LogDirectory'), camera_id, "objects_log")
     if not os.path.exists(dir_path):
         raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
+
 
 @reports_api.get("/{camera_id}/hourly", response_model=HourlyReport)
 def get_hourly_report(camera_id,
@@ -87,6 +89,7 @@ def get_hourly_report(camera_id,
     validate_dates(from_date, to_date)
     validate_existence(camera_id)
     return reports.hourly_report(camera_id, from_date, to_date)
+
 
 @reports_api.get("/{camera_id}/daily", response_model=DailyReport)
 def get_daily_report(camera_id,
@@ -121,12 +124,20 @@ def get_weekly_report(camera_id,
         validate_dates(from_date, to_date)
         return reports.weekly_report(camera_id, from_date=from_date, to_date=to_date)
 
+
 @reports_api.get("/{camera_id}/heatmap", response_model=HeatmapReport)
-def get_heatmap(camera_id,
-                from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-                to_date: date = Query(date.today().isoformat())):
+def get_heatmap(
+    camera_id,
+    from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
+    to_date: date = Query(date.today().isoformat()),
+    report_type: Optional[str] = 'violations'
+):
     validate_existence(camera_id)
-    return reports.heatmap(camera_id, from_date, to_date)
+    if report_type in ['violations', 'detections']:
+        return reports.heatmap(camera_id, from_date, to_date, report_type)
+    else:
+        raise HTTPException(status_code=400, detail='Invalid report_type')
+
 
 @reports_api.get("/{camera_id}/peak_hour_violations")
 def get_peak_hour_violations(camera_id):
@@ -135,12 +146,14 @@ def get_peak_hour_violations(camera_id):
         'peak_hour_violations': reports.peak_hour_violations(camera_id)
     }
 
+
 @reports_api.get("/{camera_id}/average_violations")
 def get_average_violations(camera_id):
     validate_existence(camera_id)
     return {
         'average_violations': reports.average_violations(camera_id)
     }
+
 
 @reports_api.get('/camera_with_most_violations')
 def get_camera_with_most_violations():
