@@ -1,4 +1,6 @@
 import openpifpaf
+import pathlib
+import shutil
 import torch
 import numpy as np
 import time
@@ -23,7 +25,11 @@ class Detector:
 
     def load_model(self):
         self.device = "cpu"
-        net_cpu, _ = openpifpaf.network.factory(checkpoint="resnet50", download_progress=False)
+        model_file = pathlib.Path('/repo/data/x86/openpifpaf-resnet50.pkl')
+        if model_file.exists():
+            net_cpu, _ = openpifpaf.network.factory(checkpoint=model_file.as_posix(), download_progress=False)
+        else:
+            net_cpu, _ = openpifpaf.network.factory(checkpoint="resnet50", download_progress=False)
         net = net_cpu.to(self.device)
         openpifpaf.decoder.CifSeeds.threshold = 0.5
         openpifpaf.decoder.nms.Keypoints.keypoint_threshold = 0.2

@@ -183,9 +183,10 @@ class Distancing:
             from libs.detectors.x86.detector import Detector
             from libs.classifiers.x86.classifier import Classifier
             self.detector = Detector(self.config)
-            self.classifier = Classifier(self.config)
-            self.classifier_img_size = [int(i) for i in
-                                        self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
+            if 'Classifier' in self.config.get_sections():
+                self.classifier = Classifier(self.config)
+                self.classifier_img_size = [int(i) for i in
+                                            self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
 
         if self.device != 'Dummy':
             print('Device is: ', self.device)

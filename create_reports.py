@@ -42,30 +42,34 @@ def create_daily_report(config):
             logger.warn(f"No data for previous day! [Camera: {src['id']}]")
             continue
 
-        summary = np.zeros((24, 3), dtype=np.long)
+        summary = np.zeros((24, 5), dtype=np.long)
         with open(yesterday_csv, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 hour = datetime.strptime(row['Timestamp'], "%Y-%m-%d %H:%M:%S").hour
-                summary[hour] += (1, int(row['DetectedObjects']), int(row['ViolatingObjects']))
+                detections = ast.literal_eval(row['Detections'])
+                faces = [d["face_label"] for d in detections if "face_label" in d]
+                summary[hour] += (1, int(row['DetectedObjects']), int(row['ViolatingObjects']), len(faces), int(sum(faces)))
 
         with open(daily_csv, "w", newline='') as csvfile:
-            headers = ["Number", "DetectedObjects", "ViolatingObjects"]
+            headers = ["Number", "DetectedObjects", "ViolatingObjects", "DetectedFaces", "UsingFacemask"]
             writer = csv.DictWriter(csvfile, fieldnames=headers)
             writer.writeheader()
             for item in summary:
-                writer.writerow({'Number': item[0], 'DetectedObjects': item[1], 'ViolatingObjects': item[2]})
+                writer.writerow({'Number': item[0], 'DetectedObjects': item[1], 'ViolatingObjects': item[2],
+                                 'DetectedFaces': item[3], 'UsingFacemask': item[4]})
 
         report_file_exists = os.path.isfile(report_csv)
         with open(report_csv, "a") as csvfile:
-            headers = ["Date", "Number", "DetectedObjects", "ViolatingObjects"]
+            headers = ["Date", "Number", "DetectedObjects", "ViolatingObjects", "DetectedFaces", "UsingFacemask"]
             writer = csv.DictWriter(csvfile, fieldnames=headers)
 
             if not report_file_exists:
                 writer.writeheader()
             totals = np.sum(summary, 0)
             writer.writerow(
-                {'Date': yesterday, 'Number': totals[0], 'DetectedObjects': totals[1], 'ViolatingObjects': totals[2]})
+                {'Date': yesterday, 'Number': totals[0], 'DetectedObjects': totals[1], 'ViolatingObjects': totals[2],
+                 'DetectedFaces': totals[3], 'UsingFacemask': totals[4]})
 
         with open(yesterday_csv, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
