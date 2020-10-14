@@ -10,7 +10,7 @@ Smart Distancing is an open-source application to quantify social distancing mea
   <img  width="100%" src="demo.gif">
 </div>
 
-You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 or Google's Coral Edge-TPU. This application measures social distancing rates and gives proper notifications each time someone ignores social distancing rules. By generating and analyzing data, this solution outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus. 
+You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 or Google's Coral Edge-TPU. This application measures social distancing rates and gives proper notifications each time someone ignores social distancing rules. By generating and analyzing data, this solution outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus.
 
 Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to covid19project@neuralet.com if you have any questions.
 
@@ -180,8 +180,12 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD
 
 ##### Run on x86
 ```bash
-# Unless you use the OpenPifPaf model, download the model first:
-./download_x86_model.sh
+
+# If you use the OpenPifPaf model, download the model first:
+./download-x86-openpifpaf-model.sh
+
+# If you use the MobileNet model run this instead:
+# ./download_x86_model.sh
 
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
