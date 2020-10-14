@@ -18,7 +18,7 @@ do
     else
         url=0.0.0.0:8000/process-video-cfg
     fi
-    # FIXME LP-317 : Remove the -k flag using the certificate already created
+    # TODO: Remove the -k flag using the certificate already created
     response=$(curl -k $url)
     if [ "$response" != true ] ; then
         echo "curl failed, trying again in 5 seconds!"
