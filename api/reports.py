@@ -5,52 +5,68 @@ from fastapi import FastAPI, Query, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from libs.utils.reports import ReportsService
-from pathlib import Path
 
 reports_api = FastAPI()
 
 reports = ReportsService()
 
-class HourlyReport(BaseModel):
+
+class Report(BaseModel):
+    detected_objects: List[int]
+    violating_objects: List[int]
+    detected_faces: List[int]
+    faces_with_mask: List[int]
+
+
+class HourlyReport(Report):
     hours: List[int]
     detected_objects: List[float]
     violating_objects: List[float]
+    detected_faces: List[float]
+    faces_with_mask: List[float]
+
     class Config:
         schema_extra = {
             'example': [{
                 'hours': list(range(0, 23)),
-                'detected_objects': [0., 7273.5, 10011.9, 0.5, 0., 7273., 10011., 0., 0., 7273., 10011., 0.,
-                                     0., 7273.1, 10011.2, 0.5, 0., 7273., 10011., 0., 0., 7273., 10011., 0.],
-                'violating_objects': [0., 4920.5, 6701.3, 0.5, 0., 4920., 6701., 0., 0., 4920., 6701., 0.,
-                                      0., 4920.1, 6701.44, 0.1, 0., 4920., 6701., 0., 0., 4920., 6701., 0.]
+                'detected_objects': [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
+                                     0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0],
+                'violating_objects': [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                                      0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0],
+                'detected_faces': [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
+                                   0, 7273, 10011, 0, 0., 7273, 10011, 0, 0, 7273, 10011, 0],
+                'faces_with_mask': [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                                    0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0]
             }]
         }
 
 
-class DailyReport(BaseModel):
+class DailyReport(Report):
     dates: List[str]
-    detected_objects: List[int]
-    violating_objects: List[int]
+
     class Config:
         schema_extra = {
             'example': [{
                 'dates': ['Saturday 2020-08-15', 'Sunday 2020-08-16', 'Monday 2020-08-17', 'Tuesday 2020-08-18'],
                 'detected_objects': [0, 7273, 10011, 0],
-                'violating_objects': [0, 4920, 6701, 0]
+                'violating_objects': [0, 4920, 6701, 0],
+                'detected_faces': [0, 7273, 10011, 0],
+                'faces_with_mask': [0, 4920, 6701, 0],
             }]
         }
 
 
-class WeeklyReport(BaseModel):
+class WeeklyReport(Report):
     weeks: List[str]
-    detected_objects: List[int]
-    violating_objects: List[int]
+
     class Config:
         schema_extra = {
             'example': [{
                 'weeks': ['2020-07-03 2020-07-05', '2020-07-06 2020-07-12', '2020-07-13 2020-07-19', '2020-07-20 2020-07-26'],
                 'detected_objects': [0, 27500, 0, 8000],
-                'violating_objects': [0, 15000, 0, 4000]
+                'violating_objects': [0, 15000, 0, 4000],
+                'detected_faces': [0, 27500, 0, 8000],
+                'faces_with_mask': [0, 15000, 0, 4000],
             }]
         }
 
@@ -58,6 +74,7 @@ class WeeklyReport(BaseModel):
 class HeatmapReport(BaseModel):
     heatmap: List[List[float]]
     not_found_dates: List[str]
+
     class Config:
         schema_extra = {
             'example': [{
