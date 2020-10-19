@@ -258,3 +258,13 @@ The project is under substantial active development; you can find our roadmap at
 * Visit our website at https://neuralet.com
 * Email us at covid19project@neuralet.com
 * Check out our other models at https://github.com/neuralet.
+
+## License
+
+Most of the code in this repo is licensed under the [Apache 2](https://opensource.org/licenses/Apache-2.0) license.
+However, some sections/classifiers include separate licenses.
+
+These include:
+
+* Openpifpaf model for x86 (see [license](libs/detectors/x86/openpifpaf_LICENSE))
+* OFM facemask classifier model (see [license](libs/classifiers/x86/OFMClassifier_LICENCE))
