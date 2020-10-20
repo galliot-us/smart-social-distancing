@@ -118,12 +118,12 @@ class ConfigEngine:
     def update_config(self, config, save_file=True):
         current_sections = []
         for section, options in config.items():
-            if section.startswith('Source'):
+            if section.startswith('Source') or section.startswith('Area'):
                 current_sections.append(section)
             for option, value in options.items():
                 self.set_option_in_section(section, option, value)
         for section in self.config.sections():
-            if len(current_sections) and section.startswith('Source') and section not in current_sections:
+            if len(current_sections) and (section.startswith('Source') or section.startswith('Area')) and section not in current_sections:
                 self.config.remove_section(section)
         if save_file:
             self.save(self.config_file_path)

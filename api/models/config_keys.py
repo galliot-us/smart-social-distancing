@@ -15,12 +15,33 @@ class SnakeModel(BaseModel):
         allow_population_by_field_name = True
 
 
-class SourceConfig(SnakeModel):
-    VideoPath: Optional[str] = Field(None, example='/repo/data/gard1-4.mp4')
-    Tags: Optional[str] = Field(None, example='area1')
-    Name: Optional[str] = Field(None, example='Front')
+class EntityConfigDTO(SnakeModel):
+    id: str = Field(example='0')
+    name: str = Field(example='Kitchen')
 
-    @validator('VideoPath')
+
+class NotificationConfig(SnakeModel):
+    violationThreshold: Optional[int] = Field(0, example=100)
+    notifyEveryMinutes: Optional[int] = Field(0, example=15)
+    emails: Optional[str] = Field("", example='john@email.com,doe@email.com')
+    dailyReport: Optional[bool] = Field(False, example=True)
+
+
+class AreaNotificationConfig(NotificationConfig):
+    occupancyThreshold:  Optional[int] = Field(0, example=300)
+
+
+class AreaConfigDTO(EntityConfigDTO, AreaNotificationConfig):
+    cameras: Optional[str] = Field("", example='cam0,cam1')
+
+
+class SourceConfigDTO(EntityConfigDTO, NotificationConfig):
+    videoPath: str = Field(example='/repo/data/softbio_vid.mp4')
+    tags: Optional[str] = Field("", example='kitchen,living_room')
+    image: Optional[str] = Field("", example='Base64 image')
+    distMethod: Optional[str] = Field("", example='CenterPointsDistance')
+
+    @validator('videoPath')
     def video_must_be_valid(cls, video_uri):
         error = False
         input_cap = cv.VideoCapture(video_uri)
@@ -39,60 +60,6 @@ class SourceConfig(SnakeModel):
             return video_uri
 
 
-class AppConfig(SnakeModel):
-    Resolution: Optional[str] = Field(None, example='640,480')
-    Encoder: Optional[str] = Field(None,
-                                   example='videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast')
-    ScreenshotPeriod: Optional[str] = Field(None, example='0')
-    ScreenshotS3Bucket: Optional[str] = Field(None, example='my-screenshots-bucket')
-
-
-class DetectorConfig(SnakeModel):
-    Device: Optional[str] = Field(None, example='x86')
-    Name: Optional[str] = Field(None, example='openvino')
-    ImageSize: Optional[str] = Field(None, example='300,300,3')
-    ModelPath: Optional[str] = Field(None, example='')
-    ClassID: Optional[str] = Field(None, example='1')
-    MinScore: Optional[str] = Field(None, example='0.25')
-
-
-class PostProcessorConfig(SnakeModel):
-    MaxTrackFrame: Optional[str] = Field(None, example='5')
-    NMSThreshold: Optional[str] = Field(None, example='0.98')
-    DefaultDistMethod: Optional[str] = Field(None, example='CenterPointsDistance')
-    DistThreshold: Optional[str] = Field(None, example='150')
-
-
-class LoggerConfig(SnakeModel):
-    Name: Optional[str] = Field(None, example='csv_logger')
-    TimeInterval: Optional[str] = Field(None, example='0.5')
-    LogDirectory: Optional[str] = Field(None, example='/repo/data/processor/static/data')
-    HeatmapResolution: Optional[str] = Field(None, example='150,150')
-
-
-class ApiConfig(SnakeModel):
-    Host: Optional[str] = Field(None, example='0.0.0.0')
-    Port: Optional[str] = Field(None, example='8000')
-
-
-class CoreConfig(SnakeModel):
-    Host: Optional[str] = Field(None, example='0.0.0.0')
-    QueuePort: Optional[str] = Field(None, example='8010')
-    QueueAuthKey: Optional[str] = Field(None, example='shibalba')
-
-
-class SourceConfigDTO(BaseModel):
-    videoPath: str = Field(example='/repo/data/softbio_vid.mp4')
-    name: str = Field(example='Front')
-    id: str = Field(example='cam1')
-    emails: Optional[str] = Field("", example='john@email.com,doe@email.com')
-    tags: Optional[str] = Field("", example='kitchen,living_room')
-    notifyEveryMinutes: Optional[int] = Field(0, example=15)
-    violationThreshold: Optional[int] = Field(0, example=100)
-    image: Optional[str] = Field("", example='Base64 image')
-    distMethod: Optional[str] = Field("", example='CenterPointsDistance')
-    dailyReport: Optional[bool] = Field(False, example=True)
-
-
 class ConfigDTO(BaseModel):
     cameras: List[SourceConfigDTO]
+    areas: List[AreaConfigDTO]

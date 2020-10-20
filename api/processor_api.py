@@ -1,5 +1,4 @@
 import base64
-
 import time
 from multiprocessing.managers import BaseManager
 from fastapi import FastAPI, status, Request
@@ -7,6 +6,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from typing import List
 import cv2 as cv
 import uvicorn
 import os
@@ -25,8 +25,7 @@ from share.commands import Commands
 logger = logging.getLogger(__name__)
 
 
-class QueueManager(BaseManager):
-    pass
+class QueueManager(BaseManager): pass
 
 
 class ProcessorAPI:
@@ -123,6 +122,7 @@ class ProcessorAPI:
             if "withImage" in options:
                 dir_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
                 image = base64.b64encode(cv.imread(f'{dir_path}/default.jpg'))
+
             return {
                 "id": camera_id,
                 "name": camera.get("Name"),
@@ -134,31 +134,71 @@ class ProcessorAPI:
                 "image": image
             }
 
+        def map_area(area_name, config):
+            area = config.get(area_name)
+
+            return {
+                "id": area.get("Id"),
+                "name": area.get("Name"),
+                "cameras": area.get("Cameras"),
+                "notifyEveryMinutes": area.get("NotifyEveryMinutes"),
+                "emails": area.get("Emails"),
+                "occupancyThreshold": area.get("OccupancyThreshold"),
+                "violationThreshold": area.get("ViolationThreshold"),
+            }
+
+        def map_to_area_file_format(area: AreaConfigDTO):
+            return dict(
+                {
+                    'Id': area.id,
+                    'Name': area.name,
+                    'Cameras': area.cameras,
+                    'NotifyEveryMinutes': str(area.notifyEveryMinutes),
+                    'Emails': area.emails,
+                    'OccupancyThreshold': str(area.occupancyThreshold),
+                    'ViolationThreshold': str(area.violationThreshold),
+                }
+            )
+
+        def map_to_camera_file_format(camera: SourceConfigDTO):
+            return dict(
+                {
+                    'Name': camera.name,
+                    'VideoPath': camera.videoPath,
+                    'Id': camera.id,
+                    'Emails': camera.emails,
+                    'Tags': camera.tags,
+                    'NotifyEveryMinutes': str(camera.notifyEveryMinutes),
+                    'ViolationThreshold': str(camera.violationThreshold),
+                    'DistMethod': camera.distMethod,
+                    'DailyReport': str(camera.dailyReport)
+                }
+            )
+
         def map_config(config, options):
             cameras_name = [x for x in config.keys() if x.startswith("Source")]
+            areas_name = [x for x in config.keys() if x.startswith("Area")]
             return {
                 "host": config.get("API").get("Host"),
                 "port": config.get("API").get("Port"),
-                "cameras": [map_camera(x, config, options) for x in cameras_name]
+                "cameras": [map_camera(x, config, options) for x in cameras_name],
+                "areas": [map_area(x, config) for x in areas_name]
             }
 
         def map_to_config_file_format(config_dto):
             config_dict = dict()
             for count, camera in enumerate(config_dto.cameras):
-                config_dict["Source_" + str(count)] = dict(
-                    {
-                        'Name': camera.name,
-                        'VideoPath': camera.videoPath,
-                        'Id': camera.id,
-                        'Emails': camera.emails,
-                        'Tags': camera.tags,
-                        'NotifyEveryMinutes': str(camera.notifyEveryMinutes),
-                        'ViolationThreshold': str(camera.violationThreshold),
-                        'DistMethod': camera.distMethod,
-                        'DailyReport': str(camera.dailyReport),
-                    }
-                )
+                config_dict["Source_" + str(count)] = map_to_camera_file_format(camera)
+            for count, area in enumerate(config_dto.areas):
+                config_dict["Area_" + str(count)] = map_to_area_file_format(area)
             return config_dict
+
+        def extract_config():
+            sections = self.config.get_sections()
+            config = {}
+            for section in sections:
+                config[section] = self.config.get_section_dict(section)
+            return config
 
         def verify_path(base, camera_id):
             dir_path = os.path.join(base, camera_id)
@@ -245,11 +285,7 @@ class ProcessorAPI:
         @app.get("/config", response_model=ConfigDTO)
         async def get_config(options: Optional[str] = ""):
             logger.info("get-config requests on api")
-            sections = self.config.get_sections()
-            config = {}
-            for section in sections:
-                config[section] = self.config.get_section_dict(section)
-            return map_config(config, options)
+            return map_config(extract_config(), options)
 
         @app.put("/config")
         async def update_config(config: ConfigDTO):
@@ -257,7 +293,77 @@ class ProcessorAPI:
             update_config_file(config_dict)
             # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
             success = restart_processor()
-            return handle_config_response(config, success)
+            return handle_config_response(config_dict, success)
+
+        @app.post('/area')
+        async def create_area(new_area: AreaConfigDTO):
+            config_dict = extract_config()
+            areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
+            areas = [map_area(x, config_dict) for x in areas_name]
+            if new_area.id in [area['id'] for area in areas]:
+                raise HTTPException(status_code=400, detail="Area already exists")
+
+            cameras = [x for x in config_dict.keys() if x.startswith("Source")]
+            cameras = [map_camera(x, config_dict, { }) for x in cameras]
+            camera_ids = [camera['id'] for camera in cameras]
+            if not all(x in camera_ids for x in new_area.cameras.split(',')):
+                non_existent_cameras = set(new_area.cameras.split(',')) - set(camera_ids)
+                raise HTTPException(status_code=404, detail=f'The cameras: {non_existent_cameras} do not exist')
+
+            config_dict[f'Area_{len(areas)}'] = map_to_area_file_format(new_area)
+            self.config.update_config(config_dict)
+            self.config.reload()
+
+            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
+            success = restart_processor()
+            return handle_config_response(config_dict, success)
+
+        @app.put('/area/{area_id}')
+        async def edit_area(area_id, edited_area: AreaConfigDTO):
+            edited_area.id = area_id
+            config_dict = extract_config()
+            areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
+            areas = [map_area(x, config_dict) for x in areas_name]
+            areas_ids = [area['id'] for area in areas]
+            try:
+                index = areas_ids.index(area_id)
+            except ValueError:
+                raise HTTPException(status_code=404, detail="Area does not exist")
+
+            cameras = [x for x in config_dict.keys() if x.startswith("Source")]
+            cameras = [map_camera(x, config_dict, { }) for x in cameras]
+            camera_ids = [camera['id'] for camera in cameras]
+            if not all(x in camera_ids for x in edited_area.cameras.split(',')):
+                non_existent_cameras = set(edited_area.cameras.split(',')) - set(camera_ids)
+                raise HTTPException(status_code=404, detail=f'The cameras: {non_existent_cameras} do not exist')
+
+            config_dict[f"Area_{index}"] = map_to_area_file_format(edited_area)
+
+            self.config.update_config(config_dict)
+            self.config.reload()
+
+            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
+            success = restart_processor()
+            return handle_config_response(config_dict, success)
+
+        @app.delete('/area/{area_id}')
+        async def delete_area(area_id):
+            config_dict = extract_config()
+            areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
+            areas = [map_area(x, config_dict) for x in areas_name]
+            areas_ids = [area['id'] for area in areas]
+            try:
+                index = areas_ids.index(area_id)
+            except ValueError:
+                raise HTTPException(status_code=404, detail="Area does not exist")
+
+            config_dict.pop(f'Area_{index}')
+            self.config.update_config(config_dict)
+            self.config.reload()
+
+            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
+            success = restart_processor()
+            return handle_config_response(config_dict, success)
 
         @app.get("/{camera_id}/image", response_model=ImageModel)
         async def get_camera_image(camera_id):
