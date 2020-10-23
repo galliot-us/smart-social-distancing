@@ -172,6 +172,16 @@ def get_average_violations(camera_id):
     }
 
 
+@reports_api.get("/{camera_id}/face_mask_stats")
+def get_face_mask_stats(camera_id):
+    validate_existence(camera_id)
+    total_faces_detected, no_face_mask_percentage = reports.face_mask_stats(camera_id)
+    return {
+        'total_faces_detected': int(total_faces_detected),
+        'no_face_mask_percentage': no_face_mask_percentage
+    }
+
+
 @reports_api.get('/camera_with_most_violations')
 def get_camera_with_most_violations():
     return {

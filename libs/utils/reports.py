@@ -252,3 +252,18 @@ class ReportsService:
                 cameras_violations[camera_id] = 0
 
         return max(cameras_violations, key=cameras_violations.get)
+
+    def face_mask_stats(self, camera_id):
+        log_dir = os.getenv('LogDirectory')
+        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        if not os.path.exists(file_path):
+            return 0, 0
+        df = pd.read_csv(file_path).drop(['Number'], axis=1)
+        total_faces_detected = df['DetectedFaces'].sum()
+        if not total_faces_detected:
+            return 0, 0
+        total_faces_with_maks_detected = df['UsingFacemask'].sum()
+        return (
+            total_faces_detected,
+            round((1 - total_faces_with_maks_detected / total_faces_detected) * 100, 2)
+        )
