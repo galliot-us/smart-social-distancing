@@ -131,6 +131,7 @@ class ProcessorAPI:
                 "violationThreshold": camera.get("ViolationThreshold"),
                 "notifyEveryMinutes": camera.get("NotifyEveryMinutes"),
                 "dailyReport": camera.get("DailyReport"),
+                'dailyReportTime': camera.get('DailyReportTime'),
                 "image": image
             }
 
@@ -145,6 +146,8 @@ class ProcessorAPI:
                 "emails": area.get("Emails"),
                 "occupancyThreshold": area.get("OccupancyThreshold"),
                 "violationThreshold": area.get("ViolationThreshold"),
+                "dailyReport": area.get('DailyReport'),
+                'dailyReportTime': area.get('DailyReportTime')
             }
 
         def map_to_area_file_format(area: AreaConfigDTO):
@@ -157,6 +160,8 @@ class ProcessorAPI:
                     'Emails': area.emails,
                     'OccupancyThreshold': str(area.occupancyThreshold),
                     'ViolationThreshold': str(area.violationThreshold),
+                    "DailyReport": str(area.dailyReport),
+                    'DailyReportTime': area.dailyReportTime
                 }
             )
 
@@ -171,7 +176,8 @@ class ProcessorAPI:
                     'NotifyEveryMinutes': str(camera.notifyEveryMinutes),
                     'ViolationThreshold': str(camera.violationThreshold),
                     'DistMethod': camera.distMethod,
-                    'DailyReport': str(camera.dailyReport)
+                    'DailyReport': str(camera.dailyReport),
+                    'DailyReportTime': camera.dailyReportTime
                 }
             )
 
@@ -239,6 +245,8 @@ class ProcessorAPI:
             return handle_config_response(config_dict, success)
 
         def is_slack_configured():
+            if not os.path.exists('slack_token.txt'):
+                return False
             with open("slack_token.txt", "r") as user_token:
                 value = user_token.read()
                 if value:

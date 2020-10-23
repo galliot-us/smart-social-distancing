@@ -5,6 +5,7 @@ import os
 import argparse
 import csv
 import schedule
+import operator
 import time
 import ast
 import numpy as np
@@ -96,24 +97,38 @@ def create_daily_report(config):
         create_heatmap_report(config, yesterday_csv, violation_heatmap_file, 'Violations')
 
 
-def send_daily_report_notification(config, source):
+def send_daily_report_notification(config, entity_info):
+    entity_type = entity_info['type']
+    all_violations_per_hour = []
     log_directory = config.get_section_dict("Logger")["LogDirectory"]
-    objects_log_directory = os.path.join(log_directory, source['id'], "objects_log")
     yesterday = str(date.today() - timedelta(days=1))
-    daily_csv = os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')
-    violations_per_hour = []
-    with open(daily_csv, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            violations_per_hour.append(int(row['ViolatingObjects']))
+
+    if entity_type == 'Camera':
+        objects_log_directory = os.path.join(log_directory, entity_info['id'], "objects_log")
+        daily_csv_file_paths = [os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')]
+    else:
+        # entity == 'Area'
+        camera_ids = entity_info['cameras']
+        daily_csv_file_paths = [os.path.join(log_directory, camera_id, "objects_log/report_" + yesterday + ".csv") for camera_id in camera_ids]
+
+    for file_path in daily_csv_file_paths:
+        violations_per_hour = []
+        with open(file_path, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                violations_per_hour.append(int(row['ViolatingObjects']))
+        if not all_violations_per_hour:
+            all_violations_per_hour = violations_per_hour
+        else:
+            all_violations_per_hour = list(map(operator.add, all_violations_per_hour, violations_per_hour))
+
     if sum(violations_per_hour):
-        if source['should_send_email_notifications']:
+        if entity_info['should_send_email_notifications']:
             ms = MailService(config)
-            ms.send_daily_report(source['section'], sum(violations_per_hour), violations_per_hour)
-        if source['should_send_slack_notifications']:
-            camera_name = config.get_section_dict(source['section'])['Name']
+            ms.send_daily_report(entity_info, sum(violations_per_hour), violations_per_hour)
+        if entity_info['should_send_slack_notifications']:
             slack_service = SlackService(config)
-            slack_service.daily_report(source['id'], camera_name, sum(violations_per_hour))
+            slack_service.daily_report(entity_info, sum(violations_per_hour))
 
 
 def main(config):
@@ -123,16 +138,20 @@ def main(config):
 
     if not config.get_boolean('Logger', 'EnableReports'):
         logger.info("Reporting disabled!")
-        return
     else:
         logger.info("Reporting enabled!")
+        schedule.every().day.at("00:01").do(create_daily_report, config=config)
 
-    schedule.every().day.at("00:01").do(create_daily_report, config=config)
     sources = config.get_video_sources()
+    areas = config.get_areas()
     for src in sources:
         if src['daily_report']:
             schedule.every().day.at(src['daily_report_time']).do(
-                send_daily_report_notification, config=config, source=src)
+                send_daily_report_notification, config=config, entity_info=src)
+    for area in areas:
+        if area['daily_report']:
+            schedule.every().day.at(area['daily_report_time']).do(
+                send_daily_report_notification, config=config, entity_info=area)
 
     while True:
         schedule.run_pending()

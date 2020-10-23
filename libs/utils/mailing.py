@@ -24,28 +24,29 @@ class MailService:
         self.email_from = NOTIFICATION_EMAIL_FROM
         self.logger = logging.getLogger(__name__)
 
-    def send_source_notification(self, source_info, subject, content):
-        if "Emails" not in source_info or source_info["Emails"].strip() == "":
+    def send_email_notification(self, entity_info, subject, content):
+        if "emails" not in entity_info or not entity_info["emails"]:
             self.logger.info("No notification was emailed because no email was added for selected source")
             return
-        to = source_info["Emails"].split(',')
+        to = entity_info["emails"]
         send_email(self.email_from, to, subject, content)
         self.logger.info(f"Sent notification email to {to}")
 
-    def send_violation_notification(self, source_name, num_violations):
-        source_info = self.config.get_section_dict(source_name)
+    def send_violation_notification(self, entity_info, num_violations):
+        entity_type = entity_info['type']
         frontend_url = self.config.get_section_dict("App")["DashboardURL"]
         with codecs.open('libs/utils/mail_violations_notification.html', 'r') as f:
             html_string = f.read()
         html_string = html_string.replace('{detections}', str(num_violations))
-        html_string = html_string.replace('{camera}', source_info['Name'])
+        html_string = html_string.replace('{entity_type}', entity_type)
+        html_string = html_string.replace('{entity_name}', entity_info['name'])
         # TODO: Fix this
         html_string = html_string.replace('{url}', f'{frontend_url}/dashboard?source=email')
-        subject = f"[Lanthorn] Violation Report on camera {source_info['Name']}"
-        self.send_source_notification(source_info, subject, html_string)
+        subject = f"[Lanthorn] Violation Report on {entity_info['name']} ({entity_type})"
+        self.send_email_notification(entity_info, subject, html_string)
 
-    def send_daily_report(self, source_name, num_violations, hours_sumary):
-        source_info = self.config.get_section_dict(source_name)
+    def send_daily_report(self, entity_info, num_violations, hours_sumary):
+        entity_type = entity_info['type']
         frontend_url = self.config.get_section_dict("App")["DashboardURL"]
         with codecs.open('libs/utils/mail_daily_report.html', 'r') as f:
             html_string = f.read()
@@ -54,7 +55,8 @@ class MailService:
         for hour, hour_violation in enumerate(hours_sumary):
             violations_per_hour += f"<tr><td>{hour}:00</td><td>{hour_violation}</td></tr>"
         html_string = html_string.replace('{violations_per_hour}', violations_per_hour)
-        html_string = html_string.replace('{camera}', source_info['Name'])
+        html_string = html_string.replace('{entity_type}', entity_type)
+        html_string = html_string.replace('{entity_name}', entity_info['name'])
         html_string = html_string.replace('{url}', f'{frontend_url}/dashboard?source=email')
-        subject = f"[Lanthorn] Daily Report on camera {source_info['Name']}"
-        self.send_source_notification(source_info, subject, html_string)
+        subject = f"[Lanthorn] Daily Report on {entity_type}: {entity_info['name']}"
+        self.send_email_notification(entity_info, subject, html_string)

@@ -25,6 +25,7 @@ class NotificationConfig(SnakeModel):
     notifyEveryMinutes: Optional[int] = Field(0, example=15)
     emails: Optional[str] = Field("", example='john@email.com,doe@email.com')
     dailyReport: Optional[bool] = Field(False, example=True)
+    dailyReportTime: Optional[str] = Field('06:00', example='06:00')
 
 
 class AreaNotificationConfig(NotificationConfig):
@@ -62,4 +63,4 @@ class SourceConfigDTO(EntityConfigDTO, NotificationConfig):
 
 class ConfigDTO(BaseModel):
     cameras: List[SourceConfigDTO]
-    areas: List[AreaConfigDTO]
+    areas: Optional[List[AreaConfigDTO]] = []

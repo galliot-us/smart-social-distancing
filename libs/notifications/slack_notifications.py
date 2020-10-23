@@ -44,10 +44,12 @@ class SlackService:
             token=self.slack_token
         )
 
-    def violation_report(self, cam_id, cam_name, number):
-        msg = f"We found {number} violations in {cam_id}: {cam_name} camera"
+    def violation_report(self, entity_info, number):
+        entity_id, entity_type, entity_name = entity_info['id'], entity_info['type'], entity_info['name']
+        msg = f"We found {number} violations in {entity_id}: {entity_name} ({entity_type})"
         self.post_message_to_channel(msg, self.channel)
 
-    def daily_report(self, cam_id, cam_name, number,):
-        msg = f"Yesterday we found {number} violations in {cam_id}: {cam_name} camera."
+    def daily_report(self, entity_info, number,):
+        entity_id, entity_type, entity_name = entity_info['id'], entity_info['type'], entity_info['name']
+        msg = f"Yesterday we found {number} violations in {entity_id}: {entity_name} ({entity_type})."
         self.post_message_to_channel(msg, self.channel)
