@@ -21,16 +21,9 @@ class ConfigHomographyMatrix(BaseModel):
 def compute_and_save_inv_homography_matrix(points: ConfigHomographyMatrix, destination: str):
     Path(os.path.dirname(destination)).mkdir(parents=True, exist_ok=True)
     pts_destination = np.float32(points.pts_destination)
-    distances_bt_points = []
-    for i in range(4):
-        distances_bt_points.append(
-            distance.euclidean(points.pts_destination[i], points.pts_destination[(i+1)%4])
-        )
-    square_size = np.average(distances_bt_points)
-    pts_sources = np.float32(
-        [[0, 0], [0, square_size], [square_size , square_size], [square_size, 0]]
+    h, _ = cv.findHomography(
+        np.float32([[0, 0], [0, 100], [100 , 100], [100, 0]]), pts_destination
     )
-    h, _ = cv.findHomography(pts_sources, pts_destination)
     h_inv = np.linalg.inv(h).flatten()
     h_inv = ' '.join(map(str, h_inv))
     with open(destination, 'w') as f:
