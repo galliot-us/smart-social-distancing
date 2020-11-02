@@ -199,9 +199,14 @@ class ProcessorAPI:
                 config_dict["Area_" + str(count)] = map_to_area_file_format(area)
             return config_dict
 
-        def extract_config():
+        def extract_config(config_type='all'):
             sections = self.config.get_sections()
+            if config_type == 'cameras':
+                sections = [x for x in sections if x.startswith("Source")]
+            elif config_type == 'areas':
+                sections = [x for x in sections if x.startswith("Area")]
             config = {}
+            
             for section in sections:
                 config[section] = self.config.get_section_dict(section)
             return config
@@ -209,7 +214,7 @@ class ProcessorAPI:
         def verify_path(base, camera_id):
             dir_path = os.path.join(base, camera_id)
             if not os.path.exists(dir_path):
-                raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
+                raise HTTPException(status_code=404, detail=f'The camera: {camera_id} does not exist')
             return dir_path
 
         def update_config_file(config_dict):
@@ -239,8 +244,7 @@ class ProcessorAPI:
             logger.info("Enabling slack notification on processor's config")
             config_dict = dict()
             config_dict["App"] = dict({"EnableSlackNotifications": "yes", "SlackChannel": token_config.channel})
-            self.config.update_config(config_dict)
-            success = restart_processor()
+            success = update_and_restart_config(config_dict)
 
             return handle_config_response(config_dict, success)
 
@@ -257,9 +261,8 @@ class ProcessorAPI:
             logger.info("Adding slack's channel on processor's config")
             config_dict = dict()
             config_dict["App"] = dict({"SlackChannel": channel})
-            self.config.update_config(config_dict)
-            success = restart_processor()
 
+            success = update_and_restart_config(config_dict)
             return handle_config_response(config_dict, success)
 
         def handle_config_response(config, success):
@@ -273,6 +276,57 @@ class ProcessorAPI:
                     })
                 )
             return JSONResponse(content=humps.decamelize(config))
+
+        def get_areas():
+            config = extract_config(config_type='areas')
+            return [map_area(x, config) for x in config.keys()]
+
+        def reestructure_areas(config_dict):
+            """Ensure that all [Area_0, Area_1, ...] are consecutive"""
+            area_names = [x for x in config_dict.keys() if x.startswith("Area")]
+            area_names.sort()
+            for index, area_name in enumerate(area_names):
+                if f'Area_{index}' != area_name:
+                    config_dict[f'Area_{index}'] = config_dict[area_name]
+                    config_dict.pop(area_name)
+            return config_dict
+
+        def reestructure_cameras(config_dict):
+            """Ensure that all [Source_0, Source_1, ...] are consecutive"""
+            source_names = [x for x in config_dict.keys() if x.startswith("Source")]
+            source_names.sort()
+            for index, source_name in enumerate(source_names):
+                if f'Source_{index}' != source_name:
+                    config_dict[f'Source_{index}'] = config_dict[source_name]
+                    config_dict.pop(source_name)
+            return config_dict
+
+        def delete_camera_from_areas(camera_id, config_dict):
+            areas = {key: config_dict[key] for key in config_dict.keys() if key.startswith("Area")}
+            for key, area in areas.items():
+                cameras = area['Cameras'].split(',')
+                if camera_id in cameras:
+                    cameras.remove(camera_id)
+                    if len(cameras) == 0:
+                        logger.warning(f'After removing the camera "{camera_id}", the area "{area["Id"]} - {area["Name"]}" was left with no cameras and deleted')
+                        config_dict.pop(key)
+                    else:
+                        config_dict[key]['Cameras'] = ",".join(cameras)
+
+            config_dict = reestructure_areas(config_dict)
+
+            return config_dict
+
+        def get_cameras(options):
+            config = extract_config(config_type='cameras')
+            return [map_camera(x, config, options) for x in config.keys()]
+
+        def update_and_restart_config(config_dict):
+            update_config_file(config_dict)
+
+            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
+            success = restart_processor()
+            return success
 
         @app.get("/process-video-cfg")
         async def process_video_cfg():
@@ -298,12 +352,24 @@ class ProcessorAPI:
         @app.put("/config")
         async def update_config(config: ConfigDTO):
             config_dict = map_to_config_file_format(config)
-            update_config_file(config_dict)
-            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
-            success = restart_processor()
+
+            success = update_and_restart_config(config_dict)
             return handle_config_response(config_dict, success)
 
-        @app.post('/area')
+        @app.get("/areas")
+        async def list_areas():
+            return {
+                "areas": get_areas()
+            }
+
+        @app.get("/areas/{area_id}")
+        async def get_area(area_id):
+            area = next((area for area in get_areas() if area['id'] == area_id), None)
+            if not area:
+                raise HTTPException(status_code=404, detail=f'The area: {area_id} does not exist')
+            return area
+
+        @app.post('/areas')
         async def create_area(new_area: AreaConfigDTO):
             config_dict = extract_config()
             areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
@@ -312,34 +378,31 @@ class ProcessorAPI:
                 raise HTTPException(status_code=400, detail="Area already exists")
 
             cameras = [x for x in config_dict.keys() if x.startswith("Source")]
-            cameras = [map_camera(x, config_dict, { }) for x in cameras]
+            cameras = [map_camera(x, config_dict, []) for x in cameras]
             camera_ids = [camera['id'] for camera in cameras]
             if not all(x in camera_ids for x in new_area.cameras.split(',')):
                 non_existent_cameras = set(new_area.cameras.split(',')) - set(camera_ids)
                 raise HTTPException(status_code=404, detail=f'The cameras: {non_existent_cameras} do not exist')
 
             config_dict[f'Area_{len(areas)}'] = map_to_area_file_format(new_area)
-            self.config.update_config(config_dict)
-            self.config.reload()
 
-            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
-            success = restart_processor()
+            success = update_and_restart_config(config_dict)
             return handle_config_response(config_dict, success)
 
-        @app.put('/area/{area_id}')
+        @app.put('/areas/{area_id}')
         async def edit_area(area_id, edited_area: AreaConfigDTO):
             edited_area.id = area_id
             config_dict = extract_config()
-            areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
-            areas = [map_area(x, config_dict) for x in areas_name]
+            area_names = [x for x in config_dict.keys() if x.startswith("Area")]
+            areas = [map_area(x, config_dict) for x in area_names]
             areas_ids = [area['id'] for area in areas]
             try:
                 index = areas_ids.index(area_id)
             except ValueError:
-                raise HTTPException(status_code=404, detail="Area does not exist")
+                raise HTTPException(status_code=404, detail=f'The area: {area_id} does not exist')
 
             cameras = [x for x in config_dict.keys() if x.startswith("Source")]
-            cameras = [map_camera(x, config_dict, { }) for x in cameras]
+            cameras = [map_camera(x, config_dict, []) for x in cameras]
             camera_ids = [camera['id'] for camera in cameras]
             if not all(x in camera_ids for x in edited_area.cameras.split(',')):
                 non_existent_cameras = set(edited_area.cameras.split(',')) - set(camera_ids)
@@ -347,14 +410,10 @@ class ProcessorAPI:
 
             config_dict[f"Area_{index}"] = map_to_area_file_format(edited_area)
 
-            self.config.update_config(config_dict)
-            self.config.reload()
-
-            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
-            success = restart_processor()
+            success = update_and_restart_config(config_dict)
             return handle_config_response(config_dict, success)
 
-        @app.delete('/area/{area_id}')
+        @app.delete('/areas/{area_id}')
         async def delete_area(area_id):
             config_dict = extract_config()
             areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
@@ -363,17 +422,77 @@ class ProcessorAPI:
             try:
                 index = areas_ids.index(area_id)
             except ValueError:
-                raise HTTPException(status_code=404, detail="Area does not exist")
+                raise HTTPException(status_code=404, detail=f'The area: {area_id} does not exist')
 
             config_dict.pop(f'Area_{index}')
-            self.config.update_config(config_dict)
-            self.config.reload()
+            config_dict = reestructure_areas((config_dict))
 
-            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
-            success = restart_processor()
+            success = update_and_restart_config(config_dict)
             return handle_config_response(config_dict, success)
 
-        @app.get("/{camera_id}/image", response_model=ImageModel)
+        @app.get("/cameras")
+        async def list_cameras(options: Optional[str] = ""):
+            return {
+                "cameras": get_cameras(options)
+            }
+
+        @app.get("/cameras/{camera_id}")
+        async def get_camera(camera_id):
+            camera = next((camera for camera in get_cameras(['withImage']) if camera['id'] == camera_id), None)
+            if not camera:
+                raise HTTPException(status_code=404, detail=f'The camera: {camera_id} does not exist')
+            return camera
+
+        @app.post("/cameras")
+        async def create_camera(new_camera: SourceConfigDTO):
+            config_dict = extract_config()
+            cameras_name = [x for x in config_dict.keys() if x.startswith("Source")]
+            cameras = [map_camera(x, config_dict, []) for x in cameras_name]
+            if new_camera.id in [camera['id'] for camera in cameras]:
+                raise HTTPException(status_code=400, detail="Camera already exists")
+
+            config_dict[f'Source_{len(cameras)}'] = map_to_camera_file_format(new_camera)
+
+            success = update_and_restart_config(config_dict)
+            return handle_config_response(config_dict, success)
+
+        @app.put("/cameras/{camera_id}")
+        async def edit_camera(camera_id, edited_camera: SourceConfigDTO):
+            edited_camera.id = camera_id
+            config_dict = extract_config()
+            camera_names = [x for x in config_dict.keys() if x.startswith("Source")]
+            cameras = [map_camera(x, config_dict, []) for x in camera_names]
+            cameras_ids = [camera['id'] for camera in cameras]
+            try:
+                index = cameras_ids.index(camera_id)
+            except ValueError:
+                raise HTTPException(status_code=404, detail=f'The camera: {camera_id} does not exist')
+
+            config_dict[f"Source_{index}"] = map_to_camera_file_format(edited_camera)
+
+            success = update_and_restart_config(config_dict)
+            return handle_config_response(config_dict, success)
+
+        @app.delete("/cameras/{camera_id}")
+        async def delete_camera(camera_id):
+            config_dict = extract_config()
+            camera_names = [x for x in config_dict.keys() if x.startswith("Source")]
+            cameras = [map_area(x, config_dict) for x in camera_names]
+            cameras_ids = [camera['id'] for camera in cameras]
+            try:
+                index = cameras_ids.index(camera_id)
+            except ValueError:
+                raise HTTPException(status_code=404, detail=f'The camera: {camera_id} does not exist')
+
+            config_dict = delete_camera_from_areas(camera_id, config_dict)
+
+            config_dict.pop(f'Source_{index}')
+            config_dict = reestructure_cameras((config_dict))
+
+            success = update_and_restart_config(config_dict)
+            return handle_config_response(config_dict, success)
+
+        @app.get("/cameras/{camera_id}/image", response_model=ImageModel)
         async def get_camera_image(camera_id):
             dir_path = verify_path(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
             with open(f'{dir_path}/default.jpg', "rb") as image_file:
@@ -382,7 +501,7 @@ class ProcessorAPI:
                 "image": encoded_string
             }
 
-        @app.put("/{camera_id}/image")
+        @app.put("/cameras/{camera_id}/image")
         async def replace_camera_image(camera_id, body: ImageModel):
             dir_path = verify_path(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
             try:
@@ -393,13 +512,11 @@ class ProcessorAPI:
             except Exception:
                 return HTTPException(status_code=400, detail="Invalid image format")
 
-        @app.post("/{camera_id}/homography_matrix")
+        @app.post("/cameras/{camera_id}/homography_matrix")
         async def config_calibrated_distance(camera_id, body: ConfigHomographyMatrix):
-            sources = self.config.get_video_sources()
-            dir_source = list(filter(lambda source: source['id'] == camera_id, sources))
-            if dir_source is None or len(dir_source) != 1:
-                raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
-            dir_source = dir_source[0]
+            dir_source = next((source for source in self.config.get_video_sources() if source['id'] == camera_id), None)
+            if not dir_source:
+                raise HTTPException(status_code=404, detail=f'The camera: {camera_id} does not exist')
             dir_path = get_camera_calibration_path(self.config, camera_id)
             compute_and_save_inv_homography_matrix(points=body, destination=dir_path)
             sections = self.config.get_sections()
@@ -407,9 +524,8 @@ class ProcessorAPI:
             for section in sections:
                 config_dict[section] = self.config.get_section_dict(section)
             config_dict[dir_source['section']]['DistMethod'] = 'CalibratedDistance'
-            update_config_file(config_dict)
-            success = restart_processor()
 
+            success = update_and_restart_config(config_dict)
             return handle_config_response(config_dict, success)
 
         @app.get("/slack/is-enabled")

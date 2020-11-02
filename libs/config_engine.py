@@ -33,6 +33,8 @@ class ConfigEngine:
             self.lock.release()
 
     def _load(self):
+        self.config = configparser.ConfigParser()
+        self.config.optionxform = str
         self.config.read(self.config_file_path)
         for section in self.config.sections():
             self.section_options_dict[section] = {}

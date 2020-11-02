@@ -116,6 +116,8 @@ docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-we
 
 #### Processor
 
+Please note that in order to correctly visualize the processor in the frontend. The `HOST_PORT` used to run the **Processor** should be the same than the one stored in `config-frontend.ini
+
 ##### Optional Parameters
 This is a list of optional parameters for the `docker run` commands.
 They are included in the examples of this section.
