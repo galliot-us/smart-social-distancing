@@ -130,7 +130,7 @@ async def get_camera(camera_id):
     return camera
 
 
-@cameras_api.post("")
+@cameras_api.post("/")
 async def create_camera(new_camera: SourceConfigDTO):
     config_dict = extract_config()
     cameras_name = [x for x in config_dict.keys() if x.startswith("Source")]
