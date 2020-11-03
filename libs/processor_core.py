@@ -6,7 +6,7 @@ from share.commands import Commands
 from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
-from libs.utils.notifications import run_check_violations
+from libs.utils.notifications import run_check_violations, run_check_occupancy
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +63,19 @@ class ProcessorCore:
             should_send_slack_notifications = area['should_send_slack_notifications']
             if should_send_email_notifications or should_send_slack_notifications:
                 interval = area['notify_every_minutes']
-                threshold = area['violation_threshold']
-                schedule.every(interval).minutes.do(
-                    run_check_violations, threshold, self.config, area, interval,
-                    should_send_email_notifications, should_send_slack_notifications
-                ).tag("notification-task")
+                violation_threshold = area['violation_threshold']
+                if violation_threshold > 0:
+                    schedule.every(interval).minutes.do(
+                        run_check_violations, violation_threshold, self.config, area, interval,
+                        should_send_email_notifications, should_send_slack_notifications
+                    ).tag("notification-task")
+                occupancy_threshold = area['occupancy_threshold']
+                if occupancy_threshold > 0:
+                    occupancy_sleep_time = 3
+                    schedule.every(5).seconds.do(
+                        run_check_occupancy, occupancy_threshold, self.config, area, occupancy_sleep_time,
+                        should_send_email_notifications, should_send_slack_notifications
+                    ).tag("notification-task")
             else:
                 logger.info(f"should not send notification for camera {area['id']}")
 
