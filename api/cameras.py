@@ -4,8 +4,8 @@ import logging
 import numpy as np
 import os
 
-from pydantic import BaseModel
 from fastapi import FastAPI
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 from typing import Optional
 

@@ -12,7 +12,6 @@ from .settings import Settings
 logger = logging.getLogger(__name__)
 
 
-@lru_cache()
 def get_config():
     return Settings().config
 

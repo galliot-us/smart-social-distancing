@@ -7,7 +7,6 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from share.commands import Commands
 from typing import Optional
 
@@ -17,6 +16,8 @@ from .models.config_keys import ConfigDTO
 from .queue_manager import QueueManager
 from .reports import reports_api
 from .settings import Settings
+from .slack import slack_api
+
 from .utils import (
     extract_config, handle_config_response, update_and_restart_config
 )
@@ -46,23 +47,13 @@ class ProcessorAPI:
         os.environ['LogDirectory'] = self.settings.config.get_section_dict("Logger")["LogDirectory"]
         os.environ['HeatmapResolution'] = self.settings.config.get_section_dict("Logger")["HeatmapResolution"]
 
-        class SlackConfig(BaseModel):
-            user_token: str
-            channel: Optional[str]
-
-            class Config:
-                schema_extra = {
-                    'example': {
-                        'user_token': 'xxxx-ffff...'
-                    }
-                }
-
         # Create and return a fastapi instance
         app = FastAPI()
 
         app.mount("/reports", reports_api)
         app.mount("/cameras", cameras_api)
         app.mount("/areas", areas_api)
+        app.mount("/slack", slack_api)
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -100,37 +91,6 @@ class ProcessorAPI:
                 "areas": [map_area(x, config) for x in areas_name]
             }
 
-        def write_user_token(token):
-            logger.info("Writing user access token")
-            with open("slack_token.txt", "w+") as slack_token:
-                slack_token.write(token)
-
-        def enable_slack(token_config):
-            write_user_token(token_config.user_token)
-            logger.info("Enabling slack notification on processor's config")
-            config_dict = dict()
-            config_dict["App"] = dict({"EnableSlackNotifications": "yes", "SlackChannel": token_config.channel})
-            success = update_and_restart_config(config_dict)
-
-            return handle_config_response(config_dict, success)
-
-        def is_slack_configured():
-            if not os.path.exists('slack_token.txt'):
-                return False
-            with open("slack_token.txt", "r") as user_token:
-                value = user_token.read()
-                if value:
-                    return True
-                return False
-
-        def add_slack_channel_to_config(channel):
-            logger.info("Adding slack's channel on processor's config")
-            config_dict = dict()
-            config_dict["App"] = dict({"SlackChannel": channel})
-
-            success = update_and_restart_config(config_dict)
-            return handle_config_response(config_dict, success)
-
         @app.get("/process-video-cfg")
         async def process_video_cfg():
             logger.info("process-video-cfg requests on api")
@@ -158,24 +118,6 @@ class ProcessorAPI:
 
             success = update_and_restart_config(config_dict)
             return handle_config_response(config_dict, success)
-
-        @app.get("/slack/is-enabled")
-        def is_slack_enabled():
-            return {
-                "enabled": is_slack_configured()
-            }
-
-        @app.delete("/slack/revoke")
-        def revoke_slack():
-            write_user_token("")
-
-        @app.post("/slack/add-channel")
-        def add_slack_channel(channel: str):
-            add_slack_channel_to_config(channel)
-
-        @app.post("/slack/enable")
-        def enable(body: SlackConfig):
-            enable_slack(body)
 
         return app
 
