@@ -3,6 +3,7 @@ import os
 from datetime import date, datetime
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
+import itertools
 
 import numpy as np
 
@@ -51,6 +52,9 @@ class Logger:
         """
         # TODO: Remove violation logic and move it to frontend
         violating_objects = extract_violating_objects(distances, self.dist_threshold)
+        # Get unique objects that are in close contact
+        violating_objects_index_list = list(set(itertools.chain(*violating_objects)))
+
         # Get the number of violating objects (people)
         no_violating_objects = len(violating_objects)
         # Get the number of detected objects (people)
@@ -62,7 +66,8 @@ class Logger:
         current_time = now.strftime("%Y-%m-%d %H:%M:%S")
         file_exists = os.path.isfile(file_path)
         with open(file_path, "a") as csvfile:
-            headers = ["Version", "Timestamp", "DetectedObjects", "ViolatingObjects", "EnvironmentScore", "Detections"]
+            headers = ["Version", "Timestamp", "DetectedObjects", "ViolatingObjects",
+                       "EnvironmentScore", "Detections", 'ViolationsIndexes']
             writer = csv.DictWriter(csvfile, fieldnames=headers)
 
             if not file_exists:
@@ -72,4 +77,4 @@ class Logger:
 
                 {'Version': version, 'Timestamp': current_time, 'DetectedObjects': no_detected_objects,
                  'ViolatingObjects': no_violating_objects, 'EnvironmentScore': environment_score,
-                 'Detections': str(objects_list)})
+                 'Detections': str(objects_list), 'ViolationsIndexes': str(violating_objects_index_list)})

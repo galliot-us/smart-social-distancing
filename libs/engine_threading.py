@@ -41,7 +41,7 @@ class EngineThread(Thread):
         self.source = source
 
     def run(self):
-        self.engine = CvEngine(self.config, self.source['id'])
+        self.engine = CvEngine(self.config, self.source['section'])
         self.engine.process_video(self.source['url'])
 
     def stop(self):

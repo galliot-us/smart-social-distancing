@@ -10,7 +10,10 @@ from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
 
-class QueueManager(BaseManager): pass
+
+class QueueManager(BaseManager):
+    pass
+
 
 class ProcessorCore:
 
@@ -42,16 +45,31 @@ class ProcessorCore:
     def _setup_scheduled_tasks(self):
         logger.info("Setup scheduled tasks")
         sources = self.config.get_video_sources()
+        areas = self.config.get_areas()
         for src in sources:
-            if src['should_send_notifications']:
+            should_send_email_notifications = src['should_send_email_notifications']
+            should_send_slack_notifications = src['should_send_slack_notifications']
+            if should_send_email_notifications or should_send_slack_notifications:
                 interval = src['notify_every_minutes']
                 threshold = src['violation_threshold']
-
-                schedule.every(interval).minutes.do(run_check_violations, threshold, self.config, src['section'],
-                    src['id'], interval) \
-                    .tag("notification-task")
+                schedule.every(interval).minutes.do(
+                    run_check_violations, threshold, self.config, src, interval,
+                    should_send_email_notifications, should_send_slack_notifications
+                ).tag("notification-task")
             else:
                 logger.info(f"should not send notification for camera {src['id']}")
+        for area in areas:
+            should_send_email_notifications = area['should_send_email_notifications']
+            should_send_slack_notifications = area['should_send_slack_notifications']
+            if should_send_email_notifications or should_send_slack_notifications:
+                interval = area['notify_every_minutes']
+                threshold = area['violation_threshold']
+                schedule.every(interval).minutes.do(
+                    run_check_violations, threshold, self.config, area, interval,
+                    should_send_email_notifications, should_send_slack_notifications
+                ).tag("notification-task")
+            else:
+                logger.info(f"should not send notification for camera {area['id']}")
 
     def _serve(self):
         logger.info("Core is listening for commands ... ")
@@ -79,7 +97,7 @@ class ProcessorCore:
 
             logger.info("started to process video ... ")
             self._result_queue.put(True)
-        elif cmd_code == Commands.STOP_PROCESS_VIDEO :
+        elif cmd_code == Commands.STOP_PROCESS_VIDEO:
             if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
                 self._stop_processing()
                 logger.info("Stop scheduled tasks")

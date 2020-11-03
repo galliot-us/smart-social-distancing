@@ -23,7 +23,6 @@ class ReportsService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-
     def hourly_report(self, camera_id, from_date, to_date):
         """Returns a report of hourly detection and violations for a specific camera taking the mean for each hour in a range of dates
             Args:
@@ -45,6 +44,8 @@ class ReportsService:
         hours = list(range(0, 24))
         detected_objects = np.zeros(24)
         violating_objects = np.zeros(24)
+        detected_faces = np.zeros(24)
+        faces_with_mask = np.zeros(24)
 
         if os.path.exists(os.path.join(dir_path, 'report.csv')):
             iters = 0
@@ -55,6 +56,8 @@ class ReportsService:
                     df = pd.read_csv(file_path).drop(['Number'], axis=1)
                     detected_objects = detected_objects + df['DetectedObjects'].to_numpy()
                     violating_objects = violating_objects + df['ViolatingObjects'].to_numpy()
+                    detected_faces = detected_faces + df.get('DetectedFaces', 0).to_numpy()
+                    faces_with_mask = faces_with_mask + df.get('UsingFacemask', 0).to_numpy()
 
             if iters != 0:
                 detected_objects = detected_objects/iters
@@ -62,8 +65,10 @@ class ReportsService:
 
         report = {
             'hours': hours,
-            'detected_objects': np.around(detected_objects, 1).tolist(),
-            'violating_objects': np.around(violating_objects, 1).tolist(),
+            'detected_objects': np.around(detected_objects).tolist(),
+            'violating_objects': np.around(violating_objects).tolist(),
+            'detected_faces': np.around(detected_faces).tolist(),
+            'faces_with_mask': np.around(faces_with_mask).tolist(),
         }
         return report
 
@@ -101,19 +106,25 @@ class ReportsService:
             merged_report = {datetime.strptime(key, '%Y-%m-%d'): merged_report[key] for key in merged_report}
         else:
             merged_report = {datetime.strptime(key, '%Y-%m-%d'): base_results[key] for key in base_results}
-
         dates = []
         detected_objects = []
         violating_objects = []
+        detected_faces = []
+        faces_with_mask = []
+
         for date in sorted(merged_report):
             dates.append(date.strftime('%A %Y-%m-%d'))
             detected_objects.append(merged_report[date]['DetectedObjects'])
             violating_objects.append(merged_report[date]['ViolatingObjects'])
+            detected_faces.append(merged_report[date].get('DetectedFaces', 0))
+            faces_with_mask.append(merged_report[date].get('UsingFacemask', 0))
 
         report = {
             'dates': dates,
             'detected_objects': detected_objects,
             'violating_objects': violating_objects,
+            'detected_faces': detected_faces,
+            'faces_with_mask': faces_with_mask,
         }
         return report
 
@@ -137,6 +148,8 @@ class ReportsService:
         weeks = []
         detected_objects = []
         violating_objects = []
+        detected_faces = []
+        faces_with_mask = []
 
         if number_of_days > 0:
             # Separate weeks in range taking a number of weeks ago, considering the week ended yesterday
@@ -154,22 +167,28 @@ class ReportsService:
         for (start_date, end_date) in week_span:
             week_data = self.daily_report(camera_id, start_date, end_date)
             weeks.append(f"{start_date.strftime('%Y-%m-%d')} {end_date.strftime('%Y-%m-%d')}")
+            print(week_data)
             detected_objects.append(sum(week_data['detected_objects']))
             violating_objects.append(sum(week_data['violating_objects']))
+            detected_faces.append(sum(week_data['detected_faces']))
+            faces_with_mask.append(sum(week_data['faces_with_mask']))
 
         report = {
             'weeks': weeks,
             'detected_objects': detected_objects,
             'violating_objects': violating_objects,
+            'detected_faces': detected_faces,
+            'faces_with_mask': faces_with_mask,
         }
         return report
 
-    def heatmap(self, camera_id, from_date, to_date):
+    def heatmap(self, camera_id, from_date, to_date, report_type):
         """Returns the sum of the heatmaps for a specified range of dates
         Args:
             camera_id (str): id of an existing camera
             from_date (date): start of the date range
             to_date (date): end of the date range
+            report_type (str): { 'violations', 'detections' }
 
         Returns:
             result (dict): {
@@ -181,7 +200,7 @@ class ReportsService:
         heatmap_resolution = os.getenv('HeatmapResolution').split(",")
         heatmap_x = int(heatmap_resolution[0])
         heatmap_y = int(heatmap_resolution[1])
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "heatmap_")
+        file_path = os.path.join(log_dir, camera_id, "objects_log", f"{report_type}_heatmap_")
 
         date_range = pd.date_range(start=from_date, end=to_date)
         heatmap_total = np.zeros((heatmap_x, heatmap_y))
@@ -233,3 +252,18 @@ class ReportsService:
                 cameras_violations[camera_id] = 0
 
         return max(cameras_violations, key=cameras_violations.get)
+
+    def face_mask_stats(self, camera_id):
+        log_dir = os.getenv('LogDirectory')
+        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        if not os.path.exists(file_path):
+            return 0, 0
+        df = pd.read_csv(file_path).drop(['Number'], axis=1)
+        total_faces_detected = df['DetectedFaces'].sum()
+        if not total_faces_detected:
+            return 0, 0
+        total_faces_with_maks_detected = df['UsingFacemask'].sum()
+        return (
+            total_faces_detected,
+            round((1 - total_faces_with_maks_detected / total_faces_detected) * 100, 2)
+        )

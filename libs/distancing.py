@@ -10,6 +10,7 @@ from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
 from libs.utils import visualization_utils
+from libs.utils.camera_calibration import get_camera_calibration_path
 from libs.uploaders.s3_uploader import S3Uploader
 import logging
 
@@ -18,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class Distancing:
 
-    def __init__(self, config, camera_id):
+    def __init__(self, config, source):
         self.config = config
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
@@ -30,26 +31,31 @@ class Distancing:
         self.running_video = False
         self.tracker = CentroidTracker(
             max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
-        self.camera_id = camera_id
-        self.logger = Logger(self.config, camera_id)
+        self.camera_id = self.config.get_section_dict(source)['Id']
+        self.logger = Logger(self.config, self.camera_id)
         self.image_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
+        self.default_dist_method = self.config.get_section_dict('PostProcessor')["DefaultDistMethod"]
 
-        self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
+        if self.config.get_section_dict(source)["DistMethod"]:
+            self.dist_method = self.config.get_section_dict(source)["DistMethod"]
+        else:
+            self.dist_method = self.default_dist_method
+
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
+
         if self.dist_method == "CalibratedDistance":
-            try:
-                calibration_file = self.config.get_section_dict("App")["CalibrationFile"]
-            except KeyError:
-                raise ValueError(
-                    "The 'CalibrationFile' should be specified in config file in case of using 'CalibratedDistance' method")
+            calibration_file = get_camera_calibration_path(
+                self.config, self.config.get_section_dict(source)["Id"])
             try:
                 with open(calibration_file, "r") as file:
                     self.h_inv = file.readlines()[0].split(" ")[1:]
                     self.h_inv = np.array(self.h_inv, dtype="float").reshape((3, 3))
             except FileNotFoundError:
-                raise FileNotFoundError("The specified 'CalibrationFile' does not exist")
+                logger.error("The specified 'CalibrationFile' does not exist")
+                logger.info(f"Falling back using {self.default_dist_method}")
+                self.dist_method = self.default_dist_method
 
         self.screenshot_period = float(
             self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60  # config.ini uses minutes as unit
