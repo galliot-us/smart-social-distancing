@@ -11,7 +11,7 @@ class Settings:
     def __init__(self, config: ConfigEngine = None):
         if not Settings.instance:
             if not config:
-                raise RuntimeError("Settings can not be initied without config")
+                raise RuntimeError("Can not initialize Settings without a config file")
             Settings.instance = Settings.__Settings(config=config)
         elif config:
             # Config file was updated.
