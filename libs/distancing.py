@@ -261,9 +261,6 @@ class Distancing:
         input_cap = cv.VideoCapture(video_uri)
         fps = max(25, input_cap.get(cv.CAP_PROP_FPS))
 
-        if not self.live_feed_enabled:
-            frames_to_skip = input_cap.get(cv.CAP_PROP_FPS) // (1 / self.log_time_interval)
-
         if (input_cap.isOpened()):
             logger.info(f'opened video {video_uri}')
         else:
@@ -271,7 +268,6 @@ class Distancing:
             return
 
         self.running_video = True
-
         # enable logging gstreamer Errors (https://stackoverflow.com/questions/3298934/how-do-i-view-gstreamer-debug-output)
         os.environ['GST_DEBUG'] = "*:1"
         if self.live_feed_enabled:
@@ -285,31 +281,27 @@ class Distancing:
 
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
         frame_num = 0
-        frames_processed = 0
         start_time = time.time()
+        last_processed_time = time.time()
         while input_cap.isOpened() and self.running_video:
-            _, cv_image = input_cap.read()
+            result, cv_image = input_cap.read()
             if np.shape(cv_image) != ():
-                # TODO: Improve that logic including a time.sleep() instead of just ignoring some frames
-                if not self.live_feed_enabled and frame_num % frames_to_skip != 0:
-                    frame_num += 1
+                if not self.live_feed_enabled and (time.time() - last_processed_time < self.log_time_interval):
                     continue
                 cv_image, objects, distancings = self.__process(cv_image)
                 violating_objects = extract_violating_objects(distancings, dist_threshold)
                 if self.live_feed_enabled:
                     self.process_live_feed(cv_image, objects, distancings, violating_objects, out, out_birdseye)
+                last_processed_time = time.time()
                 frame_num += 1
-                frames_processed += 1
-                if frames_processed % 100 == 1:
-                    logger.info(f'processed frame {frames_processed} for {video_uri}')
-
+                if frame_num % 100 == 1:
+                    logger.info(f'processed frame {frame_num} for {video_uri}')
                 # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period has occured
                 if (self.screenshot_period > 0) and (time.time() > start_time + self.screenshot_period) and (
                         len(violating_objects) > 0):
                     start_time = time.time()
                     self.capture_violation(f"{start_time}_violation.jpg", cv_image)
                 self.save_screenshot(cv_image)
-
             else:
                 continue
             self.logger.update(objects, distancings)
