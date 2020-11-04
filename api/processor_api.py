@@ -8,19 +8,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from share.commands import Commands
-from typing import Optional
 
-from .cameras import cameras_api, map_camera, map_to_camera_file_format
-from .areas import areas_api, map_area, map_to_area_file_format
-from .models.config_keys import ConfigDTO
+from .cameras import cameras_api
+from .config import config_api
+from .areas import areas_api
 from .queue_manager import QueueManager
 from .reports import reports_api
 from .settings import Settings
 from .slack import slack_api
-
-from .utils import (
-    extract_config, handle_config_response, update_and_restart_config
-)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +45,7 @@ class ProcessorAPI:
         # Create and return a fastapi instance
         app = FastAPI()
 
+        app.mount("/config", config_api)
         app.mount("/reports", reports_api)
         app.mount("/cameras", cameras_api)
         app.mount("/areas", areas_api)
@@ -73,24 +69,6 @@ class ProcessorAPI:
 
         app.mount("/static", StaticFiles(directory="/repo/data/processor/static"), name="static")
 
-        def map_to_config_file_format(config_dto):
-            config_dict = dict()
-            for count, camera in enumerate(config_dto.cameras):
-                config_dict["Source_" + str(count)] = map_to_camera_file_format(camera)
-            for count, area in enumerate(config_dto.areas):
-                config_dict["Area_" + str(count)] = map_to_area_file_format(area)
-            return config_dict
-
-        def map_config(config, options):
-            cameras_name = [x for x in config.keys() if x.startswith("Source")]
-            areas_name = [x for x in config.keys() if x.startswith("Area")]
-            return {
-                "host": config.get("API").get("Host"),
-                "port": config.get("API").get("Port"),
-                "cameras": [map_camera(x, config, options) for x in cameras_name],
-                "areas": [map_area(x, config) for x in areas_name]
-            }
-
         @app.get("/process-video-cfg")
         async def process_video_cfg():
             logger.info("process-video-cfg requests on api")
@@ -106,18 +84,6 @@ class ProcessorAPI:
             logger.info("waiting for core's response...")
             result = self.queue_manager.result_queue.get()
             return result
-
-        @app.get("/config", response_model=ConfigDTO)
-        async def get_config(options: Optional[str] = ""):
-            logger.info("get-config requests on api")
-            return map_config(extract_config(), options)
-
-        @app.put("/config")
-        async def update_config(config: ConfigDTO):
-            config_dict = map_to_config_file_format(config)
-
-            success = update_and_restart_config(config_dict)
-            return handle_config_response(config_dict, success)
 
         return app
 
