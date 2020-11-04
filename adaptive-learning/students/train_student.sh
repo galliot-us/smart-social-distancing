@@ -101,7 +101,7 @@ do
   echo "=================================================================================="
   rm -rf $EXPORT_DIR/*
   if $Quantization_Aware
-  then
+  then 
     python /models/research/object_detection/export_tflite_ssd_graph.py \
     --pipeline_config_path=$TRAINING_PIPELINE_FILE \
     --trained_checkpoint_prefix="$TRAINED_CKPT_PREFIX" \
