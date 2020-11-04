@@ -19,10 +19,13 @@ logger = logging.getLogger(__name__)
 
 class Distancing:
 
-    def __init__(self, config, source):
+    def __init__(self, config, source, live_feed_enabled=True):
         self.config = config
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
+
+        self.live_feed_enabled = live_feed_enabled
+        self.log_time_interval = float(self.config.get_section_dict("Logger")["TimeInterval"])  # Seconds
 
         self.classifier = None
         self.classifier_img_size = None
@@ -86,8 +89,10 @@ class Distancing:
                     if face_bbox is not None:
                         xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
                         ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
-                        croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)),
-                                      int(xmin):int(xmin) + (int(xmax) - int(xmin))]
+                        croped_face = cv_image[
+                            int(ymin):int(ymin) + (int(ymax) - int(ymin)),
+                            int(xmin):int(xmin) + (int(xmax) - int(xmin))
+                        ]
 
                         # Resizing input image
                         croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
@@ -171,6 +176,60 @@ class Distancing:
             raise RuntimeError("Could not open gstreamer output for " + feed_name)
         return out
 
+    def process_live_feed(self, cv_image, objects, distancings, violating_objects, out, out_birdseye):
+        dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
+        birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
+        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
+
+        output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
+        category_index = {class_id: {
+            "id": class_id,
+            "name": "Pedestrian",
+        }}  # TODO: json file for detector config
+        # Draw bounding boxes and other visualization factors on input_frame
+        visualization_utils.visualize_boxes_and_labels_on_image_array(
+            cv_image,
+            output_dict["detection_boxes"],
+            output_dict["detection_classes"],
+            output_dict["detection_scores"],
+            output_dict["detection_colors"],
+            category_index,
+            instance_masks=output_dict.get("detection_masks"),
+            use_normalized_coordinates=True,
+            line_thickness=3,
+        )
+        # TODO: Implement perspective view for objects
+        birds_eye_window = visualization_utils.birds_eye_view(
+            birds_eye_window, output_dict["detection_boxes"], output_dict["violating_objects"])
+        try:
+            fps = self.detector.fps
+        except:
+            # fps is not implemented for the detector instance"
+            fps = None
+
+        # Put fps to the frame
+        # region
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        txt_fps = 'Frames rate = ' + str(fps) + '(fps)'  # Frames rate = 95 (fps)
+        # (0, 0) is the top-left (x,y); normalized number between 0-1
+        origin = (0.05, 0.93)
+        visualization_utils.text_putter(cv_image, txt_fps, origin)
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        # endregion
+
+        # Put environment score to the frame
+        # region
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        env_score = mx_environment_scoring_consider_crowd(len(objects), len(violating_objects))
+        txt_env_score = 'Env Score = ' + str(env_score)  # Env Score = 0.7
+        origin = (0.05, 0.98)
+        visualization_utils.text_putter(cv_image, txt_env_score, origin)
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        # endregion
+
+        out.write(cv_image)
+        out_birdseye.write(birds_eye_window)
+
     def process_video(self, video_uri):
         if self.device == 'Jetson':
             from libs.detectors.jetson.detector import Detector
@@ -202,6 +261,9 @@ class Distancing:
         input_cap = cv.VideoCapture(video_uri)
         fps = max(25, input_cap.get(cv.CAP_PROP_FPS))
 
+        if not self.live_feed_enabled:
+            frames_to_skip = input_cap.get(cv.CAP_PROP_FPS) // (1 / self.log_time_interval)
+
         if (input_cap.isOpened()):
             logger.info(f'opened video {video_uri}')
         else:
@@ -212,84 +274,42 @@ class Distancing:
 
         # enable logging gstreamer Errors (https://stackoverflow.com/questions/3298934/how-do-i-view-gstreamer-debug-output)
         os.environ['GST_DEBUG'] = "*:1"
-        out, out_birdseye = (
-            self.gstreamer_writer(feed, fps, resolution)
-            for (feed, resolution) in (
-            (self.camera_id, self.resolution),
-            (self.camera_id + '-birdseye', self.birds_eye_resolution)
-        )
-        )
+        if self.live_feed_enabled:
+            out, out_birdseye = (
+                self.gstreamer_writer(feed, fps, resolution)
+                for (feed, resolution) in (
+                    (self.camera_id, self.resolution),
+                    (self.camera_id + '-birdseye', self.birds_eye_resolution)
+                )
+            )
 
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
-        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
         frame_num = 0
+        frames_processed = 0
         start_time = time.time()
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
-            birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
             if np.shape(cv_image) != ():
+                # TODO: Improve that logic including a time.sleep() instead of just ignoring some frames
+                if not self.live_feed_enabled and frame_num % frames_to_skip != 0:
+                    frame_num += 1
+                    continue
                 cv_image, objects, distancings = self.__process(cv_image)
-                output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
-
-                category_index = {class_id: {
-                    "id": class_id,
-                    "name": "Pedestrian",
-                }}  # TODO: json file for detector config
-                # Draw bounding boxes and other visualization factors on input_frame
-                visualization_utils.visualize_boxes_and_labels_on_image_array(
-                    cv_image,
-                    output_dict["detection_boxes"],
-                    output_dict["detection_classes"],
-                    output_dict["detection_scores"],
-                    output_dict["detection_colors"],
-                    category_index,
-                    instance_masks=output_dict.get("detection_masks"),
-                    use_normalized_coordinates=True,
-                    line_thickness=3,
-                )
-                # TODO: Implement perspective view for objects
-                birds_eye_window = visualization_utils.birds_eye_view(birds_eye_window, output_dict["detection_boxes"],
-                                                                      output_dict["violating_objects"])
-                try:
-                    fps = self.detector.fps
-                except:
-                    # fps is not implemented for the detector instance"
-                    fps = None
-
-                # Put fps to the frame
-                # region
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-                txt_fps = 'Frames rate = ' + str(fps) + '(fps)'  # Frames rate = 95 (fps)
-                # (0, 0) is the top-left (x,y); normalized number between 0-1
-                origin = (0.05, 0.93)
-                visualization_utils.text_putter(cv_image, txt_fps, origin)
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-                # endregion
-
-                # Put environment score to the frame
-                # region
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
                 violating_objects = extract_violating_objects(distancings, dist_threshold)
-                env_score = mx_environment_scoring_consider_crowd(len(objects), len(violating_objects))
-                txt_env_score = 'Env Score = ' + str(env_score)  # Env Score = 0.7
-                origin = (0.05, 0.98)
-                visualization_utils.text_putter(cv_image, txt_env_score, origin)
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-                # endregion
-
-                out.write(cv_image)
-                out_birdseye.write(birds_eye_window)
+                if self.live_feed_enabled:
+                    self.process_live_feed(cv_image, objects, distancings, violating_objects, out, out_birdseye)
                 frame_num += 1
-                if frame_num % 100 == 1:
-                    logger.info(f'processed frame {frame_num} for {video_uri}')
+                frames_processed += 1
+                if frames_processed % 100 == 1:
+                    logger.info(f'processed frame {frames_processed} for {video_uri}')
 
                 # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period has occured
                 if (self.screenshot_period > 0) and (time.time() > start_time + self.screenshot_period) and (
                         len(violating_objects) > 0):
                     start_time = time.time()
                     self.capture_violation(f"{start_time}_violation.jpg", cv_image)
-
                 self.save_screenshot(cv_image)
+
             else:
                 continue
             self.logger.update(objects, distancings)
@@ -329,8 +349,6 @@ class Distancing:
         new_objects_list = [tracked_boxes[i] for i in tracked_boxes.keys()]
         for i, item in enumerate(new_objects_list):
             item["id"] = item["id"].split("-")[0] + "-" + str(i)
-
-        centroids = np.array([obj["centroid"] for obj in new_objects_list])
         distances = self.calculate_box_distances(new_objects_list)
 
         return new_objects_list, distances
