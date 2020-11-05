@@ -60,8 +60,8 @@ class AreaThread(Thread):
 
     def run(self):
         self.engine = AreaEngine(self.config, self.area['section'])
-        self.engine.process_video(self.source['url'])
+        self.engine.process_area()
 
     def stop(self):
-        self.engine.stop_process_video()
+        self.engine.stop_process_area()
         self.join()
