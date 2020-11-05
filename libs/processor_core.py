@@ -6,7 +6,7 @@ from share.commands import Commands
 from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
-from libs.utils.notifications import run_check_violations, run_check_occupancy
+from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
 
@@ -67,13 +67,6 @@ class ProcessorCore:
                 if violation_threshold > 0:
                     schedule.every(interval).minutes.do(
                         run_check_violations, violation_threshold, self.config, area, interval,
-                        should_send_email_notifications, should_send_slack_notifications
-                    ).tag("notification-task")
-                occupancy_threshold = area['occupancy_threshold']
-                if occupancy_threshold > 0:
-                    occupancy_sleep_time = 3
-                    schedule.every(5).seconds.do(
-                        run_check_occupancy, occupancy_threshold, self.config, area, occupancy_sleep_time,
                         should_send_email_notifications, should_send_slack_notifications
                     ).tag("notification-task")
             else:

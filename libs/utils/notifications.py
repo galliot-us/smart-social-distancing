@@ -45,17 +45,9 @@ def check_violations(entity_type, threshold, config, entity_info, interval, shou
             slack_service = SlackService(config)
             slack_service.violation_report(entity_info, violations)
 
-def check_occupancy(entity_type, threshold, config, entity_info, sleep_time, should_send_email, should_send_slack):
-
 
 def run_check_violations(threshold, config, entity_info, interval, should_send_email, should_send_slack):
     entity_type = entity_info['type']
     job_thread = Thread(target=check_violations,
                         args=[entity_type, threshold, config, entity_info, interval, should_send_email, should_send_slack])
-    job_thread.start()
-
-def run_check_occupancy(threshold, config, entity_info, sleep_time, should_send_email, should_send_slack):
-    entity_type = entity_info['type']
-    job_thread = Thread(target=check_occupancy,
-                        args=[entity_type, threshold, config, entity_info, sleep_time, should_send_email, should_send_slack])
     job_thread.start()
