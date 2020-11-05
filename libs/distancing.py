@@ -284,7 +284,7 @@ class Distancing:
         start_time = time.time()
         last_processed_time = time.time()
         while input_cap.isOpened() and self.running_video:
-            result, cv_image = input_cap.read()
+            _, cv_image = input_cap.read()
             if np.shape(cv_image) != ():
                 if not self.live_feed_enabled and (time.time() - last_processed_time < self.log_time_interval):
                     continue
