@@ -306,8 +306,9 @@ class Distancing:
                 continue
             self.logger.update(objects, distancings)
         input_cap.release()
-        out.release()
-        out_birdseye.release()
+        if self.live_feed_enabled:
+            out.release()
+            out_birdseye.release()
         del self.detector
         self.running_video = False
 

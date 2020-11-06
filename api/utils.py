@@ -4,7 +4,6 @@ import humps
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from functools import lru_cache
 from share.commands import Commands
 
 from .settings import Settings
@@ -58,17 +57,18 @@ def update_and_restart_config(config_dict):
     return success
 
 
-def handle_config_response(config, success):
+def handle_response(response, success, status_code=status.HTTP_200_OK):
     if not success:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=jsonable_encoder({
                 'msg': 'Failed to restart video processor',
                 'type': 'unknown error on the config file',
-                'body': humps.decamelize(config)
+                'body': humps.decamelize(response)
             })
         )
-    return JSONResponse(content=humps.decamelize(config))
+    content = humps.decamelize(response) if response else None
+    return JSONResponse(status_code=status_code, content=content)
 
 
 def reestructure_areas(config_dict):

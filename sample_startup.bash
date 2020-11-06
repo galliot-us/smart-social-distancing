@@ -10,16 +10,16 @@ if [ ! -f "$videoPath" ]; then
 fi
 
 # start process video
-echo "running curl 0.0.0.0:8000/process-video-cfg "
+echo "running curl 0.0.0.0:8000/start-process-video "
 while true
 do  
     if sslEnabled=$(cat $config | grep -i "SSLEnabled = " | grep -i "true\|yes\|1"); then
-        url=https://0.0.0.0:8000/process-video-cfg
+        url=https://0.0.0.0:8000/start-process-video
     else
-        url=0.0.0.0:8000/process-video-cfg
+        url=0.0.0.0:8000/start-process-video
     fi
     # TODO: Remove the -k flag using the certificate already created
-    response=$(curl -k $url)
+    response=$(curl -X PUT -k $url)
     if [ "$response" != true ] ; then
         echo "curl failed, trying again in 5 seconds!"
         sleep 5
