@@ -137,7 +137,7 @@ class ProcessorCore:
         # Set up occupancy alerts
         areas_to_notify = [area for area in self.config.get_areas() if area['occupancy_threshold'] > 0]
         if areas_to_notify:
-            logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas ')
+            logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas')
             recv_conn, send_conn = mp.Pipe(False)
             p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, areas_to_notify))
             p.start()
