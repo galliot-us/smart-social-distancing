@@ -37,7 +37,7 @@ class AreaReporting:
     def process_area(self):
         self.processing_alerts = True
         time.sleep(self.idle_time)
-        logger.info(f'Enabled processing alerts for area - {self.area_id}: {self.area_name}')
+        logger.info(f'Enabled processing alerts for area - {self.area_id}: {self.area_name} with {len(self.cameras)} cameras')
         while self.cameras and self.processing_alerts:
             occupancy = 0
             for camera in self.cameras:
