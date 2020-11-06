@@ -34,7 +34,7 @@ class AreaThread(Thread):
         self.area = area
 
     def run(self):
-        self.engine = AreaEngine(self.config, self.area['section'])
+        self.engine = AreaEngine(self.config, self.area)
         self.engine.process_area()
 
     def stop(self):

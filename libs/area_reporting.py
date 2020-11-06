@@ -35,10 +35,18 @@ class AreaReporting:
         self.slack_service = SlackService(config)
 
     def process_area(self):
+        # Sleep for a while so cameras start processing
+        time.sleep(30)
+
         self.processing_alerts = True
-        time.sleep(self.idle_time)
-        logger.info(f'Enabled processing alerts for area - {self.area_id}: {self.area_name} with {len(self.cameras)} cameras')
+        logger.info(f'Enabled processing alerts for - {self.area_id}: {self.area_name} with {len(self.cameras)} cameras')
         while self.cameras and self.processing_alerts:
+            camera_file_paths = [os.path.join(camera['file_path'], str(date.today()) + ".csv") for camera in self.cameras]
+            if not all(list(map(os.path.isfile, camera_file_paths))):
+                # Wait before csv for this day are created
+                logger.info(f'Area reporting on - {self.area_id}: {self.area_name} is waiting for reports to be created')
+                time.sleep(self.occupancy_sleep_time_interval)
+
             occupancy = 0
             for camera in self.cameras:
                 with open(os.path.join(camera['file_path'], str(date.today()) + ".csv"), 'r') as log:

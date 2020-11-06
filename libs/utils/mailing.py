@@ -3,7 +3,7 @@ import logging
 import codecs
 
 # TODO: Move to a constants file
-NOTIFICATION_EMAIL_FROM = "noreply@yourdomain.com"
+NOTIFICATION_EMAIL_FROM = "noreply@lanthorn.ai"
 
 
 def send_email(from_email, receiver, subject, contents, attachments=None):
@@ -71,7 +71,7 @@ class MailService:
         html_string = html_string.replace('{entity_id}', entity_id)
         html_string = html_string.replace('{entity_type}', entity_type)
         html_string = html_string.replace('{entity_name}', entity_name)
-        html_string = html_string.replace('{entity_threshold}', entity_threshold)
+        html_string = html_string.replace('{entity_threshold}', str(entity_threshold))
         html_string = html_string.replace('{url}', f'{frontend_url}/dashboard?source=email')
         subject = f"[Lanthorn] Occupancy Alert on {entity_name} ({entity_type})"
         self.send_email_notification(entity_info, subject, html_string)
