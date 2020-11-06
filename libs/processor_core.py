@@ -147,8 +147,6 @@ class ProcessorCore:
 
         self._engines = engines
 
-
-
     def _stop_processing(self):
         for (conn, proc) in self._engines:
             conn.send(True)

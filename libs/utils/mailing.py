@@ -3,7 +3,7 @@ import logging
 import codecs
 
 # TODO: Move to a constants file
-NOTIFICATION_EMAIL_FROM = "noreply@lanthorn.ai"
+NOTIFICATION_EMAIL_FROM = "noreply@yourdomain.com"
 
 
 def send_email(from_email, receiver, subject, contents, attachments=None):
