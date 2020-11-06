@@ -6,6 +6,7 @@ from share.commands import Commands
 from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
+from libs.area_threading import run_area_processing
 from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
@@ -132,7 +133,21 @@ class ProcessorCore:
             p = mp.Process(target=run_video_processing, args=(self.config, recv_conn, p_src))
             p.start()
             engines.append((send_conn, p))
+
+        # Set up occupancy alerts
+        areas_to_notify = [area for area in self.config.get_areas() if area['occupancy_threshold'] > 0]
+        if areas_to_notify:
+            logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas ')
+            recv_conn, send_conn = mp.Pipe(False)
+            p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, areas_to_notify))
+            p.start()
+            engines.append((send_conn, p))
+        else:
+            logger.info('Area occupancy alerts are disabled for all areas')
+
         self._engines = engines
+
+
 
     def _stop_processing(self):
         for (conn, proc) in self._engines:

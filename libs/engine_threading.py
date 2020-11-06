@@ -2,8 +2,6 @@ import os
 from shutil import rmtree
 from threading import Thread
 from libs.distancing import Distancing as CvEngine
-from libs.areas_reporting import AreaReporting as AreaEngine
-from queue import Queue
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,19 +47,4 @@ class EngineThread(Thread):
 
     def stop(self):
         self.engine.stop_process_video()
-        self.join()
-
-class AreaThread(Thread):
-    def __init__(self, config, area):
-        Thread.__init__(self)
-        self.engine = None
-        self.config = config
-        self.area = area
-
-    def run(self):
-        self.engine = AreaEngine(self.config, self.area['section'])
-        self.engine.process_area()
-
-    def stop(self):
-        self.engine.stop_process_area()
         self.join()
