@@ -135,7 +135,11 @@ class ProcessorCore:
             engines.append((send_conn, p))
 
         # Set up occupancy alerts
-        areas_to_notify = [area for area in self.config.get_areas() if area['occupancy_threshold'] > 0]
+        areas_to_notify = [
+            area for area in self.config.get_areas() if area['occupancy_threshold'] > 0 and area['cameras'] and (
+                area['should_send_email_notifications'] or area['should_send_slack_notifications']
+            ) 
+        ]
         if areas_to_notify:
             logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas')
             recv_conn, send_conn = mp.Pipe(False)

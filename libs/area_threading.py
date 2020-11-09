@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def run_area_processing(config, pipe, areas):
     pid = os.getpid()
-    logger.info(f"[{pid}] taking on {len(areas)} cameras")
+    logger.info(f"[{pid}] taking on notifications for {len(areas)} areas")
     threads = []
     for area in areas:
         engine = AreaThread(config, area)

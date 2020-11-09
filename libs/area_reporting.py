@@ -2,7 +2,7 @@ import os
 import time
 import logging
 import csv
-from datetime import date
+from datetime import date, datetime
 from collections import deque
 from .utils.mailing import MailService
 from .notifications.slack_notifications import SlackService
@@ -17,9 +17,9 @@ class AreaReporting:
         self.config = config
         self.area = area
 
-        self.occupancy_sleep_time_interval = float(self.config.get_section_dict("App")["OccupancyAlertsTimeout"])
+        self.occupancy_sleep_time_interval = float(self.config.get_section_dict("App")["OccupancyAlertsMinInterval"])
         self.log_dir = self.config.get_section_dict("Logger")["LogDirectory"]
-        self.idle_time = float(self.config.get_section_dict('Logger')['TimeInterval']) + 0.1
+        self.idle_time = float(self.config.get_section_dict('Logger')['TimeInterval'])
         self.area_id = self.area['id']
         self.area_name = self.area['name']
         self.occupancy_threshold = self.area['occupancy_threshold']
@@ -40,7 +40,7 @@ class AreaReporting:
 
         self.processing_alerts = True
         logger.info(f'Enabled processing alerts for - {self.area_id}: {self.area_name} with {len(self.cameras)} cameras')
-        while self.cameras and self.processing_alerts:
+        while self.processing_alerts:
             camera_file_paths = [os.path.join(camera['file_path'], str(date.today()) + ".csv") for camera in self.cameras]
             if not all(list(map(os.path.isfile, camera_file_paths))):
                 # Wait before csv for this day are created
@@ -51,7 +51,12 @@ class AreaReporting:
             for camera in self.cameras:
                 with open(os.path.join(camera['file_path'], str(date.today()) + ".csv"), 'r') as log:
                     last_log = deque(csv.DictReader(log), 1)[0]
-                    occupancy += int(last_log['DetectedObjects'])
+                    log_time = datetime.strptime(last_log['Timestamp'], "%Y-%m-%d %H:%M:%S")
+                    # TODO: If the TimeInterval of the Logger is more than 30 seconds this would have to be revised.
+                    if (time.time() - log_time).total_seconds() < 30:
+                        occupancy += int(last_log['DetectedObjects'])
+                    else:
+                        logger.warn(f"Logs aren't being updated for camera {camera['id']} - {camera['name']}")
 
             if occupancy > self.occupancy_threshold:
                 # Trigger alerts
