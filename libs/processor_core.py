@@ -140,7 +140,7 @@ class ProcessorCore:
                 area['should_send_email_notifications'] or area['should_send_slack_notifications']
             ) 
         ]
-        if areas_to_notify:
+        if areas_to_notify and float(self.config.get_section_dict('App')['OccupancyAlertsMinInterval']) >= 0:
             logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas')
             recv_conn, send_conn = mp.Pipe(False)
             p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, areas_to_notify))
