@@ -1,7 +1,5 @@
 import os
-from shutil import rmtree
 from threading import Thread
-from libs.distancing import Distancing as CvEngine
 from libs.area_reporting import AreaReporting as AreaEngine
 import logging
 
