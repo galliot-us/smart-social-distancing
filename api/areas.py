@@ -1,14 +1,21 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, status
+from pydantic import BaseModel
+from typing import List
+
 from starlette.exceptions import HTTPException
 
 from .models.config_keys import AreaConfigDTO
 from .cameras import map_camera
 from .utils import (
-    extract_config, handle_config_response, reestructure_areas, update_and_restart_config
+    extract_config, handle_response, reestructure_areas, update_and_restart_config
 )
 
 
-areas_api = FastAPI()
+class AreasListDTO(BaseModel):
+    areas: List[AreaConfigDTO]
+
+
+areas_router = APIRouter()
 
 
 def get_areas():
@@ -48,23 +55,32 @@ def map_to_area_file_format(area: AreaConfigDTO):
     )
 
 
-@areas_api.get("/")
+@areas_router.get("/", response_model=AreasListDTO)
 async def list_areas():
+    """
+    Returns the list of areas managed by the processor.
+    """
     return {
         "areas": get_areas()
     }
 
 
-@areas_api.get("/{area_id}")
-async def get_area(area_id):
+@areas_router.get("/{area_id}", response_model=AreaConfigDTO)
+async def get_area(area_id: str):
+    """
+    Returns the configuration related to the area <area_id>
+    """
     area = next((area for area in get_areas() if area['id'] == area_id), None)
     if not area:
         raise HTTPException(status_code=404, detail=f'The area: {area_id} does not exist')
     return area
 
 
-@areas_api.post('/')
+@areas_router.post('/', response_model=AreaConfigDTO, status_code=status.HTTP_201_CREATED)
 async def create_area(new_area: AreaConfigDTO):
+    """
+    Adds a new area to the processor.
+    """
     config_dict = extract_config()
     areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
     areas = [map_area(x, config_dict) for x in areas_name]
@@ -77,15 +93,18 @@ async def create_area(new_area: AreaConfigDTO):
     if not all(x in camera_ids for x in new_area.cameras.split(',')):
         non_existent_cameras = set(new_area.cameras.split(',')) - set(camera_ids)
         raise HTTPException(status_code=404, detail=f'The cameras: {non_existent_cameras} do not exist')
-
-    config_dict[f'Area_{len(areas)}'] = map_to_area_file_format(new_area)
+    area_dict = map_to_area_file_format(new_area)
+    config_dict[f'Area_{len(areas)}'] = area_dict
 
     success = update_and_restart_config(config_dict)
-    return handle_config_response(config_dict, success)
+    return handle_response(area_dict, success, status.HTTP_201_CREATED)
 
 
-@areas_api.put('/{area_id}')
-async def edit_area(area_id, edited_area: AreaConfigDTO):
+@areas_router.put('/{area_id}', response_model=AreaConfigDTO)
+async def edit_area(area_id: str, edited_area: AreaConfigDTO):
+    """
+    Edits the configuration related to the area <area_id>
+    """
     edited_area.id = area_id
     config_dict = extract_config()
     area_names = [x for x in config_dict.keys() if x.startswith("Area")]
@@ -103,14 +122,18 @@ async def edit_area(area_id, edited_area: AreaConfigDTO):
         non_existent_cameras = set(edited_area.cameras.split(',')) - set(camera_ids)
         raise HTTPException(status_code=404, detail=f'The cameras: {non_existent_cameras} do not exist')
 
-    config_dict[f"Area_{index}"] = map_to_area_file_format(edited_area)
+    area_dict = map_to_area_file_format(edited_area)
+    config_dict[f"Area_{index}"] = area_dict
 
     success = update_and_restart_config(config_dict)
-    return handle_config_response(config_dict, success)
+    return handle_response(area_dict, success)
 
 
-@areas_api.delete('/{area_id}')
-async def delete_area(area_id):
+@areas_router.delete('/{area_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_area(area_id: str):
+    """
+    Deletes the configuration related to the area <area_id>
+    """
     config_dict = extract_config()
     areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
     areas = [map_area(x, config_dict) for x in areas_name]
@@ -124,4 +147,4 @@ async def delete_area(area_id):
     config_dict = reestructure_areas((config_dict))
 
     success = update_and_restart_config(config_dict)
-    return handle_config_response(config_dict, success)
+    return handle_response(None, success, status.HTTP_204_NO_CONTENT)

@@ -3,19 +3,21 @@ import os
 import logging
 
 from fastapi import FastAPI, status, Request
+
 from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.openapi.utils import get_openapi
 from share.commands import Commands
 
-from .cameras import cameras_api
-from .config import config_api
-from .areas import areas_api
+from .cameras import cameras_router
+from .config import config_router
+from .areas import areas_router
 from .queue_manager import QueueManager
-from .reports import reports_api
+from .reports import reports_router
 from .settings import Settings
-from .slack import slack_api
+from .slack import slack_router
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +47,11 @@ class ProcessorAPI:
         # Create and return a fastapi instance
         app = FastAPI()
 
-        app.mount("/config", config_api)
-        app.mount("/reports", reports_api)
-        app.mount("/cameras", cameras_api)
-        app.mount("/areas", areas_api)
-        app.mount("/slack", slack_api)
+        app.include_router(config_router, prefix="/config", tags=["config"])
+        app.include_router(cameras_router, prefix="/cameras", tags=["cameras"])
+        app.include_router(areas_router, prefix="/areas", tags=["areas"])
+        app.include_router(reports_router, prefix="/reports", tags=["reports"])
+        app.include_router(slack_router, prefix="/slack", tags=["slack"])
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -69,21 +71,45 @@ class ProcessorAPI:
 
         app.mount("/static", StaticFiles(directory="/repo/data/processor/static"), name="static")
 
-        @app.get("/process-video-cfg")
+        @app.put("/start-process-video", response_model=bool)
         async def process_video_cfg():
+            """
+            Starts the video processing
+            """
             logger.info("process-video-cfg requests on api")
             self.queue_manager.cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
             logger.info("waiting for core's response...")
             result = self.queue_manager.result_queue.get()
             return result
 
-        @app.get("/stop-process-video")
+        @app.put("/stop-process-video", response_model=bool)
         async def stop_process_video():
+            """
+            Stops the video processing
+            """
             logger.info("stop-process-video requests on api")
             self.queue_manager.cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
             logger.info("waiting for core's response...")
             result = self.queue_manager.result_queue.get()
             return result
+
+        def custom_openapi():
+            openapi_schema = get_openapi(
+                title="Smart Social Distancing",
+                version="1.0.0",
+                description="Processor API schema",
+                routes=app.routes
+            )
+            for value_path in openapi_schema['paths'].values():
+                for value in value_path.values():
+                    # Remove current 422 error message.
+                    # TODO: Display the correct validation error schema
+                    value['responses'].pop('422', None)
+
+            app.openapi_schema = openapi_schema
+            return app.openapi_schema
+
+        app.openapi = custom_openapi
 
         return app
 

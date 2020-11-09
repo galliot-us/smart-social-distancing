@@ -1,12 +1,12 @@
 import os
 
 from datetime import date, timedelta
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from libs.utils.reports import ReportsService
 
-reports_api = FastAPI()
+reports_router = APIRouter()
 
 reports = ReportsService()
 
@@ -88,6 +88,23 @@ class HeatmapReport(BaseModel):
         }
 
 
+class PeakHourViolationsReport(BaseModel):
+    peak_hour_violations: int
+
+
+class AverageViolationsReport(BaseModel):
+    average_violations: float
+
+
+class FaceMaskStatsReport(BaseModel):
+    total_faces_detected: int
+    no_face_mask_percentage: float
+
+
+class MostViolationsCamera(BaseModel):
+    cam_id: str
+
+
 def validate_dates(from_date, to_date):
     if from_date > to_date:
         raise HTTPException(status_code=400, detail='Invalid range of dates')
@@ -99,30 +116,41 @@ def validate_existence(camera_id):
         raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
 
 
-@reports_api.get("/{camera_id}/hourly", response_model=HourlyReport)
-def get_hourly_report(camera_id,
+@reports_router.get("/{camera_id}/hourly", response_model=HourlyReport)
+def get_hourly_report(camera_id: str,
                       from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
                       to_date: date = Query(date.today().isoformat())):
+    """
+    Returns a hourly report (for the date range specified) with information about the infractions detected in
+    the camera <camera_id>
+    """
     validate_dates(from_date, to_date)
     validate_existence(camera_id)
     return reports.hourly_report(camera_id, from_date, to_date)
 
 
-@reports_api.get("/{camera_id}/daily", response_model=DailyReport)
-def get_daily_report(camera_id,
+@reports_router.get("/{camera_id}/daily", response_model=DailyReport)
+def get_daily_report(camera_id: str,
                      from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
                      to_date: date = Query(date.today().isoformat())):
+    """
+    Returns a daily report (for the date range specified) with information about the infractions detected in
+    the camera <camera_id>
+    """
     validate_dates(from_date, to_date)
     validate_existence(camera_id)
     return reports.daily_report(camera_id, from_date, to_date)
 
 
-@reports_api.get("/{camera_id}/weekly", response_model=WeeklyReport)
-def get_weekly_report(camera_id,
+@reports_router.get("/{camera_id}/weekly", response_model=WeeklyReport)
+def get_weekly_report(camera_id: str,
                       weeks: int = Query(0),
                       from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
                       to_date: date = Query(date.today().isoformat())):
     """
+    Returns a weekly report (for the date range specified) with information about the infractions detected in
+    the camera <camera_id>
+
     **If `weeks` is provided and is a positive number:**
     - `from_date` and `to_date` are ignored.
     - Report spans from `weeks*7 + 1` days ago to yesterday.
@@ -142,13 +170,14 @@ def get_weekly_report(camera_id,
         return reports.weekly_report(camera_id, from_date=from_date, to_date=to_date)
 
 
-@reports_api.get("/{camera_id}/heatmap", response_model=HeatmapReport)
-def get_heatmap(
-    camera_id,
-    from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-    to_date: date = Query(date.today().isoformat()),
-    report_type: Optional[str] = 'violations'
-):
+@reports_router.get("/{camera_id}/heatmap", response_model=HeatmapReport)
+def get_heatmap(camera_id: str,
+                from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
+                to_date: date = Query(date.today().isoformat()),
+                report_type: Optional[str] = 'violations'):
+    """
+    Returns a heatmap image displaying the violations/detections detected by the camera <camera_id>
+    """
     validate_existence(camera_id)
     if report_type in ['violations', 'detections']:
         return reports.heatmap(camera_id, from_date, to_date, report_type)
@@ -156,24 +185,34 @@ def get_heatmap(
         raise HTTPException(status_code=400, detail='Invalid report_type')
 
 
-@reports_api.get("/{camera_id}/peak_hour_violations")
-def get_peak_hour_violations(camera_id):
+@reports_router.get("/{camera_id}/peak_hour_violations", response_model=PeakHourViolationsReport)
+def get_peak_hour_violations(camera_id: str):
+    """
+    Returns the hour with more violations detected by the camera <camera_id>
+    """
     validate_existence(camera_id)
     return {
         'peak_hour_violations': reports.peak_hour_violations(camera_id)
     }
 
 
-@reports_api.get("/{camera_id}/average_violations")
-def get_average_violations(camera_id):
+@reports_router.get("/{camera_id}/average_violations", response_model=AverageViolationsReport)
+def get_average_violations(camera_id: str):
+    """
+    Returns the average number of violations detected by the camera <camera_id>
+    """
     validate_existence(camera_id)
     return {
         'average_violations': reports.average_violations(camera_id)
     }
 
 
-@reports_api.get("/{camera_id}/face_mask_stats")
-def get_face_mask_stats(camera_id):
+@reports_router.get("/{camera_id}/face_mask_stats", response_model=FaceMaskStatsReport)
+def get_face_mask_stats(camera_id: str):
+    """
+    Returns the facemask detections stats for the camera <camera_id>.
+    The stats include `total faces detected` and the `percentage of people without a facemask`.
+    """
     validate_existence(camera_id)
     total_faces_detected, no_face_mask_percentage = reports.face_mask_stats(camera_id)
     return {
@@ -182,8 +221,11 @@ def get_face_mask_stats(camera_id):
     }
 
 
-@reports_api.get('/camera_with_most_violations')
+@reports_router.get('/camera_with_most_violations', response_model=MostViolationsCamera)
 def get_camera_with_most_violations():
+    """
+    Returns the camera that registers more violations.
+    """
     return {
         'cam_id': reports.camera_with_most_violations()
     }
