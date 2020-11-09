@@ -23,7 +23,6 @@ class AreaReporting:
         self.area_id = self.area['id']
         self.area_name = self.area['name']
         self.occupancy_threshold = self.area['occupancy_threshold']
-        self.emails = self.area['emails']
         self.should_send_email_notifications = self.area['should_send_email_notifications']
         self.should_send_slack_notifications = self.area['should_send_slack_notifications']
         self.cameras = [camera for camera in self.config.get_video_sources() if camera['id'] in self.area['cameras']]
