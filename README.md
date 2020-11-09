@@ -12,25 +12,34 @@ Smart Distancing is an open-source application to quantify social distancing mea
 
 You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 or Google's Coral Edge-TPU. This application measures social distancing rates and gives proper notifications each time someone ignores social distancing rules. By generating and analyzing data, this solution outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus.
 
+If you want to understand more about the architecture you can read the following [post](https://neuralet.com/article/smart-social-distancing/).
+
+
 Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to covid19project@neuralet.com if you have any questions.
+
 
 
 ## Getting Started
 
-You can read the [Smart Social Distancing tutorial](https://neuralet.com/docs/tutorials/smart-social-distancing/) on our website. The following instructions will help you get started.
+You can read the [Get Started tutorial](https://www.lanthorn.ai/get-started) on Lanthorn's [website](https://www.lanthorn.ai/). The following instructions will help you get started.
 
 ### Prerequisites
 
 **Hardware**
+
 A host edge device. We currently support the following:
+
 * NVIDIA Jetson Nano
 * NVIDIA Jetson TX2
 * Coral Dev Board
 * AMD64 node with attached Coral USB Accelerator
 * X86 node (also accelerated with Openvino)
 
+The features supported, the detection accuracy reached and the performance can vary from device to device.
+ 
 **Software**
-* You should have [Docker](https://docs.docker.com/get-docker/) on your device.
+
+You should have [Docker](https://docs.docker.com/get-docker/) on your device.
 
 ### Install
 
@@ -41,84 +50,27 @@ git clone https://github.com/neuralet/smart-social-distancing.git
 cd smart-social-distancing
 ```
 
-### Usage
+### Download a sample video
+If you don't have any camera to test the solution you can use any video as an input source. You can download an example with the following command.
 
-Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
-
-The smart social distancing app consists of two components which must be run separately.
-There is the `frontend` and the `processor`.
-In the following sections we will cover how to build and run each of them depending on which device you are using.
-
-
-#### Download Required Files
 ```bash
 # Download a sample video file from multiview object tracking dataset
 # The video is complied from this dataset: https://researchdatafinder.qut.edu.au/display/n27416
 ./download_sample_video.sh
 ```
 
-#### Web App
-(This step is optional if you are not going to build any docker image)
+### Usage
+The smart social distancing app consists of two components: the `frontend` and the `processor`. 
 
-The frontend consists of 2 Dockerfiles:
-* `frontend.Dockerfile`: Builds the React app.
-* `web-gui.Dockerfile`: Builds a FastAPI backend which serves the React app built in the previous Dockerfile.
-
-If the `frontend` directory on your branch is not identical to the upstream `master` branch, you MUST build the frontend image with
-tag "`neuralet/smart-social-distancing:latest-frontend`" BEFORE BUILDING THE MAIN FRONTEND IMAGE.
-Otherwise, skip this step, as we have already built the frontend for `master` branch on Dockerhub.
-
-* To build the frontend run:
-
-```bash
-docker build -f frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-frontend" .
-```
-
-* To run the frontend, run:
-
-```bash
-docker build -f web-gui.Dockerfile -t "neuralet/smart-social-distancing:latest-web-gui" .
-docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-web-gui
-```
-
-> Important: There is a `config-frontend.ini` file which tells the frontend where to find the processor container.
-> You must set the "Processor" section of the config file with the correct IP and port of the processor.
-
----
-***NOTE***
-
-Building the frontend is resource intensive. If you are planning to host everything on an edge device, we suggest building the docker image on your PC/laptop first and then copy it to the edge device. However, you can always start the frontend container on a PC/laptop and the processor container on the edge device.
-
----
-
-* To run the frontend on an edge device (Only possible on jetson for now):
-
-```bash
-# Run this commands on your PC/laptop:
-docker build -f frontend.Dockerfile -t "neuralet/smart-social-distancing:latest-frontend" .
-docker save -o "frontend_base_image.tar" neuralet/smart-social-distancing:latest-frontend
-```
-
-* Then, move the file `frontend_base_image.tar` that was just built on your PC/laptop to your jetson platform and load it:
-```bash
-# Copy "frontend_image.tar" to your edge device and run this command on your device:
-docker load -i "frontend_base_image.tar"
-rm frontend_base_image.tar
-```
-
-* Then build the web-gui image for jetson:
-```bash
-docker build -f jetson-web-gui.Dockerfile -t "neuralet/smart-social-distancing:latest-web-gui-jetson" .
-
-# And run it:
-docker run -it -p HOST_PORT:8000 --rm neuralet/smart-social-distancing:latest-web-gui-jetson
-```
+#### Frontend
+The frontend is a public [webapp](http://beta.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. This web app allows you to configure some aspects of the processor (such as notifications and calibration) using a friendly UI. Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
 
 #### Processor
 
-Please note that in order to correctly visualize the processor in the frontend. The `HOST_PORT` used to run the **Processor** should be the same than the one stored in `config-frontend.ini
+Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
 
 ##### Optional Parameters
+
 This is a list of optional parameters for the `docker run` commands.
 They are included in the examples of this section.
 
@@ -132,7 +84,7 @@ Please note that the bash script may require permissions to execute `chmod +777 
 
 **Persisting changes on the config.ini file**
 
-Adding the respective `config.ini` as a volume (as for example `-v "$PWD/config-jetson.ini":/repo/config-jetson.ini`). Will allow for syncing changes of said file.
+Adding the respective `config.ini` as a volume (as for example `-v "$PWD/config-jetson.ini":/repo/config-jetson.ini`). Will allow for syncing changes of said file. 
 
 ##### Enabling SSL
 
@@ -237,34 +189,29 @@ You can read and modify the configurations in `config-*.ini` files, accordingly:
 
 `config-x86-openvino.ini`: for x86 systems accelerated with Openvino
 
-Under the `[Detector]` section, you can modify the `Min score` parameter to define the person detection threshold. You can also change the distance threshold by altering the value of `DistThreshold`.
+Some examples of changes that you can apply are:
+
+- Under the `[Detector]` section, you can modify the `MinScore` parameter to define the person detection threshold. You can also change the distance threshold by altering the value of `DistThreshold`.
+- Under the `[API]` section, you can modify the `SSLEnabled` parameter to enable/disable HTTPS/SSL in the processor
+- Under the `[Logger]` section, you can modify the `TimeInterval` to set the desired logging interval. In the same section, you can change the destination of the file with the parameter `LogDirectory`.  
+
 
 ### API usage
-After you run the processor's docker on your node, no matter if your frontend docker is running or not, you can use the Processor's API to control the Processor's Core, where all the process is getting done.
+After you run the processor on your node, you can use the exposed API to control the Processor's Core, where all the process is getting done.
 
-* The API supported paths are now as the following:
+* Some of the API supported paths are now as the following:
 
- 1- `PROCESSOR_IP:PROCESSOR_PORT/process-video-cfg`: Sends command `PROCESS_VIDEO_CFG` to core and returns the response. It starts to process the video adressed in the configuration file. If the response is `true`, it means the core is going to try to process the video (no guarantee if it will do it), and if the response is `false`, it means the process can not be started now (e.g. another process is already requested and running)
+ 1- `PUT PROCESSOR_IP:PROCESSOR_PORT/start-process-video`: Sends command `PROCESS_VIDEO_CFG` to core and returns the response. It starts to process the video adressed in the configuration file. If the response is `true`, it means the core is going to try to process the video (no guarantee if it will do it), and if the response is `false`, it means the process can not be started now (e.g. another process is already requested and running)
 
- 2- `PROCESSOR_IP:PROCESSOR_PORT/stop-process-video`: Sends command `STOP_PROCESS_VIDEO` to core and returns the response. It stops processing the video at hand, returns the response `true` if it stopped or `false`, meaning it can not (e.g. no video is already being processed to stop!)
+ 2- `PUT PROCESSOR_IP:PROCESSOR_PORT/stop-process-video`: Sends command `STOP_PROCESS_VIDEO` to core and returns the response. It stops processing the video at hand, returns the response `true` if it stopped or `false`, meaning it can not (e.g. no video is already being processed to stop!)
 
- 3- `PROCESSOR_IP:PROCESSOR_PORT/get-config`: It returns the config which is used by both processor's API and Core (it is the same so returns just a single configuration set) in json format. This is the file you have used in your Processor's Dockerfile.
+ 3- `GET PROCESSOR_IP:PROCESSOR_PORT/config`: It returns the config which is used by processor in json format. This is the file you have used in your Processor's Dockerfile.
 
- 4- `PROCESSOR_IP:PROCESSOR_PORT/set-config`: As the configuration file between Processor's API and Core is the same configuration, it sets the given set of json configurations in the config, for both API and Core and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any).
+ 4- `PUT PROCESSOR_IP:PROCESSOR_PORT/config`: It sets the given set of json configurations in the config, and reloads the configuration. Core's engine is also restarted so all methods and members (specially those which were initiated with the old config) can use the updated config (this will stop the processing of the video - if any).
 
- ***NOTE*** that the config file given in the Dockerfile will be updated, but this will be inside your docker and will be lost after stopping you running docker.
+The rest of the endpoints are documented with swagger in the url `PROCESSOR_IP:PROCESSOR_PORT/docs`
 
-* Usage example:
-
-While the Processor's docker is up and running:
-
-```bash
-curl -d '{"App": { "VideoPath" : "/repo/data/YOUR_VIDEO.mp4"} }' -H "Content-Type: application/json" -X POST http://PROCESSOR_IP:PROCESSOR_PORT/set-config
-```
-(of course you have to put your video under `data/` before) and then enter `http://PROCESSOR_IP:PROCESSOR_PORT/process-video-cfg` in your browser. You can see in your terminal running the docker that your video is being loaded and processed. You also can refresh your dashboard to see the output.
-
-***NOTE***: residual files under `data/web_gui/static/` may cause you to see previous streams and plots stored there! This needs to be issued separately, you can mannually clean that path for now.
-
+ ***NOTE*** Most of the endpoints update the config file given in the Dockerfile. If you don't have this file mounted, these changes will be inside your container and will be lost after stopping it.
 
 ## Issues and Contributing
 
