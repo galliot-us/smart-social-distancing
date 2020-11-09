@@ -245,3 +245,23 @@ async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatri
     config_dict[dir_source['section']]['DistMethod'] = 'CalibratedDistance'
     success = update_and_restart_config(config_dict)
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
+
+
+@cameras_router.get("/{camera_id}/calibration_image", response_model=ImageModel)
+async def get_camera_calibration_image(camera_id: str):
+    """
+    Gets the image required to calibrate the camera <camera_id>
+    """
+    camera = next((camera for camera in get_cameras(['withImage']) if camera['id'] == camera_id), None)
+    camera_cap = cv.VideoCapture(camera['videoPath'])
+    if not camera_cap.isOpened():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f'The camera: {camera_id} is not available.')
+    _, cv_image = camera_cap.read()
+    _, buffer = cv.imencode('.jpg', cv_image)
+    encoded_string = base64.b64encode(buffer)
+    camera_cap.release()
+    return {
+        "image": encoded_string
+    }
