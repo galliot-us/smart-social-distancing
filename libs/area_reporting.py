@@ -53,7 +53,7 @@ class AreaReporting:
                     last_log = deque(csv.DictReader(log), 1)[0]
                     log_time = datetime.strptime(last_log['Timestamp'], "%Y-%m-%d %H:%M:%S")
                     # TODO: If the TimeInterval of the Logger is more than 30 seconds this would have to be revised.
-                    if (time.time() - log_time).total_seconds() < 30:
+                    if (datetime.now() - log_time).total_seconds() < 30:
                         occupancy += int(last_log['DetectedObjects'])
                     else:
                         logger.warn(f"Logs aren't being updated for camera {camera['id']} - {camera['name']}")
