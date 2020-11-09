@@ -103,7 +103,7 @@ async def create_area(new_area: AreaConfigDTO):
 @areas_router.put('/{area_id}', response_model=AreaConfigDTO)
 async def edit_area(area_id: str, edited_area: AreaConfigDTO):
     """
-    Edits the configuration related to the area <carea_id>
+    Edits the configuration related to the area <area_id>
     """
     edited_area.id = area_id
     config_dict = extract_config()
