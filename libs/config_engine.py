@@ -178,7 +178,7 @@ class ConfigEngine:
                     if 'Cameras' in section and section['Cameras'].strip() != "":
                         area['cameras'] = section['Cameras'].split(',')
 
-                    if area['notify_every_minutes'] > 0 and (area['violation_threshold'] > 0 or area['occupancy_threshold'] > 0):
+                    if (area['notify_every_minutes'] > 0 and area['violation_threshold'] > 0) or area['occupancy_threshold'] > 0:
                         area['should_send_email_notifications'] = 'emails' in area
                         area['should_send_slack_notifications'] = bool(self.config['App']['SlackChannel'] and
                                                                        self.config.getboolean('App', 'EnableSlackNotifications'))

@@ -48,5 +48,6 @@ def check_violations(entity_type, threshold, config, entity_info, interval, shou
 
 def run_check_violations(threshold, config, entity_info, interval, should_send_email, should_send_slack):
     entity_type = entity_info['type']
-    job_thread = Thread(target=check_violations, args=[entity_type, threshold, config, entity_info, interval, should_send_email, should_send_slack])
+    job_thread = Thread(target=check_violations,
+                        args=[entity_type, threshold, config, entity_info, interval, should_send_email, should_send_slack])
     job_thread.start()

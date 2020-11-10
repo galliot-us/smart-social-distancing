@@ -6,6 +6,7 @@ from share.commands import Commands
 from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
+from libs.area_threading import run_area_processing
 from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
@@ -63,11 +64,12 @@ class ProcessorCore:
             should_send_slack_notifications = area['should_send_slack_notifications']
             if should_send_email_notifications or should_send_slack_notifications:
                 interval = area['notify_every_minutes']
-                threshold = area['violation_threshold']
-                schedule.every(interval).minutes.do(
-                    run_check_violations, threshold, self.config, area, interval,
-                    should_send_email_notifications, should_send_slack_notifications
-                ).tag("notification-task")
+                violation_threshold = area['violation_threshold']
+                if violation_threshold > 0:
+                    schedule.every(interval).minutes.do(
+                        run_check_violations, violation_threshold, self.config, area, interval,
+                        should_send_email_notifications, should_send_slack_notifications
+                    ).tag("notification-task")
             else:
                 logger.info(f"should not send notification for camera {area['id']}")
 
@@ -131,6 +133,22 @@ class ProcessorCore:
             p = mp.Process(target=run_video_processing, args=(self.config, recv_conn, p_src))
             p.start()
             engines.append((send_conn, p))
+
+        # Set up occupancy alerts
+        areas_to_notify = [
+            area for area in self.config.get_areas() if area['occupancy_threshold'] > 0 and area['cameras'] and (
+                area['should_send_email_notifications'] or area['should_send_slack_notifications']
+            ) 
+        ]
+        if areas_to_notify and float(self.config.get_section_dict('App')['OccupancyAlertsMinInterval']) >= 0:
+            logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas')
+            recv_conn, send_conn = mp.Pipe(False)
+            p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, areas_to_notify))
+            p.start()
+            engines.append((send_conn, p))
+        else:
+            logger.info('Area occupancy alerts are disabled for all areas')
+
         self._engines = engines
 
     def _stop_processing(self):

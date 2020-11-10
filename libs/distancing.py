@@ -60,8 +60,8 @@ class Distancing:
                 logger.info(f"Falling back using {self.default_dist_method}")
                 self.dist_method = self.default_dist_method
 
-        self.screenshot_period = float(
-            self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60  # config.ini uses minutes as unit
+        # config.ini uses minutes as unit
+        self.screenshot_period = float(self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60
         self.bucket_screenshots = config.get_section_dict("App")["ScreenshotS3Bucket"]
         self.uploader = S3Uploader(self.config)
         self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
