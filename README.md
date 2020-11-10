@@ -63,7 +63,9 @@ If you don't have any camera to test the solution you can use any video as an in
 The smart social distancing app consists of two components: the `frontend` and the `processor`. 
 
 #### Frontend
-The frontend is a public [webapp](http://beta.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. This web app allows you to configure some aspects of the processor (such as notifications and calibration) using a friendly UI. Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
+The frontend is a public [web app](http://beta.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. 
+This web app allows you to configure some aspects of the processor (such as notifications and camera calibration) using a friendly UI. 
+Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
 
 #### Processor
 
