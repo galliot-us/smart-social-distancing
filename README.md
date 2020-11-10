@@ -84,7 +84,7 @@ Please note that the bash script may require permissions to execute `chmod +777 
 
 **Persisting changes on the config.ini file**
 
-Adding the respective `config.ini` as a volume (as for example `-v "$PWD/config-jetson.ini":/repo/config-jetson.ini`). Will allow for syncing changes of said file. 
+Adding the respective `config.ini` as a volume (as for example `-v "$PWD/config-jetson.ini":/repo/config-jetson.ini`). Will allow for syncing changes of said file.
 
 ##### Enabling SSL
 
