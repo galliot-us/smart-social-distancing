@@ -185,7 +185,7 @@ class Distancing:
         elif self.device == 'Dummy':
             from libs.detectors.dummy.detector import Detector
             self.detector = Detector(self.config)
-        elif self.device == 'x86':
+        elif self.device in ['x86', 'x86-gpu']:
             from libs.detectors.x86.detector import Detector
             from libs.classifiers.x86.classifier import Classifier
             self.detector = Detector(self.config)
