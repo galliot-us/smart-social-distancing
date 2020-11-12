@@ -144,6 +144,7 @@ class ConfigEngine:
                     src['violation_threshold'] = int(section['ViolationThreshold'])
                     src['should_send_notifications'] = 'emails' in src and src['notify_every_minutes'] > 0 and \
                                                        src['violation_threshold'] > 0
+                    src['repeat'] = section['Repeat'] 
                     sources.append(src)
             return sources
         except:
