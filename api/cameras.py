@@ -58,7 +58,8 @@ def map_camera(camera_name, config, options=[]):
         "notifyEveryMinutes": camera.get("NotifyEveryMinutes"),
         "dailyReport": camera.get("DailyReport"),
         'dailyReportTime': camera.get('DailyReportTime'),
-        "image": image
+        "image": image,
+        "distMethod": camera.get("DistMethod"),
     }
 
 
