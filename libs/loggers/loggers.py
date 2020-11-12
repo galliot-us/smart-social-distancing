@@ -26,15 +26,15 @@ class Logger:
         # Logger name, at this time only csv_logger is supported. You can implement your own logger
         # by following csv_logger implementation as an example.
         self.name = self.config.get_section_dict("Logger")["Name"]
+        self.loggers = []
         if self.name == "csv_logger":
-            from . import csv_logger
-            self.logger = csv_logger.Logger(self.config, camera_id)
+            from .csv_logger import CSVLogger
+            self.loggers.append(CSVLogger(self.config, camera_id))
         else:
             raise ValueError('Not supported logger named: ', self.name)
 
-        self.web_hook_logger = None
         if self.config.get_section_dict("Logger")["WebHooksEndpoint"]:
-            self.web_hook_logger = WebHookLogger(self.config, camera_id)
+            self.loggers.append(WebHookLogger(self.config, camera_id))
 
         # Specifies how often the logger should log information. For example with time_interval of 0.5
         # the logger log the information every 0.5 seconds.
@@ -68,18 +68,8 @@ class Logger:
             detected_objects_count = len(objects_list)
             # Get environment score
             environment_score = mx_environment_scoring_consider_crowd(detected_objects_count, violating_objects_count)
-            self.logger.log_objects(
-                objects,
-                violating_objects,
-                violating_objects_index_list,
-                violating_objects_count,
-                detected_objects_count,
-                environment_score,
-                current_time,
-                version=LOG_FORMAT_VERSION
-            )
-            if self.web_hook_logger:
-                self.web_hook_logger.log_objects(
+            for logger in self.loggers:
+                logger.log_objects(
                     objects,
                     violating_objects,
                     violating_objects_index_list,
