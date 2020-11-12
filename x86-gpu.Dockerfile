@@ -79,7 +79,7 @@ RUN apt-get update && apt-get install -y python3-dev && pip3 install torch==1.5 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
-
+ENV TF_FORCE_GPU_ALLOW_GROWTH=true
 COPY . /repo
 WORKDIR /repo
 ENTRYPOINT ["bash", "start_services.bash"]
