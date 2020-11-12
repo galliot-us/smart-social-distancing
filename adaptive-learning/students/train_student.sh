@@ -31,6 +31,11 @@ echo "====================================================="
 echo "Adaptive Learning Process Started..."
 echo "====================================================="
 sleep 5
+MODEL_DIR="/repo/adaptive-learning/data/student_model"
+EXPORT_DIR=$MODEL_DIR/frozen_graph
+mkdir -p $MODEL_DIR
+mkdir -p $EXPORT_DIR
+
 Quantization_Aware=$(sed -n -e 's/^\s*QuantizationAware\s*:\s*//p' "$CONFIG_FILE")
 if $Quantization_Aware
 then
@@ -64,11 +69,7 @@ then
 fi
 
 
-MODEL_DIR="/repo/adaptive-learning/data/student_model"
-EXPORT_DIR=$MODEL_DIR/frozen_graph
 TFRECORD_DIR="/repo/adaptive-learning/data/tfrecords"
-mkdir -p $MODEL_DIR
-mkdir -p $EXPORT_DIR
 mkdir -p $TFRECORD_DIR
 tensorboard --logdir $MODEL_DIR &
 # TODO: add infinite loop option

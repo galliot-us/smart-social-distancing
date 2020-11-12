@@ -85,6 +85,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	python3-requests \
         build-essential \
         libedgetpu1-std \
+	procps \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install -r /requirements.txt \
 	https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_x86_64.whl \

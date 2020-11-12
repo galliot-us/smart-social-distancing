@@ -1,18 +1,11 @@
 #!/bin/bash
 config="$1"
 
-# check if model name is correct
-line=$(cat $config | grep Name)
-model="$(cut -d'=' -f2 <<<"$line")"
-if [ $model != "mobilenet_ssd_v2" ]; then
-    echo "the selected model must be 'mobilenet_ssd_v2' in adaptive learning setup but it is $model"
-    exit 1
-fi
-
 MODEL_DIR="/repo/adaptive-learning/data/student_model/frozen_graph/"
+sleep 20
 
 # start watching files
-inotifywait -e modify,create --exclude "[^detect.tflite]$" -m $MODEL_DIR |
+inotifywait -e modify -m $MODEL_DIR | grep '\s\+detect.tflite$' --line-buffered |
   while read dir action file; do
     echo "Start Updating Model ..."
     sleep 5

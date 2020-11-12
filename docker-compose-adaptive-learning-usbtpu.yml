@@ -13,6 +13,8 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=0
+    depends_on:
+      - smart-social-distancing
 
   student:
     build:
@@ -30,6 +32,8 @@ services:
       - NVIDIA_VISIBLE_DEVICES=0
       - PYTHONPATH=$PYTHONPATH:/models/research:/models/research/slim
       - TF_FORCE_GPU_ALLOW_GROWTH=true
+    depends_on:
+      - smart-social-distancing
 
   smart-social-distancing:
     build:
