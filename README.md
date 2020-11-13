@@ -224,7 +224,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   A single processor can manage multiple areas and all of them must be configured in the config file. You can generate this configuration in 3 different ways: directly in the config file, using the [UI](https://beta.lanthorn.ai) or using the API.
   - `Id`: A string parameter to identify each area. This value must be *unique*.
   - `Name`: A string parameter to name each area. Although you can repeat the same name in multiple areas, we recommend don't do that.
-  - `Cameras`: Configures the cameras (using the *ids*) included in the area. If you are configuring multiple cameras you should write the ids separated by commas. Each area should have unless one camera.
+  - `Cameras`: Configures the cameras (using the *ids*) included in the area. If you are configuring multiple cameras you should write the ids separated by commas. Each area should have at least one camera.
   - `NotifyEveryMinutes` and `ViolationThreshold`: Defines the *period of time* and *number of social distancing violations* desired to send notifications. For example, if you want to notify when *occurs more than 10 violations every 15 minutes*, you must set `NotifyEveryMinutes` in 15 and `ViolationThreshold` in 10.
   -`Emails`: Defines the emails list to receive the notification. Multiple emails can be written separating them by commas.
   - `OccupancyThreshold`: Defines the occupancy violation threshold. For example, if you want to notify when *there is more than 20 persons in the area* you must set `OccupancyThreshold` in 20.
