@@ -275,6 +275,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `LogDirectory`: Defines the location where the generated files will be stored.
   - `EnableReports`: A boolean parameter to enable/disable the reports generation.
   - `HeatmapResolution`: Sets the resolution used by the heatmap report.
+  - `WebHooksEndpoint`: Configures an endpoint to receive in real-time the objects detections and violations.
 
 ### API usage
 After you run the processor on your node, you can use the exposed API to control the Processor's Core, where all the process is getting done.
