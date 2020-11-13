@@ -264,7 +264,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[PostProcessor]`:
   - `MaxTrackFrame`: Defines the number of frames that an object should disappear to be considered as lost.
-  - `NMSThreshold`: Configures the threshold of minimum IoU of to detect two box as duplicated.
+  - `NMSThreshold`: Configures the threshold of minimum IoU to detect two boxes as referring to the same object.
   - `DefaultDistMethod`: Defines the default distance algorithm for the cameras without *DistMethod* configuration.
   - `DistThreshold`: Configures the distance threshold for the *social distancing violations*
   - `Anonymize`: A boolean parameter to enable/disable anonymization of faces in videos and screenshots.
