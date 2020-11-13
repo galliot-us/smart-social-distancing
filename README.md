@@ -261,6 +261,8 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `Name`: Name of the facemask classifier used.
   - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
   - `ModelPath`: The same behavior as in the section `Detector`.
+  - `MinScore`: Defines the facemask detection threshold. Any facemask detected by the model with a score less than the threshold will be ignored.
+
 
 - `[PostProcessor]`:
   - `MaxTrackFrame`: Defines the number of frames that an object should disappear to be considered as lost.

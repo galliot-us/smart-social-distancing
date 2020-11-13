@@ -71,7 +71,8 @@ def create_daily_report(config):
                 hour = datetime.strptime(row['Timestamp'], "%Y-%m-%d %H:%M:%S").hour
                 detections = ast.literal_eval(row['Detections'])
                 faces = [d["face_label"] for d in detections if "face_label" in d]
-                summary[hour] += (1, int(row['DetectedObjects']), int(row['ViolatingObjects']), len(faces), int(sum(faces)))
+                masks = [f for f in faces if f == 0]
+                summary[hour] += (1, int(row['DetectedObjects']), int(row['ViolatingObjects']), len(faces), len(masks))
 
         with open(daily_csv, "w", newline='') as csvfile:
             headers = ["Number", "DetectedObjects", "ViolatingObjects", "DetectedFaces", "UsingFacemask"]
@@ -109,7 +110,8 @@ def send_daily_report_notification(config, entity_info):
     else:
         # entity == 'Area'
         camera_ids = entity_info['cameras']
-        daily_csv_file_paths = [os.path.join(log_directory, camera_id, "objects_log/report_" + yesterday + ".csv") for camera_id in camera_ids]
+        daily_csv_file_paths = [
+            os.path.join(log_directory, camera_id, "objects_log/report_" + yesterday + ".csv") for camera_id in camera_ids]
 
     for file_path in daily_csv_file_paths:
         violations_per_hour = []

@@ -81,7 +81,7 @@ class Detector:
                 ymax = int(min(y_max + .1 * h, self.h))
                 bbox_dict = {
                     "id": f"{self.class_id}-" + str(i), "bbox": [ymin / self.h, xmin / self.w, ymax / self.h, xmax / self.w],
-                    "score": 0.9, "face": None
+                    "score": pose.score, "face": None
                 }
                 # extracting face bounding box
                 if np.all(keypoints[[0, 1, 2, 5, 6], -1] > 0.15):
