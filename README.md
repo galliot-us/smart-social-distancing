@@ -194,7 +194,7 @@ You can read and modify the configurations in `config-*.ini` files, accordingly:
 `config-x86-openvino.ini`: for x86 systems accelerated with Openvino
 
 You can also modify some of them using the [UI](https://beta.lanthorn.ai). 
-If you choose this option, take care of mount the config file to keep the changes after any restart of the processor.
+If you choose this option, make sure to mount the config file as a volume to keep the changes after any restart of the container.
 
 All the configurations are grouped in *sections* and some of them can vary depending on the chosen device.
 
