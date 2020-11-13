@@ -67,6 +67,8 @@ The frontend is a public [web app](https://beta.lanthorn.ai) provided by [lantho
 This web app allows you to configure some aspects of the processor (such as notifications and camera calibration) using a friendly UI. 
 Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
 
+The frontend site uses HTTPs, in order to have it communicate with the processor, the latter must be either **Running with SSL enabled** (See `Enabling SSL` on this Readme), **or** you must edit your site settings for `https://beta.lanthorn.ai` in order to allow for Mixed Content (Insecure Content). **Without doing any of these, communication with the local processor will fail**
+
 #### Processor
 
 Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
