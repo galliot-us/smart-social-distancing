@@ -260,7 +260,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   Some of the supported devices includes the *facemask detection* feature. If you want to include this feature, you need to specify the classifier section.
   - `Name`: Name of the facemask classifier used.
   - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
-  - `ModelPath`: The same behavior that the section `Detector`.
+  - `ModelPath`: The same behavior as in the section `Detector`.
 
 - `[PostProcessor]`:
   - `MaxTrackFrame`: Defines the number of frames that an object should disappear to be considered as lost.
