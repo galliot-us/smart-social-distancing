@@ -123,7 +123,7 @@ class ProcessorAPI:
         if self.settings.config.get_boolean("API", "SSLEnabled"):
             # HTTPs is enabled
             kwargs.update({
-                "ssl_keyfile": f"{self.settings.config.get_section_dict("API")["SSLKeyFile"]}",
-                "ssl_certfile": f"{self.settings.config.get_section_dict("API")["SSLCertificateFile"]}"
+                "ssl_keyfile": f"{self.settings.config.get_section_dict('API')['SSLKeyFile']}",
+                "ssl_certfile": f"{self.settings.config.get_section_dict('API')['SSLCertificateFile']}"
             })
         uvicorn.run(self.app, **kwargs)
