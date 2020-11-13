@@ -55,7 +55,7 @@ def map_to_area_file_format(area: AreaConfigDTO):
     )
 
 
-@areas_router.get("/", response_model=AreasListDTO)
+@areas_router.get("", response_model=AreasListDTO)
 async def list_areas():
     """
     Returns the list of areas managed by the processor.
@@ -76,7 +76,7 @@ async def get_area(area_id: str):
     return area
 
 
-@areas_router.post('/', response_model=AreaConfigDTO, status_code=status.HTTP_201_CREATED)
+@areas_router.post('', response_model=AreaConfigDTO, status_code=status.HTTP_201_CREATED)
 async def create_area(new_area: AreaConfigDTO):
     """
     Adds a new area to the processor.

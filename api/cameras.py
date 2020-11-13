@@ -120,7 +120,7 @@ def verify_path(base, camera_id):
     return dir_path
 
 
-@cameras_router.get("/", response_model=CamerasListDTO)
+@cameras_router.get("", response_model=CamerasListDTO)
 async def list_cameras(options: Optional[str] = ""):
     """
     Returns the list of cameras managed by the processor.
@@ -141,7 +141,7 @@ async def get_camera(camera_id: str):
     return camera
 
 
-@cameras_router.post("/", response_model=SourceConfigDTO, status_code=status.HTTP_201_CREATED)
+@cameras_router.post("", response_model=SourceConfigDTO, status_code=status.HTTP_201_CREATED)
 async def create_camera(new_camera: SourceConfigDTO):
     """
     Adds a new camera to the processor.
