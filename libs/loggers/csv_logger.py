@@ -38,6 +38,6 @@ class CSVLogger(LoggerTemplate):
                 writer.writeheader()
 
             writer.writerow(
-                {'Version': version, 'Timestamp': time_stamp, 'DetectedObjects': detected_objects_cout,
-                 'ViolatingObjects': violating_objects_count, 'EnvironmentScore': environment_score,
-                 'Detections': str(objects), 'ViolationsIndexes': str(violating_objects_index_list)})
+                {"Version": version, "Timestamp": time_stamp, "DetectedObjects": detected_objects_cout,
+                 "ViolatingObjects": violating_objects_count, "EnvironmentScore": environment_score,
+                 "Detections": str(objects), "ViolationsIndexes": str(violating_objects_index_list)})

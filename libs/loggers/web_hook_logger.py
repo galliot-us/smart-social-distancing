@@ -17,13 +17,13 @@ class WebHookLogger(LoggerTemplate):
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,
                     detected_objects_cout, environment_score, time_stamp, version):
         request_data = {
-            'version': version,
-            'timestamp': time_stamp,
-            'detected_objects': detected_objects_cout,
-            'violating_objects': violating_objects_count,
-            'environment_score': environment_score,
-            'detections': str(objects),
-            'violations_indexes': str(violating_objects_index_list)
+            "version": version,
+            "timestamp": time_stamp,
+            "detected_objects": detected_objects_cout,
+            "violating_objects": violating_objects_count,
+            "environment_score": environment_score,
+            "detections": str(objects),
+            "violations_indexes": str(violating_objects_index_list)
         }
         try:
             requests.put(self.web_hook_endpoint, data=request_data)
