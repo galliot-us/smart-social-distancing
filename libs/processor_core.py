@@ -6,11 +6,15 @@ from share.commands import Commands
 from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
+from libs.area_threading import run_area_processing
 from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
 
-class QueueManager(BaseManager): pass
+
+class QueueManager(BaseManager):
+    pass
+
 
 class ProcessorCore:
 
@@ -42,16 +46,32 @@ class ProcessorCore:
     def _setup_scheduled_tasks(self):
         logger.info("Setup scheduled tasks")
         sources = self.config.get_video_sources()
+        areas = self.config.get_areas()
         for src in sources:
-            if src['should_send_notifications']:
+            should_send_email_notifications = src['should_send_email_notifications']
+            should_send_slack_notifications = src['should_send_slack_notifications']
+            if should_send_email_notifications or should_send_slack_notifications:
                 interval = src['notify_every_minutes']
                 threshold = src['violation_threshold']
-
-                schedule.every(interval).minutes.do(run_check_violations, threshold, self.config, src['section'],
-                    src['id'], interval) \
-                    .tag("notification-task")
+                schedule.every(interval).minutes.do(
+                    run_check_violations, threshold, self.config, src, interval,
+                    should_send_email_notifications, should_send_slack_notifications
+                ).tag("notification-task")
             else:
                 logger.info(f"should not send notification for camera {src['id']}")
+        for area in areas:
+            should_send_email_notifications = area['should_send_email_notifications']
+            should_send_slack_notifications = area['should_send_slack_notifications']
+            if should_send_email_notifications or should_send_slack_notifications:
+                interval = area['notify_every_minutes']
+                violation_threshold = area['violation_threshold']
+                if violation_threshold > 0:
+                    schedule.every(interval).minutes.do(
+                        run_check_violations, violation_threshold, self.config, area, interval,
+                        should_send_email_notifications, should_send_slack_notifications
+                    ).tag("notification-task")
+            else:
+                logger.info(f"should not send notification for camera {area['id']}")
 
     def _serve(self):
         logger.info("Core is listening for commands ... ")
@@ -79,7 +99,7 @@ class ProcessorCore:
 
             logger.info("started to process video ... ")
             self._result_queue.put(True)
-        elif cmd_code == Commands.STOP_PROCESS_VIDEO :
+        elif cmd_code == Commands.STOP_PROCESS_VIDEO:
             if Commands.PROCESS_VIDEO_CFG in self._tasks.keys():
                 self._stop_processing()
                 logger.info("Stop scheduled tasks")
@@ -113,6 +133,22 @@ class ProcessorCore:
             p = mp.Process(target=run_video_processing, args=(self.config, recv_conn, p_src))
             p.start()
             engines.append((send_conn, p))
+
+        # Set up occupancy alerts
+        areas_to_notify = [
+            area for area in self.config.get_areas() if area['occupancy_threshold'] > 0 and area['cameras'] and (
+                area['should_send_email_notifications'] or area['should_send_slack_notifications']
+            ) 
+        ]
+        if areas_to_notify and float(self.config.get_section_dict('App')['OccupancyAlertsMinInterval']) >= 0:
+            logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas')
+            recv_conn, send_conn = mp.Pipe(False)
+            p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, areas_to_notify))
+            p.start()
+            engines.append((send_conn, p))
+        else:
+            logger.info('Area occupancy alerts are disabled for all areas')
+
         self._engines = engines
 
     def _stop_processing(self):

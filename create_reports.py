@@ -5,23 +5,45 @@ import os
 import argparse
 import csv
 import schedule
+import operator
 import time
-import sys
 import ast
 import numpy as np
 import logging
 
 from datetime import date, datetime, timedelta
 from libs.config_engine import ConfigEngine
+from libs.notifications.slack_notifications import SlackService
+from libs.utils.mailing import MailService
 
 logger = logging.getLogger(__name__)
 
 
-def create_daily_report(config):
-    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
     heatmap_resolution = config.get_section_dict("Logger")["HeatmapResolution"].split(",")
     heatmap_x = int(heatmap_resolution[0])
     heatmap_y = int(heatmap_resolution[1])
+    heatmap_grid = np.zeros((heatmap_x, heatmap_y))
+
+    with open(yesterday_csv, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            detections = ast.literal_eval(row['Detections'])
+            if column == 'Violations':
+                violations_indexes = ast.literal_eval(row['ViolationsIndexes'])
+                # Get bounding boxes of violations
+                detections = [detections[object_id] for object_id in violations_indexes]
+
+            for detection in detections:
+                bbox = detection.get('bbox')
+                x = int((np.floor((bbox[0] + bbox[2]) * heatmap_x / 2)).item())
+                y = int((np.floor((bbox[1] + bbox[3]) * heatmap_y / 2)).item())
+                heatmap_grid[x][y] += 1 / (1 + heatmap_grid[x][y])
+        np.save(heatmap_file, heatmap_grid)
+
+
+def create_daily_report(config):
+    log_directory = config.get_section_dict("Logger")["LogDirectory"]
     sources = config.get_video_sources()
     for src in sources:
         # A directory inside the log_directory that stores object log files.
@@ -31,8 +53,8 @@ def create_daily_report(config):
         yesterday_csv = os.path.join(objects_log_directory, yesterday + '.csv')
         daily_csv = os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')
         report_csv = os.path.join(objects_log_directory, 'report.csv')
-        heatmap_file = os.path.join(objects_log_directory, 'heatmap_' + yesterday)
-        heatmap_grid = np.zeros((heatmap_x, heatmap_y))
+        detection_heatmap_file = os.path.join(objects_log_directory, 'detections_heatmap_' + yesterday)
+        violation_heatmap_file = os.path.join(objects_log_directory, 'violations_heatmap_' + yesterday)
 
         if os.path.isfile(daily_csv):
             logger.warn("Report was already generated!")
@@ -71,16 +93,42 @@ def create_daily_report(config):
                 {'Date': yesterday, 'Number': totals[0], 'DetectedObjects': totals[1], 'ViolatingObjects': totals[2],
                  'DetectedFaces': totals[3], 'UsingFacemask': totals[4]})
 
-        with open(yesterday_csv, newline='') as csvfile:
+        create_heatmap_report(config, yesterday_csv, detection_heatmap_file, 'Detections')
+        create_heatmap_report(config, yesterday_csv, violation_heatmap_file, 'Violations')
+
+
+def send_daily_report_notification(config, entity_info):
+    entity_type = entity_info['type']
+    all_violations_per_hour = []
+    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+    yesterday = str(date.today() - timedelta(days=1))
+
+    if entity_type == 'Camera':
+        objects_log_directory = os.path.join(log_directory, entity_info['id'], "objects_log")
+        daily_csv_file_paths = [os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')]
+    else:
+        # entity == 'Area'
+        camera_ids = entity_info['cameras']
+        daily_csv_file_paths = [os.path.join(log_directory, camera_id, "objects_log/report_" + yesterday + ".csv") for camera_id in camera_ids]
+
+    for file_path in daily_csv_file_paths:
+        violations_per_hour = []
+        with open(file_path, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                detections = ast.literal_eval(row['Detections'])
-                for detection in detections:
-                    bbox = detection.get('bbox')
-                    x = int((np.floor((bbox[0] + bbox[2]) * heatmap_x / 2)).item())
-                    y = int((np.floor((bbox[1] + bbox[3]) * heatmap_y / 2)).item())
-                    heatmap_grid[x][y] += 1 / (1 + heatmap_grid[x][y])
-            np.save(heatmap_file, heatmap_grid)
+                violations_per_hour.append(int(row['ViolatingObjects']))
+        if not all_violations_per_hour:
+            all_violations_per_hour = violations_per_hour
+        else:
+            all_violations_per_hour = list(map(operator.add, all_violations_per_hour, violations_per_hour))
+
+    if sum(violations_per_hour):
+        if entity_info['should_send_email_notifications']:
+            ms = MailService(config)
+            ms.send_daily_report(entity_info, sum(violations_per_hour), violations_per_hour)
+        if entity_info['should_send_slack_notifications']:
+            slack_service = SlackService(config)
+            slack_service.daily_report(entity_info, sum(violations_per_hour))
 
 
 def main(config):
@@ -90,11 +138,20 @@ def main(config):
 
     if not config.get_boolean('Logger', 'EnableReports'):
         logger.info("Reporting disabled!")
-        return
     else:
         logger.info("Reporting enabled!")
+        schedule.every().day.at("00:01").do(create_daily_report, config=config)
 
-    schedule.every().day.at("00:01").do(create_daily_report, config=config)
+    sources = config.get_video_sources()
+    areas = config.get_areas()
+    for src in sources:
+        if src['daily_report']:
+            schedule.every().day.at(src['daily_report_time']).do(
+                send_daily_report_notification, config=config, entity_info=src)
+    for area in areas:
+        if area['daily_report']:
+            schedule.every().day.at(area['daily_report_time']).do(
+                send_daily_report_notification, config=config, entity_info=area)
 
     while True:
         schedule.run_pending()

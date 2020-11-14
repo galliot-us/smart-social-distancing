@@ -42,7 +42,11 @@
           <td valign="top" class="m_5283153553260840980mcnTextContent"
               style="padding: 0 18px 9px;word-break:break-word;color:#080e2a;font-family:Helvetica;font-size:16px;line-height:150%;text-align:left">
             <h1 style="display:block;margin:0;padding:0;color:#080e2a;font-size:26px;line-height:125%;letter-spacing:normal;text-align:left">
-              We found {detections} violations in <strong>{entity_name} ({entity_type})</strong></h1>
+              Occupancy threshold was exceeded in <strong>{entity_type} {entity_id}: {entity_name}</strong>.
+            </h1>
+            <h3 style="display:block;margin:0;padding:0;color:#080e2a;font-size:26px;line-height:125%;letter-spacing:normal;text-align:left">
+              We found <strong>{num_occupancy}</strong> people out of a capacity of <strong>{entity_threshold}</strong>.
+            </h3>
           </td>
         </tr>
         <tr>

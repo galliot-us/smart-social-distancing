@@ -10,6 +10,7 @@ from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
 from libs.utils import visualization_utils
+from libs.utils.camera_calibration import get_camera_calibration_path
 from libs.uploaders.s3_uploader import S3Uploader
 import logging
 
@@ -18,11 +19,14 @@ logger = logging.getLogger(__name__)
 
 class Distancing:
 
-    def __init__(self, config, camera_id, repeat):
+    def __init__(self, config, source, repeat, live_feed_enabled=True):
         self.config = config
         self.repeat = repeat
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
+
+        self.live_feed_enabled = live_feed_enabled
+        self.log_time_interval = float(self.config.get_section_dict("Logger")["TimeInterval"])  # Seconds
 
         self.classifier = None
         self.classifier_img_size = None
@@ -31,29 +35,34 @@ class Distancing:
         self.running_video = False
         self.tracker = CentroidTracker(
             max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
-        self.camera_id = camera_id
-        self.logger = Logger(self.config, camera_id)
+        self.camera_id = self.config.get_section_dict(source)['Id']
+        self.logger = Logger(self.config, self.camera_id)
         self.image_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
+        self.default_dist_method = self.config.get_section_dict('PostProcessor')["DefaultDistMethod"]
 
-        self.dist_method = self.config.get_section_dict("PostProcessor")["DistMethod"]
+        if self.config.get_section_dict(source)["DistMethod"]:
+            self.dist_method = self.config.get_section_dict(source)["DistMethod"]
+        else:
+            self.dist_method = self.default_dist_method
+
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
+
         if self.dist_method == "CalibratedDistance":
-            try:
-                calibration_file = self.config.get_section_dict("App")["CalibrationFile"]
-            except KeyError:
-                raise ValueError(
-                    "The 'CalibrationFile' should be specified in config file in case of using 'CalibratedDistance' method")
+            calibration_file = get_camera_calibration_path(
+                self.config, self.config.get_section_dict(source)["Id"])
             try:
                 with open(calibration_file, "r") as file:
                     self.h_inv = file.readlines()[0].split(" ")[1:]
                     self.h_inv = np.array(self.h_inv, dtype="float").reshape((3, 3))
             except FileNotFoundError:
-                raise FileNotFoundError("The specified 'CalibrationFile' does not exist")
+                logger.error("The specified 'CalibrationFile' does not exist")
+                logger.info(f"Falling back using {self.default_dist_method}")
+                self.dist_method = self.default_dist_method
 
-        self.screenshot_period = float(
-            self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60  # config.ini uses minutes as unit
+        # config.ini uses minutes as unit
+        self.screenshot_period = float(self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60
         self.bucket_screenshots = config.get_section_dict("App")["ScreenshotS3Bucket"]
         self.uploader = S3Uploader(self.config)
         self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
@@ -81,8 +90,10 @@ class Distancing:
                     if face_bbox is not None:
                         xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
                         ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
-                        croped_face = cv_image[int(ymin):int(ymin) + (int(ymax) - int(ymin)),
-                                      int(xmin):int(xmin) + (int(xmax) - int(xmin))]
+                        croped_face = cv_image[
+                            int(ymin):int(ymin) + (int(ymax) - int(ymin)),
+                            int(xmin):int(xmin) + (int(xmax) - int(xmin))
+                        ]
 
                         # Resizing input image
                         croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
@@ -166,6 +177,60 @@ class Distancing:
             raise RuntimeError("Could not open gstreamer output for " + feed_name)
         return out
 
+    def process_live_feed(self, cv_image, objects, distancings, violating_objects, out, out_birdseye):
+        dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
+        birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
+        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
+
+        output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
+        category_index = {class_id: {
+            "id": class_id,
+            "name": "Pedestrian",
+        }}  # TODO: json file for detector config
+        # Draw bounding boxes and other visualization factors on input_frame
+        visualization_utils.visualize_boxes_and_labels_on_image_array(
+            cv_image,
+            output_dict["detection_boxes"],
+            output_dict["detection_classes"],
+            output_dict["detection_scores"],
+            output_dict["detection_colors"],
+            category_index,
+            instance_masks=output_dict.get("detection_masks"),
+            use_normalized_coordinates=True,
+            line_thickness=3,
+        )
+        # TODO: Implement perspective view for objects
+        birds_eye_window = visualization_utils.birds_eye_view(
+            birds_eye_window, output_dict["detection_boxes"], output_dict["violating_objects"])
+        try:
+            fps = self.detector.fps
+        except:
+            # fps is not implemented for the detector instance"
+            fps = None
+
+        # Put fps to the frame
+        # region
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        txt_fps = 'Frames rate = ' + str(fps) + '(fps)'  # Frames rate = 95 (fps)
+        # (0, 0) is the top-left (x,y); normalized number between 0-1
+        origin = (0.05, 0.93)
+        visualization_utils.text_putter(cv_image, txt_fps, origin)
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        # endregion
+
+        # Put environment score to the frame
+        # region
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        env_score = mx_environment_scoring_consider_crowd(len(objects), len(violating_objects))
+        txt_env_score = 'Env Score = ' + str(env_score)  # Env Score = 0.7
+        origin = (0.05, 0.98)
+        visualization_utils.text_putter(cv_image, txt_env_score, origin)
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        # endregion
+
+        out.write(cv_image)
+        out_birdseye.write(birds_eye_window)
+
     def process_video(self, video_uri):
         if self.device == 'Jetson':
             from libs.detectors.jetson.detector import Detector
@@ -204,77 +269,32 @@ class Distancing:
             return
 
         self.running_video = True
-
         # enable logging gstreamer Errors (https://stackoverflow.com/questions/3298934/how-do-i-view-gstreamer-debug-output)
         os.environ['GST_DEBUG'] = "*:1"
-        out, out_birdseye = (
-            self.gstreamer_writer(feed, fps, resolution)
-            for (feed, resolution) in (
-            (self.camera_id, self.resolution),
-            (self.camera_id + '-birdseye', self.birds_eye_resolution)
-        )
-        )
+        if self.live_feed_enabled:
+            out, out_birdseye = (
+                self.gstreamer_writer(feed, fps, resolution)
+                for (feed, resolution) in (
+                    (self.camera_id, self.resolution),
+                    (self.camera_id + '-birdseye', self.birds_eye_resolution)
+                )
+            )
 
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
-        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
         frame_num = 0
         total_frames = input_cap.get(cv.CAP_PROP_FRAME_COUNT)
         start_time = time.time()
+        last_processed_time = time.time()
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
-            birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
             if np.shape(cv_image) != ():
+                if not self.live_feed_enabled and (time.time() - last_processed_time < self.log_time_interval):
+                    continue
                 cv_image, objects, distancings = self.__process(cv_image)
-                output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
-
-                category_index = {class_id: {
-                    "id": class_id,
-                    "name": "Pedestrian",
-                }}  # TODO: json file for detector config
-                # Draw bounding boxes and other visualization factors on input_frame
-                visualization_utils.visualize_boxes_and_labels_on_image_array(
-                    cv_image,
-                    output_dict["detection_boxes"],
-                    output_dict["detection_classes"],
-                    output_dict["detection_scores"],
-                    output_dict["detection_colors"],
-                    category_index,
-                    instance_masks=output_dict.get("detection_masks"),
-                    use_normalized_coordinates=True,
-                    line_thickness=3,
-                )
-                # TODO: Implement perspective view for objects
-                birds_eye_window = visualization_utils.birds_eye_view(birds_eye_window, output_dict["detection_boxes"],
-                                                                      output_dict["violating_objects"])
-                try:
-                    fps = self.detector.fps
-                except:
-                    # fps is not implemented for the detector instance"
-                    fps = None
-
-                # Put fps to the frame
-                # region
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-                txt_fps = 'Frames rate = ' + str(fps) + '(fps)'  # Frames rate = 95 (fps)
-                # (0, 0) is the top-left (x,y); normalized number between 0-1
-                origin = (0.05, 0.93)
-                visualization_utils.text_putter(cv_image, txt_fps, origin)
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-                # endregion
-
-                # Put environment score to the frame
-                # region
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
                 violating_objects = extract_violating_objects(distancings, dist_threshold)
-                env_score = mx_environment_scoring_consider_crowd(len(objects), len(violating_objects))
-                txt_env_score = 'Env Score = ' + str(env_score)  # Env Score = 0.7
-                origin = (0.05, 0.98)
-                visualization_utils.text_putter(cv_image, txt_env_score, origin)
-                # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-                # endregion
-
-                out.write(cv_image)
-                out_birdseye.write(birds_eye_window)
+                if self.live_feed_enabled:
+                    self.process_live_feed(cv_image, objects, distancings, violating_objects, out, out_birdseye)
+                last_processed_time = time.time()
                 frame_num += 1
                 if frame_num % 100 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
@@ -287,14 +307,14 @@ class Distancing:
                         len(violating_objects) > 0):
                     start_time = time.time()
                     self.capture_violation(f"{start_time}_violation.jpg", cv_image)
-
                 self.save_screenshot(cv_image)
             else:
                 continue
             self.logger.update(objects, distancings)
         input_cap.release()
-        out.release()
-        out_birdseye.release()
+        if self.live_feed_enabled:
+            out.release()
+            out_birdseye.release()
         del self.detector
         self.running_video = False
 
@@ -328,8 +348,6 @@ class Distancing:
         new_objects_list = [tracked_boxes[i] for i in tracked_boxes.keys()]
         for i, item in enumerate(new_objects_list):
             item["id"] = item["id"].split("-")[0] + "-" + str(i)
-
-        centroids = np.array([obj["centroid"] for obj in new_objects_list])
         distances = self.calculate_box_distances(new_objects_list)
 
         return new_objects_list, distances

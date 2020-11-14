@@ -2,17 +2,17 @@ import os
 from shutil import rmtree
 from threading import Thread
 from libs.distancing import Distancing as CvEngine
-from queue import Queue
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 def run_video_processing(config, pipe, sources):
     pid = os.getpid()
     logger.info(f"[{pid}] taking on {len(sources)} cameras")
     threads = []
     for src in sources:
-        engine = EngineThread(config, src)
+        engine = EngineThread(config, src, len(sources) == 1)
         engine.start()
         threads.append(engine)
 
@@ -34,14 +34,15 @@ def run_video_processing(config, pipe, sources):
 
 
 class EngineThread(Thread):
-    def __init__(self, config, source):
+    def __init__(self, config, source, live_feed_enabled=True):
         Thread.__init__(self)
         self.engine = None
         self.config = config
         self.source = source
+        self.live_feed_enabled = live_feed_enabled
 
     def run(self):
-        self.engine = CvEngine(self.config, self.source['id'], self.source['repeat'])
+        self.engine = CvEngine(self.config, self.source['section'], self.source['repeat'], self.live_feed_enabled)
         self.engine.process_video(self.source['url'])
 
     def stop(self):

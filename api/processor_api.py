@@ -1,27 +1,25 @@
-import base64
-import time
-from multiprocessing.managers import BaseManager
+import uvicorn
+import os
+import logging
+
 from fastapi import FastAPI, status, Request
+
 from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-import cv2 as cv
-import uvicorn
-import os
-import logging
-import humps
-import numpy as np
-from starlette.exceptions import HTTPException
-
-from api.models.config_keys import *
-from api.reports import reports_api
+from fastapi.openapi.utils import get_openapi
 from share.commands import Commands
 
+from .cameras import cameras_router
+from .config import config_router
+from .areas import areas_router
+from .queue_manager import QueueManager
+from .reports import reports_router
+from .settings import Settings
+from .slack import slack_router
+
 logger = logging.getLogger(__name__)
-
-
-class QueueManager(BaseManager): pass
 
 
 class ProcessorAPI:
@@ -34,53 +32,26 @@ class ProcessorAPI:
         is possible by calling get_section_dict method.
     """
 
-    def __init__(self, config):
-        self.config = config
-        self._setup_queues()
-        self._host = self.config.get_section_dict("API")["Host"]
-        self._port = int(self.config.get_section_dict("API")["Port"])
-        self._screenshot_directory = self.config.get_section_dict("App")["ScreenshotsDirectory"]
+    def __init__(self):
+        self.settings = Settings()
+        self.queue_manager = QueueManager(config=self.settings.config)
+        self._host = self.settings.config.get_section_dict("API")["Host"]
+        self._port = int(self.settings.config.get_section_dict("API")["Port"])
+        self._screenshot_directory = self.settings.config.get_section_dict("App")["ScreenshotsDirectory"]
         self.app = self.create_fastapi_app()
 
-    def _setup_queues(self):
-        QueueManager.register('get_cmd_queue')
-        QueueManager.register('get_result_queue')
-        self._queue_host = self.config.get_section_dict("CORE")["Host"]
-        self._queue_port = int(self.config.get_section_dict("CORE")["QueuePort"])
-        auth_key = self.config.get_section_dict("CORE")["QueueAuthKey"]
-        self._queue_manager = QueueManager(address=(self._queue_host, self._queue_port),
-                                           authkey=auth_key.encode('ascii'))
-
-        while True:
-            try:
-                self._queue_manager.connect()
-                break
-            except ConnectionRefusedError:
-                logger.warning("Waiting for core's queue to initiate ... ")
-                time.sleep(1)
-
-        logger.info("Connection established to Core's queue")
-        self._cmd_queue = self._queue_manager.get_cmd_queue()
-        self._result_queue = self._queue_manager.get_result_queue()
-
     def create_fastapi_app(self):
-        os.environ['LogDirectory'] = self.config.get_section_dict("Logger")["LogDirectory"]
-        os.environ['HeatmapResolution'] = self.config.get_section_dict("Logger")["HeatmapResolution"]
-
-        class ImageModel(BaseModel):
-            image: str
-
-            class Config:
-                schema_extra = {
-                    'example': {
-                        'image': 'data:image/jpg;base64,iVBORw0KG...'
-                    }
-                }
+        os.environ['LogDirectory'] = self.settings.config.get_section_dict("Logger")["LogDirectory"]
+        os.environ['HeatmapResolution'] = self.settings.config.get_section_dict("Logger")["HeatmapResolution"]
 
         # Create and return a fastapi instance
         app = FastAPI()
 
-        app.mount("/reports", reports_api)
+        app.include_router(config_router, prefix="/config", tags=["config"])
+        app.include_router(cameras_router, prefix="/cameras", tags=["cameras"])
+        app.include_router(areas_router, prefix="/areas", tags=["areas"])
+        app.include_router(reports_router, prefix="/reports", tags=["reports"])
+        app.include_router(slack_router, prefix="/slack", tags=["slack"])
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
@@ -100,126 +71,59 @@ class ProcessorAPI:
 
         app.mount("/static", StaticFiles(directory="/repo/data/processor/static"), name="static")
 
-        def map_camera(camera_name, config, options):
-            camera = config.get(camera_name)
-            camera_id = camera.get("Id")
-            image = None
-            if "withImage" in options:
-                dir_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
-                image = base64.b64encode(cv.imread(f'{dir_path}/default.jpg'))
-
-            return {
-                "id": camera_id,
-                "name": camera.get("Name"),
-                "videoPath": camera.get("VideoPath"),
-                "emails": camera.get("Emails"),
-                "violationThreshold": camera.get("ViolationThreshold"),
-                "notifyEveryMinutes": camera.get("NotifyEveryMinutes"),
-                "image": image
-            }
-
-        def map_config(config, options):
-            cameras_name = [x for x in config.keys() if x.startswith("Source")]
-            return {
-                "host": config.get("API").get("Host"),
-                "port": config.get("API").get("Port"),
-                "cameras": [map_camera(x, config, options) for x in cameras_name]
-            }
-
-        def map_to_config_file_format(config_dto):
-            config_dict = dict()
-            for count, camera in enumerate(config_dto.cameras):
-                config_dict["Source_" + str(count)] = dict(
-                    {
-                        'Name': camera.name,
-                        'VideoPath': camera.videoPath,
-                        'Id': camera.id,
-                        'Emails': camera.emails,
-                        'Tags': camera.tags,
-                        'NotifyEveryMinutes': str(camera.notifyEveryMinutes),
-                        'ViolationThreshold': str(camera.violationThreshold)
-                    }
-                )
-            return config_dict
-
-        def verify_path(camera_id):
-            dir_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
-            if not os.path.exists(dir_path):
-                raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
-            return dir_path
-
-        @app.get("/process-video-cfg")
+        @app.put("/start-process-video", response_model=bool)
         async def process_video_cfg():
+            """
+            Starts the video processing
+            """
             logger.info("process-video-cfg requests on api")
-            self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
+            self.queue_manager.cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
             logger.info("waiting for core's response...")
-            result = self._result_queue.get()
+            result = self.queue_manager.result_queue.get()
             return result
 
-        @app.get("/stop-process-video")
+        @app.put("/stop-process-video", response_model=bool)
         async def stop_process_video():
+            """
+            Stops the video processing
+            """
             logger.info("stop-process-video requests on api")
-            self._cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
+            self.queue_manager.cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
             logger.info("waiting for core's response...")
-            result = self._result_queue.get()
+            result = self.queue_manager.result_queue.get()
             return result
 
-        @app.get("/config", response_model=ConfigDTO)
-        async def get_config(options: Optional[str] = ""):
-            logger.info("get-config requests on api")
-            sections = self.config.get_sections()
-            config = {}
-            for section in sections:
-                config[section] = self.config.get_section_dict(section)
-            return map_config(config, options)
+        def custom_openapi():
+            openapi_schema = get_openapi(
+                title="Smart Social Distancing",
+                version="1.0.0",
+                description="Processor API schema",
+                routes=app.routes
+            )
+            for value_path in openapi_schema['paths'].values():
+                for value in value_path.values():
+                    # Remove current 422 error message.
+                    # TODO: Display the correct validation error schema
+                    value['responses'].pop('422', None)
 
-        @app.put("/config")
-        async def update_config(config: ConfigDTO):
-            config_dict = map_to_config_file_format(config)
-            logger.info("Updating config...")
-            self.config.update_config(config_dict)
-            self.config.reload()
+            app.openapi_schema = openapi_schema
+            return app.openapi_schema
 
-            # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
-            logger.info("Restarting video processor...")
-            self._cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
-            stopped = self._result_queue.get()
-            if stopped:
-                self._cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
-                started = self._result_queue.get()
-                if not started:
-                    logger.info("Failed to restart video processor...")
-                    return JSONResponse(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        content=jsonable_encoder({
-                            'msg': 'Failed to restart video processor',
-                            'type': 'unknown error',
-                            'body': humps.decamelize(config)
-                        })
-                    )
-            return JSONResponse(content=humps.decamelize(config))
-
-        @app.get("/{camera_id}/image", response_model=ImageModel)
-        async def get_camera_image(camera_id):
-            dir_path = verify_path(camera_id)
-            with open(f'{dir_path}/default.jpg', "rb") as image_file:
-                encoded_string = base64.b64encode(image_file.read())
-            return {
-                "image": encoded_string
-            }
-
-        @app.put("/{camera_id}/image")
-        async def replace_camera_image(camera_id, body: ImageModel):
-            dir_path = verify_path(camera_id)
-            try:
-                decoded_image = base64.b64decode(body.image.split(',')[1])
-                nparr = np.fromstring(decoded_image, np.uint8)
-                cv_image = cv.imdecode(nparr, cv.IMREAD_COLOR)
-                cv.imwrite(f"{dir_path}/default.jpg", cv_image)
-            except Exception:
-                return HTTPException(status_code=400, detail="Invalid image format")
+        app.openapi = custom_openapi
 
         return app
 
     def start(self):
-        uvicorn.run(self.app, host=self._host, port=self._port, log_level='info', access_log=False)
+        kwargs = {
+            "host": self._host,
+            "port": self._port,
+            "log_level": "info",
+            "access_log": False,
+        }
+        if self.settings.config.get_boolean("API", "SSLEnabled"):
+            # HTTPs is enabled
+            kwargs.update({
+                "ssl_keyfile": f"{self.settings.config.get_section_dict('API')['SSLKeyFile']}",
+                "ssl_certfile": f"{self.settings.config.get_section_dict('API')['SSLCertificateFile']}"
+            })
+        uvicorn.run(self.app, **kwargs)
