@@ -206,6 +206,23 @@ docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:lat
 docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86-openvino.ini":/repo/config-x86-openvino.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
+##### Run on AMD node with a connected Coral USB Accelerator with Adaptive Learning Support
+Currently Smart Social Distancing supports Adaptive Learning framework on X86 nodes with connected USB TPU. for more information about Adaptive Learning visit [this page](https://github.com/neuralet/neuralet/tree/master/applications/adaptive-learning)
+Important notes:
+1. you must install [Docker Compose](https://github.com/docker/compose) to be able to use Adaptive Learning.
+2. At this time Adaptive Learning is only compatible with `mobilenet_ssd_v2` models.
+
+```bash
+# Download model first:
+./download_x86_model.sh
+
+# 1) Configure adaptive-learing/configs/iterdet.ini file. (you may only need to configure video VideoPath, BatchSize and Epochs)
+# 2) Configure the HOST_PORT in docker-compose-adaptive-learning-usbtpu.yml
+# 3) Run the Docker Compose 
+docker-compose -f docker-compose-adaptive-learning-usbtpu.yml up --build
+```
+
+
 ### Configurations
 You can read and modify the configurations in `config-*.ini` files, accordingly:
 

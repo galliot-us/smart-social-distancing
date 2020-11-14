@@ -26,7 +26,7 @@ services:
     volumes:
     - ./:/repo
     ports:
-      - "2029:6006"
+      - "6006:6006"
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=0
@@ -45,7 +45,7 @@ services:
     volumes:
     - ./:/repo
     ports:
-    - 2031:8000
+    - [HOST_PORT]:8000
     environment:
       - TZ=./timezone.sh
     privileged: true
