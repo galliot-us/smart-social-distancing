@@ -567,9 +567,9 @@ class Distancing:
         kernel_w = int(w / 3)
         kernel_h = int(h / 3)
         if kernel_w % 2 == 0:
-            kernel_w -= 1
+            kernel_w = max(1, kernel_w - 1)
         if kernel_h % 2 == 0:
-            kernel_h -= 1
+            kernel_h = max(1, kernel_h - 1)
         return cv.GaussianBlur(image, (kernel_w, kernel_h), 0)
 
     # TODO: Make this an async task?
