@@ -31,7 +31,8 @@ class AreaReporting:
             camera['last_processed_time'] = time.time()
 
         self.mail_service = MailService(config)
-        self.slack_service = SlackService(config)
+        if self.should_send_slack_notifications:
+            self.slack_service = SlackService(config)
 
     def process_area(self):
         # Sleep for a while so cameras start processing
