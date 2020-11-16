@@ -170,6 +170,25 @@ docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_6
 docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.ini":/repo/config-x86.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
 ```
 
+##### Run on x86 with GPU
+Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
+```bash
+
+# If you use the OpenPifPaf model, download the model first:
+./download-x86-openpifpaf-model.sh
+
+# If you use the MobileNet model run this instead:
+# ./download_x86_model.sh
+
+# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+docker build -f x86-gpu.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_gpu" .
+
+# 2) Run Docker container:
+Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.ini":/repo/config-x86.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
+```
+
+
 ##### Run on x86 using OpenVino
 ```bash
 # download model first
