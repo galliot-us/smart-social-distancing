@@ -33,7 +33,7 @@ def map_config(config, options):
     }
 
 
-@config_router.get("/", response_model=ConfigDTO)
+@config_router.get("", response_model=ConfigDTO)
 async def get_config(options: Optional[str] = ""):
     """
     Returns the configuration used by the processor
@@ -42,7 +42,7 @@ async def get_config(options: Optional[str] = ""):
     return map_config(extract_config(), options)
 
 
-@config_router.put("/", response_model=ConfigDTO)
+@config_router.put("", response_model=ConfigDTO)
 async def update_config(config: ConfigDTO):
     """
     Overwrites the configuration used by the processor.

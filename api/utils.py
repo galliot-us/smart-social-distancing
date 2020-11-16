@@ -15,11 +15,11 @@ def get_config():
     return Settings().config
 
 
-def extract_config(config_type='all'):
+def extract_config(config_type="all"):
     sections = get_config().get_sections()
-    if config_type == 'cameras':
+    if config_type == "cameras":
         sections = [x for x in sections if x.startswith("Source")]
-    elif config_type == 'areas':
+    elif config_type == "areas":
         sections = [x for x in sections if x.startswith("Area")]
     config = {}
 
@@ -62,9 +62,9 @@ def handle_response(response, success, status_code=status.HTTP_200_OK):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=jsonable_encoder({
-                'msg': 'Failed to restart video processor',
-                'type': 'unknown error on the config file',
-                'body': humps.decamelize(response)
+                "msg": "Failed to restart video processor",
+                "type": "unknown error on the config file",
+                "body": humps.decamelize(response)
             })
         )
     content = humps.decamelize(response) if response else None
@@ -76,7 +76,7 @@ def reestructure_areas(config_dict):
     area_names = [x for x in config_dict.keys() if x.startswith("Area")]
     area_names.sort()
     for index, area_name in enumerate(area_names):
-        if f'Area_{index}' != area_name:
-            config_dict[f'Area_{index}'] = config_dict[area_name]
+        if f"Area_{index}" != area_name:
+            config_dict[f"Area_{index}"] = config_dict[area_name]
             config_dict.pop(area_name)
     return config_dict

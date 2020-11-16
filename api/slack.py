@@ -19,8 +19,8 @@ class SlackConfig(BaseModel):
 
     class Config:
         schema_extra = {
-            'example': {
-                'user_token': 'xxxx-ffff...'
+            "example": {
+                "user_token": "xxxx-ffff..."
             }
         }
 
@@ -39,7 +39,7 @@ def add_slack_channel_to_config(channel):
 
 
 def is_slack_configured():
-    if not os.path.exists('slack_token.txt'):
+    if not os.path.exists("slack_token.txt"):
         return False
     with open("slack_token.txt", "r") as user_token:
         value = user_token.read()

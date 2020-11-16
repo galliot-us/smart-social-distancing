@@ -41,8 +41,8 @@ class ProcessorAPI:
         self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):
-        os.environ['LogDirectory'] = self.settings.config.get_section_dict("Logger")["LogDirectory"]
-        os.environ['HeatmapResolution'] = self.settings.config.get_section_dict("Logger")["HeatmapResolution"]
+        os.environ["LogDirectory"] = self.settings.config.get_section_dict("Logger")["LogDirectory"]
+        os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("Logger")["HeatmapResolution"]
 
         # Create and return a fastapi instance
         app = FastAPI()
@@ -60,14 +60,14 @@ class ProcessorAPI:
                 content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
             )
 
-        if os.environ.get('DEV_ALLOW_ALL_ORIGINS', False):
+        if os.environ.get("DEV_ALLOW_ALL_ORIGINS", False):
             # This option allows React development server (which is served on another port, like 3000) to proxy requests
             # to this server.
             # WARNING: read this before enabling it in your environment:
             # https://medium.com/@stestagg/stealing-secrets-from-developers-using-websockets-254f98d577a0
             from fastapi.middleware.cors import CORSMiddleware
-            app.add_middleware(CORSMiddleware, allow_origins='*', allow_credentials=True, allow_methods=['*'],
-                               allow_headers=['*'])
+            app.add_middleware(CORSMiddleware, allow_origins="*", allow_credentials=True, allow_methods=["*"],
+                               allow_headers=["*"])
 
         app.mount("/static", StaticFiles(directory="/repo/data/processor/static"), name="static")
 
@@ -100,11 +100,11 @@ class ProcessorAPI:
                 description="Processor API schema",
                 routes=app.routes
             )
-            for value_path in openapi_schema['paths'].values():
+            for value_path in openapi_schema["paths"].values():
                 for value in value_path.values():
                     # Remove current 422 error message.
                     # TODO: Display the correct validation error schema
-                    value['responses'].pop('422', None)
+                    value["responses"].pop("422", None)
 
             app.openapi_schema = openapi_schema
             return app.openapi_schema

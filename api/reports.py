@@ -27,15 +27,15 @@ class HourlyReport(Report):
 
     class Config:
         schema_extra = {
-            'example': [{
-                'hours': list(range(0, 23)),
-                'detected_objects': [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
+            "example": [{
+                "hours": list(range(0, 23)),
+                "detected_objects": [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
                                      0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0],
-                'violating_objects': [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                "violating_objects": [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
                                       0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0],
-                'detected_faces': [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
+                "detected_faces": [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
                                    0, 7273, 10011, 0, 0., 7273, 10011, 0, 0, 7273, 10011, 0],
-                'faces_with_mask': [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                "faces_with_mask": [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
                                     0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0]
             }]
         }
@@ -46,12 +46,12 @@ class DailyReport(Report):
 
     class Config:
         schema_extra = {
-            'example': [{
-                'dates': ['Saturday 2020-08-15', 'Sunday 2020-08-16', 'Monday 2020-08-17', 'Tuesday 2020-08-18'],
-                'detected_objects': [0, 7273, 10011, 0],
-                'violating_objects': [0, 4920, 6701, 0],
-                'detected_faces': [0, 7273, 10011, 0],
-                'faces_with_mask': [0, 4920, 6701, 0],
+            "example": [{
+                "dates": ["Saturday 2020-08-15", "Sunday 2020-08-16", "Monday 2020-08-17", "Tuesday 2020-08-18"],
+                "detected_objects": [0, 7273, 10011, 0],
+                "violating_objects": [0, 4920, 6701, 0],
+                "detected_faces": [0, 7273, 10011, 0],
+                "faces_with_mask": [0, 4920, 6701, 0],
             }]
         }
 
@@ -61,12 +61,12 @@ class WeeklyReport(Report):
 
     class Config:
         schema_extra = {
-            'example': [{
-                'weeks': ['2020-07-03 2020-07-05', '2020-07-06 2020-07-12', '2020-07-13 2020-07-19', '2020-07-20 2020-07-26'],
-                'detected_objects': [0, 27500, 0, 8000],
-                'violating_objects': [0, 15000, 0, 4000],
-                'detected_faces': [0, 27500, 0, 8000],
-                'faces_with_mask': [0, 15000, 0, 4000],
+            "example": [{
+                "weeks": ["2020-07-03 2020-07-05", "2020-07-06 2020-07-12", "2020-07-13 2020-07-19", "2020-07-20 2020-07-26"],
+                "detected_objects": [0, 27500, 0, 8000],
+                "violating_objects": [0, 15000, 0, 4000],
+                "detected_faces": [0, 27500, 0, 8000],
+                "faces_with_mask": [0, 15000, 0, 4000],
             }]
         }
 
@@ -77,7 +77,7 @@ class HeatmapReport(BaseModel):
 
     class Config:
         schema_extra = {
-            'example': [{
+            "example": [{
                 "heatmap": "[[0.0,3.0,1.0,2.0,...],[3.0,1.34234,5.2342342,...],...]",
                 "not_found_dates": [
                     "2020-08-14",
@@ -107,13 +107,13 @@ class MostViolationsCamera(BaseModel):
 
 def validate_dates(from_date, to_date):
     if from_date > to_date:
-        raise HTTPException(status_code=400, detail='Invalid range of dates')
+        raise HTTPException(status_code=400, detail="Invalid range of dates")
 
 
 def validate_existence(camera_id):
-    dir_path = os.path.join(os.getenv('LogDirectory'), camera_id, "objects_log")
+    dir_path = os.path.join(os.getenv("LogDirectory"), camera_id, "objects_log")
     if not os.path.exists(dir_path):
-        raise HTTPException(status_code=404, detail=f'Camera with id "{camera_id}" does not exist')
+        raise HTTPException(status_code=404, detail=f"Camera with id '{camera_id}' does not exist")
 
 
 @reports_router.get("/{camera_id}/hourly", response_model=HourlyReport)
@@ -174,15 +174,15 @@ def get_weekly_report(camera_id: str,
 def get_heatmap(camera_id: str,
                 from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
                 to_date: date = Query(date.today().isoformat()),
-                report_type: Optional[str] = 'violations'):
+                report_type: Optional[str] = "violations"):
     """
     Returns a heatmap image displaying the violations/detections detected by the camera <camera_id>
     """
     validate_existence(camera_id)
-    if report_type in ['violations', 'detections']:
+    if report_type in ["violations", "detections"]:
         return reports.heatmap(camera_id, from_date, to_date, report_type)
     else:
-        raise HTTPException(status_code=400, detail='Invalid report_type')
+        raise HTTPException(status_code=400, detail="Invalid report_type")
 
 
 @reports_router.get("/{camera_id}/peak_hour_violations", response_model=PeakHourViolationsReport)
@@ -192,7 +192,7 @@ def get_peak_hour_violations(camera_id: str):
     """
     validate_existence(camera_id)
     return {
-        'peak_hour_violations': reports.peak_hour_violations(camera_id)
+        "peak_hour_violations": reports.peak_hour_violations(camera_id)
     }
 
 
@@ -203,7 +203,7 @@ def get_average_violations(camera_id: str):
     """
     validate_existence(camera_id)
     return {
-        'average_violations': reports.average_violations(camera_id)
+        "average_violations": reports.average_violations(camera_id)
     }
 
 
@@ -216,16 +216,16 @@ def get_face_mask_stats(camera_id: str):
     validate_existence(camera_id)
     total_faces_detected, no_face_mask_percentage = reports.face_mask_stats(camera_id)
     return {
-        'total_faces_detected': int(total_faces_detected),
-        'no_face_mask_percentage': no_face_mask_percentage
+        "total_faces_detected": int(total_faces_detected),
+        "no_face_mask_percentage": no_face_mask_percentage
     }
 
 
-@reports_router.get('/camera_with_most_violations', response_model=MostViolationsCamera)
+@reports_router.get("/camera_with_most_violations", response_model=MostViolationsCamera)
 def get_camera_with_most_violations():
     """
     Returns the camera that registers more violations.
     """
     return {
-        'cam_id': reports.camera_with_most_violations()
+        "cam_id": reports.camera_with_most_violations()
     }
