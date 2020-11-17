@@ -82,5 +82,6 @@ ENV AWS_CONFIG_FILE=/repo/.aws/config
 ENV TF_FORCE_GPU_ALLOW_GROWTH=true
 COPY . /repo
 WORKDIR /repo
+HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-x86-gpu.ini
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-x86-gpu.ini"]

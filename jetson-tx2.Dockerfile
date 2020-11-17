@@ -95,5 +95,6 @@ ENV AWS_CONFIG_FILE=/repo/.aws/config
 
 COPY . /repo/
 WORKDIR /repo
+HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-jetson.ini
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-jetson.ini"]

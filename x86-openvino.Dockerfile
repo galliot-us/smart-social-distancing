@@ -85,4 +85,6 @@ ENV AWS_CONFIG_FILE=/repo/.aws/config
 
 COPY . /repo
 WORKDIR /repo
+
+HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-x86-openvino.ini
 CMD env `python3 /opt/openvino_setupvars.py` bash start_services.bash config-x86-openvino.ini

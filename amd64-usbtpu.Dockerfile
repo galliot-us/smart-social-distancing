@@ -102,5 +102,6 @@ ENV PYTHONPATH=$PYTHONPATH:/project-posenet
 
 COPY . /repo
 WORKDIR /repo
+HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-coral.ini
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-coral.ini"]

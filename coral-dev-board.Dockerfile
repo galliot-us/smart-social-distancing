@@ -86,5 +86,6 @@ ENV PYTHONPATH=$PYTHONPATH:/project-posenet
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
 COPY . /repo
 WORKDIR /repo
+HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-coral.ini
 ENTRYPOINT ["bash", "start_services.bash"]
 CMD ["config-coral.ini"]
