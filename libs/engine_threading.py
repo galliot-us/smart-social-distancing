@@ -42,7 +42,7 @@ class EngineThread(Thread):
         self.live_feed_enabled = live_feed_enabled
 
     def run(self):
-        self.engine = CvEngine(self.config, self.source['section'], self.live_feed_enabled)
+        self.engine = CvEngine(self.config, self.source['section'], self.source['loop_video_file'], self.live_feed_enabled)
         self.engine.process_video(self.source['url'])
 
     def stop(self):

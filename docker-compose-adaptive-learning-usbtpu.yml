@@ -1,0 +1,51 @@
+version: '2.3'
+services:
+  teacher:
+    build:
+      context: ./adaptive-learning/teachers/
+      dockerfile: iterdet-teacher.Dockerfile
+    stdin_open: true 
+    tty: true
+    container_name: teacher-container
+    volumes:
+      - ./:/repo
+
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+    depends_on:
+      - smart-social-distancing
+
+  student:
+    build:
+      context: ./adaptive-learning/students/
+      dockerfile: ssd-mobilenet-v2-student.Dockerfile
+    stdin_open: true
+    tty: true
+    container_name: student-container
+    volumes:
+    - ./:/repo
+    ports:
+      - "6006:6006"
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+      - PYTHONPATH=$PYTHONPATH:/models/research:/models/research/slim
+      - TF_FORCE_GPU_ALLOW_GROWTH=true
+    depends_on:
+      - smart-social-distancing
+
+  smart-social-distancing:
+    build:
+      context: ./
+      dockerfile: amd64-usbtpu-adaptive-learning.Dockerfile
+    stdin_open: true
+    tty: true
+    container_name: smart-social-distancing
+    volumes:
+    - ./:/repo
+    ports:
+    - [HOST_PORT]:8000
+    environment:
+      - TZ=./timezone.sh
+    privileged: true

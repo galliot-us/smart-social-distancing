@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 class Distancing:
 
-    def __init__(self, config, source, live_feed_enabled=True):
+    def __init__(self, config, source, loop_video_file, live_feed_enabled=True):
         self.config = config
+        self.loop_video_file = loop_video_file
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
 
@@ -292,6 +293,7 @@ class Distancing:
 
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
         frame_num = 0
+        total_frames = input_cap.get(cv.CAP_PROP_FRAME_COUNT)
         start_time = time.time()
         last_processed_time = time.time()
         while input_cap.isOpened() and self.running_video:
@@ -307,6 +309,10 @@ class Distancing:
                 frame_num += 1
                 if frame_num % 100 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
+                if self.loop_video_file and frame_num % total_frames == 0:
+                    input_cap.set(cv.CAP_PROP_POS_FRAMES, 0)
+                    logger.info("reached end of video, app will process from begining")
+
                 # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period
                 # has occured
                 if (self.screenshot_period > 0) and (time.time() > start_time + self.screenshot_period) and (
