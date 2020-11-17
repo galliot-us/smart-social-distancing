@@ -118,8 +118,8 @@ class Distancing:
             detection_scores.append(itm['score'])
             class_ids.append(int(itm['id'].split('-')[0]))
             detection_bboxes.append((int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h)))
-            faces = np.array(faces)
-            face_mask_results, scores = self.classifier.inference(faces)
+        faces = np.array(faces)
+        face_mask_results, scores = self.classifier.inference(faces)
 
         tracks = self.tracker.update(detection_bboxes, class_ids, detection_scores)
         idx = 0
@@ -143,7 +143,7 @@ class Distancing:
                 track_count, trackid, class_id_o, centroid, track_bbox, track_info = track
                 selected_box = [int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h)]
                 if functools.reduce(lambda x, y: x and y, map(lambda p, q: p == q, selected_box, track_bbox), True):
-                    obj["traked_id"] = trackid
+                    obj["tracked_id"] = trackid
                     obj["track_info"] = track_info
 
         objects_list, distancings = self.calculate_distancing(tmp_objects_list)

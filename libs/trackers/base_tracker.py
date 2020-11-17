@@ -2,7 +2,7 @@ from collections import OrderedDict
 import numpy as np
 from scipy.spatial import distance
 from libs.trackers.utils.misc import get_centroids
-from libs.trackers.tracker import Track
+from libs.trackers.track import Track
 
 
 class BaseTracker:
