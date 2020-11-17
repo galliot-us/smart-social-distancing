@@ -183,9 +183,9 @@ docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86-o
 ```
 
 ##### Run on AMD node with a connected Coral USB Accelerator with Adaptive Learning Support
-Currently Smart Social Distancing supports Adaptive Learning framework on X86 nodes with connected USB TPU. for more information about Adaptive Learning visit [this page](https://github.com/neuralet/neuralet/tree/master/applications/adaptive-learning)
+Currently Smart Social Distancing supports Adaptive Learning framework on X86 nodes with connected USB TPU. For more information about Adaptive Learning visit [this page](https://github.com/neuralet/neuralet/tree/master/applications/adaptive-learning)
 Important notes:
-1. you must install [Docker Compose](https://github.com/docker/compose) to be able to use Adaptive Learning.
+1. You must install [Docker Compose](https://github.com/docker/compose) to be able to use Adaptive Learning.
 2. At this time Adaptive Learning is only compatible with `mobilenet_ssd_v2` models.
 
 ```bash
