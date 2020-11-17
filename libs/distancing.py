@@ -35,7 +35,7 @@ class Distancing:
         self.running_video = False
         self.tracker = IOUTracker(
             max_lost=int(self.config.get_section_dict("PostProcessor")["MaxLost"]),
-            iou_threshold=self.config.get_section_dict("PostProcessor")["TrackerIOUThreshold"],
+            iou_threshold=float(self.config.get_section_dict("PostProcessor")["TrackerIOUThreshold"]),
             min_detection_confidence=0.2,
             max_detection_confidence=1.0
         )
