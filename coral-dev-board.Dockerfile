@@ -67,6 +67,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         python3-scipy \
         python3-wget \
+        supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m pip install --upgrade pip setuptools==41.0.0 && pip install -r /requirements.txt \
         https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_aarch64.whl \
@@ -77,6 +78,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
+ENV CONFIG_FILE=config-coral.ini
+
 
 RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
     https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
@@ -87,5 +90,4 @@ ENV PYTHONPATH=$PYTHONPATH:/project-posenet
 COPY . /repo
 WORKDIR /repo
 HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-coral.ini
-ENTRYPOINT ["bash", "start_services.bash"]
-CMD ["config-coral.ini"]
+CMD supervisord -c supervisord.conf -n
