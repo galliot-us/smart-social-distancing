@@ -21,7 +21,7 @@ inotifywait -e modify -m $MODEL_DIR | grep '\s\+detect.tflite$' --line-buffered 
     fi
 
 
-    response=$(curl 0.0.0.0:8000/process-video-cfg)
+    response=$(curl 0.0.0.0:8000/start-process-video)
     if [ "$response" != true ] ; then
         echo "restarting failed, trying again in 5 seconds!"
     elif [ "$response" = true ] ; then
