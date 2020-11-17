@@ -2,6 +2,7 @@ import os
 
 from datetime import date, timedelta
 from fastapi import APIRouter, Query, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from libs.utils.reports import ReportsService
@@ -229,3 +230,15 @@ def get_camera_with_most_violations():
     return {
         "cam_id": reports.camera_with_most_violations()
     }
+
+
+@reports_router.get("/{camera_id}/daily_data")
+def get_daily_data(camera_id: str, date: date = Query(date.today().isoformat())):
+    """
+    Returns a csv file containing the data detected by the camera <camera_id> for the date <date>
+    """
+    validate_existence(camera_id)
+    dir_path = os.path.join(os.getenv("LogDirectory"), camera_id, "objects_log")
+    if not os.path.exists(os.path.join(dir_path, f"{date}.csv")):
+        raise HTTPException(status_code=404, detail=f"There is no data for the selected date.")
+    return FileResponse(f"{dir_path}/{date}.csv", media_type="text/csv", filename=f"{date}_daily_data.csv")

@@ -1,6 +1,14 @@
+import itertools
 import time
 
+from datetime import datetime
+from tools.environment_score import mx_environment_scoring_consider_crowd
+from tools.objects_post_process import extract_violating_objects
+
+from .web_hook_logger import WebHookLogger
+
 LOG_FORMAT_VERSION = "1.0"
+
 
 class Logger:
     """logger layer to build a logger and pass data to it for logging
@@ -18,21 +26,21 @@ class Logger:
         # Logger name, at this time only csv_logger is supported. You can implement your own logger
         # by following csv_logger implementation as an example.
         self.name = self.config.get_section_dict("Logger")["Name"]
+        self.loggers = []
         if self.name == "csv_logger":
-            from . import csv_processed_logger
-            self.logger = csv_processed_logger.Logger(self.config, camera_id)
+            from .csv_logger import CSVLogger
+            self.loggers.append(CSVLogger(self.config, camera_id))
+        else:
+            raise ValueError('Not supported logger named: ', self.name)
 
-            # For Logger instance from loggers/csv_logger
-            # region csv_logger
-            # from . import csv_logger
-            # self.logger = csv_logger.Logger(self.config)
-            # end region
+        if self.config.get_section_dict("Logger")["WebHooksEndpoint"]:
+            self.loggers.append(WebHookLogger(self.config, camera_id))
 
         # Specifies how often the logger should log information. For example with time_interval of 0.5
         # the logger log the information every 0.5 seconds.
         self.time_interval = float(self.config.get_section_dict("Logger")["TimeInterval"])  # Seconds
         self.submited_time = 0
-        # self.frame_number = 0  # For Logger instance from loggers/csv_logger
+        self.dist_threshold = config.get_section_dict("PostProcessor")["DistThreshold"]
 
     def update(self, objects_list, distances):
         """call the update method of the logger.
@@ -46,14 +54,32 @@ class Logger:
         """
 
         if time.time() - self.submited_time > self.time_interval:
+            # Get timeline which is used for as Timestamp
+            now = datetime.now()
+            current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+            # Process objects
             objects = self.format_objects(objects_list)
-            self.logger.update(objects, distances, version=LOG_FORMAT_VERSION)
+            violating_objects = extract_violating_objects(distances, self.dist_threshold)
+            # Get unique objects that are in close contact
+            violating_objects_index_list = list(set(itertools.chain(*violating_objects)))
+            # Get the number of violating objects (people)
+            violating_objects_count = len(violating_objects)
+            # Get the number of detected objects (people)
+            detected_objects_count = len(objects_list)
+            # Get environment score
+            environment_score = mx_environment_scoring_consider_crowd(detected_objects_count, violating_objects_count)
+            for logger in self.loggers:
+                logger.log_objects(
+                    objects,
+                    violating_objects,
+                    violating_objects_index_list,
+                    violating_objects_count,
+                    detected_objects_count,
+                    environment_score,
+                    current_time,
+                    version=LOG_FORMAT_VERSION
+                )
             self.submited_time = time.time()
-            # For Logger instance from loggers/csv_logger
-            # region
-            # self.logger.update(self.frame_number, objects_list, distances)
-            # self.frame_number += 1
-            # end region
 
     def format_objects(self, objects_list):
         """ Format the attributes of the objects in a way ready to be saved
@@ -71,6 +97,5 @@ class Logger:
             if "face_label" in obj_dict and obj_dict["face_label"] != -1:
                 obj["face_label"] = obj_dict["face_label"]
             # TODO: Add more optional parameters
-
             objects.append(obj)
         return objects
