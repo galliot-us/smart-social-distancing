@@ -186,7 +186,7 @@ def select_items(directory, num_of_images, max_retry=100):
                 "There is not {} images on the {} directory. try number {} from {}".format(num_of_images, directory,
                                                                                            tries + 1, max_retry))
             tries += 1
-            time.sleep(2)
+            time.sleep(300)
 
 
 def main(_):
