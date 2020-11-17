@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 
 class Distancing:
 
-    def __init__(self, config, source, repeat, live_feed_enabled=True):
+    def __init__(self, config, source, loop_video_file, live_feed_enabled=True):
         self.config = config
-        self.repeat = repeat
+        self.loop_video_file = loop_video_file
         self.detector = None
         self.device = self.config.get_section_dict('Detector')['Device']
 
@@ -298,7 +298,7 @@ class Distancing:
                 frame_num += 1
                 if frame_num % 100 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
-                if self.repeat == 'true' and frame_num % total_frames == 0:
+                if self.loop_video_file and frame_num % total_frames == 0:
                     input_cap.set(cv.CAP_PROP_POS_FRAMES, 0)
                     logger.info("reached end of video, app will process from begining")
 

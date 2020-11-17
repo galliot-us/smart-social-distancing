@@ -161,6 +161,7 @@ class ConfigEngine:
                     else:
                         src['should_send_email_notifications'] = False
                         src['should_send_slack_notifications'] = False
+                    src['loop_video_file'] = self.get_boolean(title, 'LoopVideoFile')
                     sources.append(src)
             return sources
         except:
