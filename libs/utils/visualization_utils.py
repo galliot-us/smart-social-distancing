@@ -160,7 +160,7 @@ def draw_bounding_box_on_image(
             fill=color,
         )
         draw.text(
-            (left + margin, text_bottom - text_height - margin),
+            (left + margin, text_bottom - text_height),
             display_str,
             fill="black",
             font=font,
@@ -273,6 +273,8 @@ def visualize_boxes_and_labels_on_image_array(
         groundtruth_box_visualization_color="black",
         skip_scores=False,
         skip_labels=False,
+        face_labels=None,
+        face_index={}
 ):
     """Overlay labeled boxes on an image with formatted scores and label names.
   
@@ -311,6 +313,8 @@ def visualize_boxes_and_labels_on_image_array(
         boxes
       skip_scores: whether to skip score when drawing a single detection
       skip_labels: whether to skip label when drawing a single detection
+      face_labels: an array containing the face_mask classifer results
+      face_index: a dictionary contianing the description of each face_label
   
     Returns:
       uint8 numpy array with shape (img_height, img_width, 3) with overlaid boxes.
@@ -358,6 +362,9 @@ def visualize_boxes_and_labels_on_image_array(
                     box_to_color_map[box] = STANDARD_COLORS[
                         classes[i] % len(STANDARD_COLORS)
                         ]
+                if face_labels:
+                    facemask_label = f"Facemask: {face_index[face_labels[i]]}"
+                    box_to_display_str_map[box].append(facemask_label)
 
     # Draw all boxes onto image.
     for box, color in zip(boxes, colors):
@@ -409,6 +416,7 @@ def visualization_preparation(nn_out, distances, dist_threshold):
     detection_boxes = []
     is_violating = []
     colors = []
+    face_labels = []
 
     distance = np.amin(distances + np.identity(len(distances)) * dist_threshold * 2, 0) if distances != [] else [dist_threshold]
     for i, obj in enumerate(nn_out):
@@ -434,12 +442,15 @@ def visualization_preparation(nn_out, distances, dist_threshold):
         detection_scores.append(score)
         detection_boxes.append(box)
         colors.append(color)
+        if "face_label" in obj:
+            face_labels.append(obj["face_label"])
         is_violating.append(True) if distance[i] < dist_threshold else is_violating.append(False)
     output_dict["detection_boxes"] = np.array(detection_boxes)
     output_dict["detection_scores"] = detection_scores
     output_dict["detection_classes"] = detection_classes
     output_dict["violating_objects"] = is_violating
     output_dict["detection_colors"] = colors
+    output_dict["face_labels"] = face_labels
     return output_dict
 
 

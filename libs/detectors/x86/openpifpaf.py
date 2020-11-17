@@ -18,13 +18,14 @@ class Detector:
         self.config = config
         # Get the model name from the config
         self.model_name = self.config.get_section_dict('Detector')['Name']
+        self.device = "cuda:0" if self.config.get_section_dict('Detector')['Device'] == "x86-gpu" else "cpu"
         # Frames Per Second
         self.fps = None
         self.net, self.processor = self.load_model()
         self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
 
     def load_model(self):
-        self.device = "cpu"
+
         model_file = pathlib.Path('/repo/data/x86/openpifpaf-resnet50.pkl')
         if model_file.exists():
             net_cpu, _ = openpifpaf.network.factory(checkpoint=model_file.as_posix(), download_progress=False)

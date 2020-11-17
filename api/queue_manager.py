@@ -21,13 +21,13 @@ class QueueManager:
 
     def __init__(self, config=None):
         if not QueueManager.instance:
-            QueueManager.__QueueManager.register('get_cmd_queue')
-            QueueManager.__QueueManager.register('get_result_queue')
+            QueueManager.__QueueManager.register("get_cmd_queue")
+            QueueManager.__QueueManager.register("get_result_queue")
             queue_host = config.get_section_dict("CORE")["Host"]
             queue_port = int(config.get_section_dict("CORE")["QueuePort"])
             auth_key = config.get_section_dict("CORE")["QueueAuthKey"]
             QueueManager.instance = QueueManager.__QueueManager(
-                address=(queue_host, queue_port), authkey=auth_key.encode('ascii'))
+                address=(queue_host, queue_port), authkey=auth_key.encode("ascii"))
             while True:
                 try:
                     QueueManager.instance.connect()

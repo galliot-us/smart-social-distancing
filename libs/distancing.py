@@ -69,6 +69,9 @@ class Distancing:
         if not os.path.exists(self.screenshot_path):
             os.makedirs(self.screenshot_path)
 
+        if "Classifier" in self.config.get_sections():
+            self.face_threshold = float(self.config.get_section_dict("Classifier").get("MinScore", 0.75))
+
     def __process(self, cv_image):
         """
         return object_list list of  dict for each obj,
@@ -107,7 +110,7 @@ class Distancing:
         idx = 0
         for obj in tmp_objects_list:
             if self.classifier is not None and 'face' in obj.keys():
-                if obj['face'] is not None:
+                if obj['face'] is not None and scores[idx] > self.face_threshold:
                     obj['face_label'] = face_mask_results[idx]
                     idx = idx + 1
                 else:
@@ -187,6 +190,11 @@ class Distancing:
             "id": class_id,
             "name": "Pedestrian",
         }}  # TODO: json file for detector config
+        face_index = {
+            0: "YES",
+            1: "NO",
+            -1: "N/A",
+        }
         # Draw bounding boxes and other visualization factors on input_frame
         visualization_utils.visualize_boxes_and_labels_on_image_array(
             cv_image,
@@ -198,6 +206,8 @@ class Distancing:
             instance_masks=output_dict.get("detection_masks"),
             use_normalized_coordinates=True,
             line_thickness=3,
+            face_labels=output_dict["face_labels"],
+            face_index=face_index
         )
         # TODO: Implement perspective view for objects
         birds_eye_window = visualization_utils.birds_eye_view(
@@ -238,21 +248,22 @@ class Distancing:
         elif self.device == 'EdgeTPU':
             from libs.detectors.edgetpu.detector import Detector
             from libs.classifiers.edgetpu.classifier import Classifier
-            self.classifier = Classifier(self.config)
             self.detector = Detector(self.config)
-            self.classifier_img_size = [int(i) for i in
-                                        self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
+            if "Classifier" in self.config.get_sections():
+                self.classifier = Classifier(self.config)
+                self.classifier_img_size = [int(i) for i in
+                                            self.config.get_section_dict("Classifier")["ImageSize"].split(",")]
         elif self.device == 'Dummy':
             from libs.detectors.dummy.detector import Detector
             self.detector = Detector(self.config)
-        elif self.device == 'x86':
+        elif self.device in ['x86', 'x86-gpu']:
             from libs.detectors.x86.detector import Detector
             from libs.classifiers.x86.classifier import Classifier
             self.detector = Detector(self.config)
-            if 'Classifier' in self.config.get_sections():
+            if "Classifier" in self.config.get_sections():
                 self.classifier = Classifier(self.config)
                 self.classifier_img_size = [int(i) for i in
-                                            self.config.get_section_dict('Classifier')['ImageSize'].split(',')]
+                                            self.config.get_section_dict("Classifier")["ImageSize"].split(",")]
 
         if self.device != 'Dummy':
             print('Device is: ', self.device)
@@ -302,7 +313,8 @@ class Distancing:
                     input_cap.set(cv.CAP_PROP_POS_FRAMES, 0)
                     logger.info("reached end of video, app will process from begining")
 
-                # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period has occured
+                # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period
+                # has occured
                 if (self.screenshot_period > 0) and (time.time() > start_time + self.screenshot_period) and (
                         len(violating_objects) > 0):
                     start_time = time.time()
@@ -573,9 +585,9 @@ class Distancing:
         kernel_w = int(w / 3)
         kernel_h = int(h / 3)
         if kernel_w % 2 == 0:
-            kernel_w -= 1
+            kernel_w = max(1, kernel_w - 1)
         if kernel_h % 2 == 0:
-            kernel_h -= 1
+            kernel_h = max(1, kernel_h - 1)
         return cv.GaussianBlur(image, (kernel_w, kernel_h), 0)
 
     # TODO: Make this an async task?
