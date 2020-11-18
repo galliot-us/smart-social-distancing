@@ -227,6 +227,8 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `DashboardURL`: Sets the url where the frontend is running. Unless you are using a custom domain, you should keep this value as https://beta.lanthorn.ai/.
   - `EnableSlackNotifications`: A boolean parameter to enable/disable the Slack integration for notifications and daily reports. We recommend not editing this parameter directly and manage it from the [UI](https://beta.lanthorn.ai) to configure your workspace correctly.
   - `SlackChannel`: Configures the slack channel used by the notifications. The chosen slack channel must exist in the configured workspace.
+  - `OccupancyAlertsMinInterval`:  Sets the desired interval (in seconds) between occupancy alerts.
+  - `MaxThreadRestarts`: Defines the number of restarts allowed per thread.
 
 - `[Api]`
   - `Host`: Configures the host IP of the processor's API (inside docker). We recommend don't change that value and keep it as *0.0.0.0*.

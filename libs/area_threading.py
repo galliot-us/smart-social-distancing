@@ -35,14 +35,15 @@ class AreaThread(Thread):
     def run(self):
         self.engine = AreaEngine(self.config, self.area)
         restarts = 0
+        max_restarts = int(self.config.get_section_dict("App")["MaxThreadRestarts"])
         while True:
             try:
                 self.engine.process_area()
             except Exception as e:
                 logging.error(e, exc_info=True)
                 logging.info(f"Exception processing area {self.area['name']}")
-                if restarts == 5:
-                    break
+                if restarts == max_restarts:
+                    raise e
                 # Sleep the thread for 5 seconds and try to process the area again
                 time.sleep(5)
                 logging.info("Restarting the area processing")
