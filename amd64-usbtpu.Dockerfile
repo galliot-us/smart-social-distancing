@@ -104,5 +104,5 @@ ENV PYTHONPATH=$PYTHONPATH:/project-posenet
 
 COPY . /repo
 WORKDIR /repo
-HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-coral.ini
+HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
 CMD supervisord -c supervisord.conf -n

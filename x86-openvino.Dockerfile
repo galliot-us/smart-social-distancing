@@ -88,5 +88,5 @@ ENV CONFIG_FILE=config-x86-openvino.ini
 COPY . /repo
 WORKDIR /repo
 
-HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-x86-openvino.ini
+HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
 CMD env `python3 /opt/openvino_setupvars.py` supervisord -c supervisord.conf -n

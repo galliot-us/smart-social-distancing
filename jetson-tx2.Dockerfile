@@ -98,5 +98,5 @@ ENV CONFIG_FILE=config-jetson.ini
 
 COPY . /repo/
 WORKDIR /repo
-HEALTHCHECK --interval=30s --retries=5 --start-period=15s CMD bash healthcheck.bash config-jetson.ini
+HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
 CMD supervisord -c supervisord.conf -n
