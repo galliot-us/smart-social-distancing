@@ -44,15 +44,19 @@ class EngineThread(Thread):
 
     def run(self):
         self.engine = CvEngine(self.config, self.source['section'], self.live_feed_enabled)
+        restarts = 0
         while True:
             try:
                 self.engine.process_video(self.source['url'])
             except Exception as e:
                 logging.error(e, exc_info=True)
+                logging.info(f"Exception processing video for source {self.source['name']}")
+                if restarts == 5:
+                    break
                 # Sleep the thread for 5 seconds and try to process the video again
                 time.sleep(5)
-                logging.info(f"Exception processing video for source {self.source['name']}")
                 logging.info("Restarting the video processing")
+                restarts += 1
 
     def stop(self):
         self.engine.stop_process_video()

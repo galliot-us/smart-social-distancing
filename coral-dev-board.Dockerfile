@@ -78,15 +78,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
-ENV CONFIG_FILE=config-coral.ini
-
 
 RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
     https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
     /project-posenet/install_requirements.sh && sh /project-posenet/install_requirements.sh
 ENV PYTHONPATH=$PYTHONPATH:/project-posenet
-
+ENV CONFIG_FILE=config-coral.ini
 # Also if you use opencv: LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libgomp.so.1.0.0"
+
 COPY . /repo
 WORKDIR /repo
 HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
