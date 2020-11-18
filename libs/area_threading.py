@@ -39,7 +39,7 @@ class AreaThread(Thread):
                 self.engine.process_area()
             except Exception as e:
                 logging.error(e, exc_info=True)
-                # Sleep the thread for 5 seconds and try to process the video again
+                # Sleep the thread for 5 seconds and try to process the area again
                 time.sleep(5)
                 logging.info(f"Exception processing area {self.area['name']}")
                 logging.info("Restarting the area processing")

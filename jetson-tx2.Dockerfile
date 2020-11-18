@@ -95,7 +95,6 @@ ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
 ENV CONFIG_FILE=config-jetson.ini
 
-
 COPY . /repo/
 WORKDIR /repo
 HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
