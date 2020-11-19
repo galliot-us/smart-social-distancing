@@ -212,12 +212,16 @@ You can read and modify the configurations in `config-*.ini` files, accordingly:
 
 `config-x86-openvino.ini`: for x86 systems accelerated with Openvino
 
+Please note that if you modify these values you should also set `[App]` `HasBeenConfigured` to `"True"`.
+This allows for a client to recognize if this processor was previously configured.
+
 You can also modify some of them using the [UI](https://beta.lanthorn.ai). 
 If you choose this option, make sure to mount the config file as a volume to keep the changes after any restart of the container.
 
 All the configurations are grouped in *sections* and some of them can vary depending on the chosen device.
 
 - `[App]`
+  - `HasBeenConfigured`: A boolean parameter that state if the *config.ini* was changed or not.
   - `Resolution`: Specifies the image resolution that the whole processor will use. If you are using a single camera we recommend using that resolution.
   - `Encoder`: Specifies the video encoder used by the processing pipeline.
   - `MaxProcesses`: Defines the number of processes executed in the processor. If you are using multiple cameras per processor we recommend increasing this number.
