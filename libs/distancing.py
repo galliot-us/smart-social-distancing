@@ -5,7 +5,7 @@ import math
 import os
 import shutil
 import time
-from libs.centroid_object_tracker import CentroidTracker
+from libs.trackers.iou_tracker import IOUTracker
 from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
@@ -13,6 +13,7 @@ from libs.utils import visualization_utils
 from libs.utils.camera_calibration import get_camera_calibration_path
 from libs.uploaders.s3_uploader import S3Uploader
 import logging
+import functools
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +33,12 @@ class Distancing:
         self.face_mask_classifier = None
 
         self.running_video = False
-        self.tracker = CentroidTracker(
-            max_disappeared=int(self.config.get_section_dict("PostProcessor")["MaxTrackFrame"]))
+        self.tracker = IOUTracker(
+            max_lost=int(self.config.get_section_dict("PostProcessor")["MaxLost"]),
+            iou_threshold=float(self.config.get_section_dict("PostProcessor")["TrackerIOUThreshold"]),
+            min_detection_confidence=0.2,
+            max_detection_confidence=1.0
+        )
         self.camera_id = self.config.get_section_dict(source)['Id']
         self.logger = Logger(self.config, self.camera_id)
         self.image_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
@@ -83,29 +88,43 @@ class Distancing:
         resized_image = cv.resize(cv_image, tuple(self.image_size[:2]))
         rgb_resized_image = cv.cvtColor(resized_image, cv.COLOR_BGR2RGB)
         tmp_objects_list = self.detector.inference(rgb_resized_image)
-        # Get the classifier result for detected face
-        if self.classifier is not None:
-            faces = []
-            for itm in tmp_objects_list:
-                if 'face' in itm.keys():
-                    face_bbox = itm['face']  # [ymin, xmin, ymax, xmax]
-                    if face_bbox is not None:
-                        xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
-                        ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
-                        croped_face = cv_image[
-                            int(ymin):int(ymin) + (int(ymax) - int(ymin)),
-                            int(xmin):int(xmin) + (int(xmax) - int(xmin))
-                        ]
 
-                        # Resizing input image
-                        croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
-                        croped_face = cv.cvtColor(croped_face, cv.COLOR_BGR2RGB)
-                        # Normalizing input image to [0.0-1.0]
-                        croped_face = np.array(croped_face) / 255.0
-                        faces.append(croped_face)
-            faces = np.array(faces)
-            face_mask_results, scores = self.classifier.inference(faces)
         [w, h] = self.resolution
+        detection_scores = []
+        class_ids = []
+        detection_bboxes = []
+        faces = []
+        # Get the classifier of detected face
+        for itm in tmp_objects_list:
+            if 'face' in itm.keys() and self.classifier is not None:
+                face_bbox = itm['face']  # [ymin, xmin, ymax, xmax]
+                if face_bbox is not None:
+                    xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
+                    ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
+                    croped_face = cv_image[
+                        int(ymin):int(ymin) + (int(ymax) - int(ymin)),
+                        int(xmin):int(xmin) + (int(xmax) - int(xmin))
+                    ]
+
+                    # Resizing input image
+                    croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
+                    croped_face = cv.cvtColor(croped_face, cv.COLOR_BGR2RGB)
+                    # Normalizing input image to [0.0-1.0]
+                    croped_face = np.array(croped_face) / 255.0
+                    faces.append(croped_face)
+            # Prepare tracker input
+            box = itm["bbox"]
+            x0 = box[1]
+            y0 = box[0]
+            x1 = box[3]
+            y1 = box[2]
+            detection_scores.append(itm['score'])
+            class_ids.append(int(itm['id'].split('-')[0]))
+            detection_bboxes.append((int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h)))
+        faces = np.array(faces)
+        face_mask_results, scores = self.classifier.inference(faces)
+
+        tracks = self.tracker.update(detection_bboxes, class_ids, detection_scores)
         idx = 0
         for obj in tmp_objects_list:
             if self.classifier is not None and 'face' in obj.keys():
@@ -123,6 +142,12 @@ class Distancing:
             obj["bbox"] = [x0, y0, x1, y1]
             obj["centroidReal"] = [(x0 + x1) * w / 2, (y0 + y1) * h / 2, (x1 - x0) * w, (y1 - y0) * h]
             obj["bboxReal"] = [x0 * w, y0 * h, x1 * w, y1 * h]
+            for track in tracks:
+                track_count, trackid, class_id_o, centroid, track_bbox, track_info = track
+                selected_box = [int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h)]
+                if functools.reduce(lambda x, y: x and y, map(lambda p, q: p == q, selected_box, track_bbox), True):
+                    obj["tracked_id"] = trackid
+                    obj["track_info"] = track_info
 
         objects_list, distancings = self.calculate_distancing(tmp_objects_list)
         anonymize = self.config.get_section_dict('PostProcessor')['Anonymize'] == "true"
@@ -350,8 +375,6 @@ class Distancing:
         new_objects_list = self.non_max_suppression_fast(new_objects_list,
                                                          float(self.config.get_section_dict("PostProcessor")[
                                                                    "NMSThreshold"]))
-        tracked_boxes = self.tracker.update(new_objects_list)
-        new_objects_list = [tracked_boxes[i] for i in tracked_boxes.keys()]
         for i, item in enumerate(new_objects_list):
             item["id"] = item["id"].split("-")[0] + "-" + str(i)
         distances = self.calculate_box_distances(new_objects_list)

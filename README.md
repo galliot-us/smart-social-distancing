@@ -284,7 +284,8 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 
 - `[PostProcessor]`:
-  - `MaxTrackFrame`: Defines the number of frames that an object should disappear to be considered as lost.
+  - `MaxLost`: Defines the number of frames that an object should disappear to be considered as lost.
+  - `TrackerIOUThreshold`: Configures the threshold of IoU to consider boxes at two frames as referring to the same object at IoU tracker.
   - `NMSThreshold`: Configures the threshold of minimum IoU to detect two boxes as referring to the same object.
   - `DefaultDistMethod`: Defines the default distance algorithm for the cameras without *DistMethod* configuration.
   - `DistThreshold`: Configures the distance threshold for the *social distancing violations*
