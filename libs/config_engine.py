@@ -127,6 +127,7 @@ class ConfigEngine:
         for section in self.config.sections():
             if len(current_sections) and (section.startswith('Source') or section.startswith('Area')) and section not in current_sections:
                 self.config.remove_section(section)
+        self.set_option_in_section("App", "HasBeenConfigured", "True")
         if save_file:
             self.save(self.config_file_path)
 
