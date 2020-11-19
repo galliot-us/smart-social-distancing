@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter
+from pydantic import BaseModel
 from typing import Optional
 
 from .areas import map_area, map_to_area_file_format
@@ -13,6 +14,21 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 config_router = APIRouter()
+
+
+class ConfigInfo(BaseModel):
+    version: str
+    device: str
+    has_been_configured: bool
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "version": "0.2.0",
+                "device": "device",
+                "has_been_configured": True
+            }
+        }
 
 
 def map_to_config_file_format(config_dto: ConfigDTO):
@@ -33,6 +49,18 @@ def map_config(config, options):
     }
 
 
+def processor_info(config):
+    has_been_configured = config['App']['HasBeenConfigured']
+    device = config['Detector']['Device']
+    if config['Detector']['Name'] == 'openvino':
+        device += '-openvino'
+    return {
+        'version': '0.2.0',
+        'device': device,
+        'has_been_configured': has_been_configured
+    }
+
+
 @config_router.get("", response_model=ConfigDTO)
 async def get_config(options: Optional[str] = ""):
     """
@@ -50,3 +78,11 @@ async def update_config(config: ConfigDTO):
     config_dict = map_to_config_file_format(config)
     success = update_and_restart_config(config_dict)
     return handle_response(config_dict, success)
+
+
+@config_router.get("/info", response_model=ConfigInfo)
+async def get_processor_info():
+    """
+    Returns basic info regarding this processor
+    """
+    return processor_info(extract_config())
