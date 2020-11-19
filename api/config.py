@@ -10,6 +10,7 @@ from .models.config_keys import ConfigDTO
 from .utils import (
     extract_config, handle_response, update_and_restart_config
 )
+from constants import PROCESSOR_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class ConfigInfo(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "version": "0.2.0",
+                "version": PROCESSOR_VERSION,
                 "device": "device",
                 "has_been_configured": True
             }
@@ -55,7 +56,7 @@ def processor_info(config):
     if config["Detector"]["Name"] == "openvino":
         device += "-openvino"
     return {
-        "version": "0.2.0",
+        "version": PROCESSOR_VERSION,
         "device": device,
         "has_been_configured": has_been_configured
     }
