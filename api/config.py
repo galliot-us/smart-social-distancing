@@ -50,14 +50,14 @@ def map_config(config, options):
 
 
 def processor_info(config):
-    has_been_configured = bool(config['App']['HasBeenConfigured'])
-    device = config['Detector']['Device']
-    if config['Detector']['Name'] == 'openvino':
-        device += '-openvino'
+    has_been_configured = bool(config["App"]["HasBeenConfigured"])
+    device = config["Detector"]["Device"]
+    if config["Detector"]["Name"] == "openvino":
+        device += "-openvino"
     return {
-        'version': '0.2.0',
-        'device': device,
-        'has_been_configured': has_been_configured
+        "version": "0.2.0",
+        "device": device,
+        "has_been_configured": has_been_configured
     }
 
 
