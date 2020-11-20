@@ -221,7 +221,7 @@ If you choose this option, make sure to mount the config file as a volume to kee
 All the configurations are grouped in *sections* and some of them can vary depending on the chosen device.
 
 - `[App]`
-  - `HasBeenConfigured`: A boolean parameter that state if the *config.ini* was changed or not.
+  - `HasBeenConfigured`: A boolean parameter that states whether the *config.ini* was set up or not.
   - `Resolution`: Specifies the image resolution that the whole processor will use. If you are using a single camera we recommend using that resolution.
   - `Encoder`: Specifies the video encoder used by the processing pipeline.
   - `MaxProcesses`: Defines the number of processes executed in the processor. If you are using multiple cameras per processor we recommend increasing this number.
