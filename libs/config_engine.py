@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+import os
+import logging
 import configparser
 import threading
 from distutils.util import strtobool
@@ -14,6 +16,7 @@ class ConfigEngine:
     """
 
     def __init__(self, config_path="./config-coral.ini"):
+        self.logger = logging.getLogger(__name__)
         self.config = configparser.ConfigParser()
         self.config.optionxform = str
         self.config_file_path = config_path
@@ -137,6 +140,7 @@ class ConfigEngine:
             ent["tags"] = section["Tags"].split(",")
         if "Emails" in section and section["Emails"].strip() != "":
             ent["emails"] = section["Emails"].split(",")
+        ent["enable_slack_notifications"] = self.config.getboolean(title, "EnableSlackNotifications")
         ent["notify_every_minutes"] = int(section["NotifyEveryMinutes"])
         ent["violation_threshold"] = int(section["ViolationThreshold"])
         ent["daily_report"] = self.config.getboolean(title, "DailyReport")
@@ -156,9 +160,8 @@ class ConfigEngine:
                     if "Tags" in section and section["Tags"].strip() != "":
                         src["tags"] = section["Tags"].split(",")
                     if src["notify_every_minutes"] > 0 and src["violation_threshold"] > 0:
-                        src["should_send_email_notifications"] = "emails" in src
-                        src["should_send_slack_notifications"] = bool(self.config["App"]["SlackChannel"] and
-                                                                      self.config.getboolean("App", "EnableSlackNotifications"))
+                        src["should_send_email_notifications"] = self.should_send_email_notifications(src)
+                        src["should_send_slack_notifications"] = self.should_send_slack_notifications(src)
                     else:
                         src["should_send_email_notifications"] = False
                         src["should_send_slack_notifications"] = False
@@ -180,9 +183,8 @@ class ConfigEngine:
                         area["cameras"] = section["Cameras"].split(",")
 
                     if (area["notify_every_minutes"] > 0 and area["violation_threshold"] > 0) or area["occupancy_threshold"] > 0:
-                        area["should_send_email_notifications"] = "emails" in area
-                        area["should_send_slack_notifications"] = bool(self.config["App"]["SlackChannel"] and
-                                                                       self.config.getboolean("App", "EnableSlackNotifications"))
+                        area["should_send_email_notifications"] = self.should_send_email_notifications(area)
+                        area["should_send_slack_notifications"] = self.should_send_slack_notifications(area)
                     else:
                         area["should_send_email_notifications"] = False
                         area["should_send_slack_notifications"] = False
@@ -191,3 +193,19 @@ class ConfigEngine:
         except:
             # Sources are invalid in config file. What should we do?
             raise RuntimeError("Invalid areas in config file")
+
+    def should_send_email_notifications(self, entity):
+        if "emails" in entity:
+            if os.path.isfile("oauth2_cred.json"):
+                return True
+            else:
+                self.logger.warning("Tried to enable email notifications but oauth2_cred.json is missing")
+        return False
+
+    def should_send_slack_notifications(self, ent):
+        if self.config["App"]["SlackChannel"] and ent["enable_slack_notifications"]:
+            if os.path.isfile("slack_token.txt"):
+                return True
+            else:
+                self.logger.warning("Tried to enable slack notifications but slack_token.txt is missing")
+        return False

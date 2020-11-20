@@ -56,7 +56,7 @@ def enable_slack(token_config, reboot_processor):
     write_user_token(token_config.user_token)
     logger.info("Enabling slack notification on processor's config")
     config_dict = dict()
-    config_dict["App"] = dict({"EnableSlackNotifications": "yes", "SlackChannel": token_config.channel})
+    config_dict["App"] = dict({"SlackChannel": token_config.channel})
     success = update_config(config_dict, reboot_processor)
 
     return handle_response(config_dict, success)
