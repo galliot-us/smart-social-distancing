@@ -4,7 +4,7 @@ import logging
 import configparser
 import threading
 from distutils.util import strtobool
-
+from api.slack import is_slack_configured
 
 class ConfigEngine:
     """
@@ -204,8 +204,8 @@ class ConfigEngine:
 
     def should_send_slack_notifications(self, ent):
         if self.config["App"]["SlackChannel"] and ent["enable_slack_notifications"]:
-            if os.path.isfile("slack_token.txt"):
+            if is_slack_configured():
                 return True
             else:
-                self.logger.warning("Tried to enable slack notifications but slack_token.txt is missing")
+                self.logger.warning("Tried to enable slack notifications but slack_token.txt is either missing or unauthorized")
         return False
