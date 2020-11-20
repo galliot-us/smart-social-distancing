@@ -2,6 +2,24 @@
 
 This file includes a list of notable changes to this project.
 
+### [0.2.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.2.0)
+
+**Added/removed features:**
+
+* Remove old frontend and ui backend. Update Readme. (#73)
+* Support for running on x86 with GPU (#72)
+* Added endpoint to get version, device and whether the processor has been set up (#84)
+* Add endpoints to export raw data (#74)
+
+**Fixes/improvements:**
+
+* Fix an error in face anonymizer when using PoseNet (#80, #81)
+* Refactor Endpoints to not end with / (#76)
+* Some improvements in face mask detection like adding a label on top of bounding boxes (#77)
+* Improved Object tracker (IOU tracker added) (#79)
+* Improve fault tolerance (#82)
+
+
 ### First version [0.1.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.1.0)
 
 This is the first release of the Smart Social Distancing app.
