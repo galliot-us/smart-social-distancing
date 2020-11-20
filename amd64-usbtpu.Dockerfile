@@ -83,6 +83,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	python3-requests \
         build-essential \
         libedgetpu1-std \
+        supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install -r /requirements.txt \
 	https://dl.google.com/coral/python/tflite_runtime-2.1.0.post1-cp37-cp37m-linux_x86_64.whl \
@@ -99,8 +100,9 @@ RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clon
     https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
     /project-posenet/install_requirements.sh && sh /project-posenet/install_requirements.sh
 ENV PYTHONPATH=$PYTHONPATH:/project-posenet
+ENV CONFIG_FILE=config-coral.ini
 
 COPY . /repo
 WORKDIR /repo
-ENTRYPOINT ["bash", "start_services.bash"]
-CMD ["config-coral.ini"]
+HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
+CMD supervisord -c supervisord.conf -n

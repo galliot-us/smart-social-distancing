@@ -1,8 +1,11 @@
 import os
+import logging
+import time
+
+from datetime import datetime
 from shutil import rmtree
 from threading import Thread
 from libs.distancing import Distancing as CvEngine
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +46,24 @@ class EngineThread(Thread):
 
     def run(self):
         self.engine = CvEngine(self.config, self.source['section'], self.live_feed_enabled)
-        self.engine.process_video(self.source['url'])
+        restarts = 0
+        max_restarts = int(self.config.get_section_dict("App")["MaxThreadRestarts"])
+        while True:
+            try:
+                last_restart_time = datetime.now()
+                self.engine.process_video(self.source['url'])
+            except Exception as e:
+                logging.error(e, exc_info=True)
+                logging.info(f"Exception processing video for source {self.source['name']}")
+                if (datetime.now() - last_restart_time).total_seconds() > 60:
+                    # If the last restart was previous than 1 minute ago, restart the counter.
+                    restarts = 0
+                if restarts == max_restarts:
+                    raise e
+                # Sleep the thread for 5 seconds and try to process the video again
+                time.sleep(5)
+                logging.info("Restarting the video processing")
+                restarts += 1
 
     def stop(self):
         self.engine.stop_process_video()

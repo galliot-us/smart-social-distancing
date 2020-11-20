@@ -3,7 +3,7 @@ config="$1"
 
 # check if video file exists, if not download it
 line=$(cat $config | grep VideoPath)
-videoPath="$(cut -d'=' -f2 <<<"$line")"
+videoPath="$(cut -d'=' -f2 <<<"$line" | xargs)"
 if [ ! -f "$videoPath" ]; then
     echo "video file at $videoPath not exists, downloading..."
     sh '/repo/download_sample_video.sh'

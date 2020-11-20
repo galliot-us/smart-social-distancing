@@ -68,6 +68,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         python3-scipy \
         python3-wget \
+        supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m pip install --upgrade pip setuptools==41.0.0 && pip install -r /requirements.txt \
     && apt-get purge -y \
@@ -80,7 +81,10 @@ ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
 ENV TF_FORCE_GPU_ALLOW_GROWTH=true
+ENV CONFIG_FILE=config-x86-gpu.ini
+
 COPY . /repo
 WORKDIR /repo
-ENTRYPOINT ["bash", "start_services.bash"]
-CMD ["config-x86-gpu.ini"]
+
+HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
+CMD supervisord -c supervisord.conf -n

@@ -80,6 +80,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         python3-scipy \
         python3-wget \
+        supervisor \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf $(which gcc) /usr/local/bin/gcc-aarch64-linux-gnu \
     && ln -sf $(which g++) /usr/local/bin/g++-aarch64-linux-gnu \
@@ -92,8 +93,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
+ENV CONFIG_FILE=config-jetson.ini
 
 COPY . /repo/
 WORKDIR /repo
-ENTRYPOINT ["bash", "start_services.bash"]
-CMD ["config-jetson.ini"]
+HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash
+CMD supervisord -c supervisord.conf -n
