@@ -13,7 +13,7 @@ class ConfigEngine:
     :param config_path: the path of config file
     """
 
-    def __init__(self, config_path='./config-coral.ini'):
+    def __init__(self, config_path="./config-coral.ini"):
         self.config = configparser.ConfigParser()
         self.config.optionxform = str
         self.config_file_path = config_path
@@ -120,26 +120,27 @@ class ConfigEngine:
     def update_config(self, config, save_file=True):
         current_sections = []
         for section, options in config.items():
-            if section.startswith('Source') or section.startswith('Area'):
+            if section.startswith("Source") or section.startswith("Area"):
                 current_sections.append(section)
             for option, value in options.items():
                 self.set_option_in_section(section, option, value)
         for section in self.config.sections():
-            if len(current_sections) and (section.startswith('Source') or section.startswith('Area')) and section not in current_sections:
+            if len(current_sections) and (section.startswith("Source") or section.startswith("Area")) and section not in current_sections:
                 self.config.remove_section(section)
+        self.set_option_in_section("App", "HasBeenConfigured", "True")
         if save_file:
             self.save(self.config_file_path)
 
     def get_entity_with_notifications(self, title, section):
-        ent = {'section': title, 'id': section['Id'], 'name': section['Name']}
-        if 'Tags' in section and section['Tags'].strip() != "":
-            ent['tags'] = section['Tags'].split(',')
-        if 'Emails' in section and section['Emails'].strip() != "":
-            ent['emails'] = section['Emails'].split(',')
-        ent['notify_every_minutes'] = int(section['NotifyEveryMinutes'])
-        ent['violation_threshold'] = int(section['ViolationThreshold'])
-        ent['daily_report'] = self.config.getboolean(title, 'DailyReport')
-        ent['daily_report_time'] = section.get('DailyReportTime') or '06:00'
+        ent = {"section": title, "id": section["Id"], "name": section["Name"]}
+        if "Tags" in section and section["Tags"].strip() != "":
+            ent["tags"] = section["Tags"].split(",")
+        if "Emails" in section and section["Emails"].strip() != "":
+            ent["emails"] = section["Emails"].split(",")
+        ent["notify_every_minutes"] = int(section["NotifyEveryMinutes"])
+        ent["violation_threshold"] = int(section["ViolationThreshold"])
+        ent["daily_report"] = self.config.getboolean(title, "DailyReport")
+        ent["daily_report_time"] = section.get("DailyReportTime") or "06:00"
 
         return ent
 
@@ -147,20 +148,20 @@ class ConfigEngine:
         try:
             sources = []
             for title, section in self.config.items():
-                if title.startswith('Source_'):
+                if title.startswith("Source_"):
                     src = self.get_entity_with_notifications(title, section)
-                    src['type'] = 'Camera'
-                    src['url'] = section['VideoPath']
-                    src['dist_method'] = section['DistMethod']
-                    if 'Tags' in section and section['Tags'].strip() != "":
-                        src['tags'] = section['Tags'].split(',')
-                    if src['notify_every_minutes'] > 0 and src['violation_threshold'] > 0:
-                        src['should_send_email_notifications'] = 'emails' in src
-                        src['should_send_slack_notifications'] = bool(self.config['App']['SlackChannel'] and
-                                                                      self.config.getboolean('App', 'EnableSlackNotifications'))
+                    src["type"] = "Camera"
+                    src["url"] = section["VideoPath"]
+                    src["dist_method"] = section["DistMethod"]
+                    if "Tags" in section and section["Tags"].strip() != "":
+                        src["tags"] = section["Tags"].split(",")
+                    if src["notify_every_minutes"] > 0 and src["violation_threshold"] > 0:
+                        src["should_send_email_notifications"] = "emails" in src
+                        src["should_send_slack_notifications"] = bool(self.config["App"]["SlackChannel"] and
+                                                                      self.config.getboolean("App", "EnableSlackNotifications"))
                     else:
-                        src['should_send_email_notifications'] = False
-                        src['should_send_slack_notifications'] = False
+                        src["should_send_email_notifications"] = False
+                        src["should_send_slack_notifications"] = False
                     sources.append(src)
             return sources
         except:
@@ -171,20 +172,20 @@ class ConfigEngine:
         try:
             areas = []
             for title, section in self.config.items():
-                if title.startswith('Area_'):
+                if title.startswith("Area_"):
                     area = self.get_entity_with_notifications(title, section)
-                    area['type'] = 'Area'
-                    area['occupancy_threshold'] = int(section['OccupancyThreshold'])
-                    if 'Cameras' in section and section['Cameras'].strip() != "":
-                        area['cameras'] = section['Cameras'].split(',')
+                    area["type"] = "Area"
+                    area["occupancy_threshold"] = int(section["OccupancyThreshold"])
+                    if "Cameras" in section and section["Cameras"].strip() != "":
+                        area["cameras"] = section["Cameras"].split(",")
 
-                    if (area['notify_every_minutes'] > 0 and area['violation_threshold'] > 0) or area['occupancy_threshold'] > 0:
-                        area['should_send_email_notifications'] = 'emails' in area
-                        area['should_send_slack_notifications'] = bool(self.config['App']['SlackChannel'] and
-                                                                       self.config.getboolean('App', 'EnableSlackNotifications'))
+                    if (area["notify_every_minutes"] > 0 and area["violation_threshold"] > 0) or area["occupancy_threshold"] > 0:
+                        area["should_send_email_notifications"] = "emails" in area
+                        area["should_send_slack_notifications"] = bool(self.config["App"]["SlackChannel"] and
+                                                                       self.config.getboolean("App", "EnableSlackNotifications"))
                     else:
-                        area['should_send_email_notifications'] = False
-                        area['should_send_slack_notifications'] = False
+                        area["should_send_email_notifications"] = False
+                        area["should_send_slack_notifications"] = False
                     areas.append(area)
             return areas
         except:

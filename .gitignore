@@ -16,3 +16,4 @@ oauth2_cred.json
 .aws
 venv/
 slack_token.txt
+.env

@@ -1,10 +1,9 @@
+import os
 import yagmail
 import logging
 import codecs
-
-# TODO: Move to a constants file
-NOTIFICATION_EMAIL_FROM = "noreply@yourdomain.com"
-
+from dotenv import load_dotenv
+load_dotenv()
 
 def send_email(from_email, receiver, subject, contents, attachments=None):
     with yagmail.SMTP(from_email, oauth2_file="oauth2_cred.json") as yag:
@@ -21,7 +20,7 @@ class MailService:
 
     def __init__(self, config):
         self.config = config
-        self.email_from = NOTIFICATION_EMAIL_FROM
+        self.email_from = os.getenv("NOTIFICATION_EMAIL_FROM")
         self.logger = logging.getLogger(__name__)
 
     def send_email_notification(self, entity_info, subject, content):
