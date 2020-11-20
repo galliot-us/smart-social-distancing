@@ -43,18 +43,15 @@ def restart_processor():
     return True
 
 
-def update_config_file(config_dict):
+def update_config(config_dict, reboot_processor):
     logger.info("Updating config...")
     get_config().update_config(config_dict)
     get_config().reload()
 
-
-def update_and_restart_config(config_dict):
-    update_config_file(config_dict)
-
-    # TODO: Restart only when necessary, and only the threads that are necessary (for instance to load a new video)
-    success = restart_processor()
-    return success
+    if reboot_processor:
+        success = restart_processor()
+        return success
+    return True
 
 
 def handle_response(response, success, status_code=status.HTTP_200_OK):

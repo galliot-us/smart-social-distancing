@@ -8,7 +8,7 @@ from .areas import map_area, map_to_area_file_format
 from .cameras import map_camera, map_to_camera_file_format
 from .models.config_keys import ConfigDTO
 from .utils import (
-    extract_config, handle_response, update_and_restart_config
+    extract_config, handle_response, update_config
 )
 from constants import PROCESSOR_VERSION
 
@@ -72,12 +72,12 @@ async def get_config(options: Optional[str] = ""):
 
 
 @config_router.put("", response_model=ConfigDTO)
-async def update_config(config: ConfigDTO):
+async def update_config(config: ConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Overwrites the configuration used by the processor.
     """
     config_dict = map_to_config_file_format(config)
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(config_dict, success)
 
 

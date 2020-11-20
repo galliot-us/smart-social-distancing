@@ -1,13 +1,13 @@
 from fastapi import APIRouter, status
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 from starlette.exceptions import HTTPException
 
 from .models.config_keys import AreaConfigDTO
 from .cameras import map_camera
 from .utils import (
-    extract_config, handle_response, reestructure_areas, update_and_restart_config
+    extract_config, handle_response, reestructure_areas, update_config
 )
 
 
@@ -77,7 +77,7 @@ async def get_area(area_id: str):
 
 
 @areas_router.post("", response_model=AreaConfigDTO, status_code=status.HTTP_201_CREATED)
-async def create_area(new_area: AreaConfigDTO):
+async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Adds a new area to the processor.
     """
@@ -96,12 +96,12 @@ async def create_area(new_area: AreaConfigDTO):
     area_dict = map_to_area_file_format(new_area)
     config_dict[f"Area_{len(areas)}"] = area_dict
 
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(area_dict, success, status.HTTP_201_CREATED)
 
 
 @areas_router.put("/{area_id}", response_model=AreaConfigDTO)
-async def edit_area(area_id: str, edited_area: AreaConfigDTO):
+async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Edits the configuration related to the area <area_id>
     """
@@ -125,12 +125,12 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO):
     area_dict = map_to_area_file_format(edited_area)
     config_dict[f"Area_{index}"] = area_dict
 
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(area_dict, success)
 
 
 @areas_router.delete("/{area_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_area(area_id: str):
+async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the area <area_id>
     """
@@ -146,5 +146,5 @@ async def delete_area(area_id: str):
     config_dict.pop(f"Area_{index}")
     config_dict = reestructure_areas((config_dict))
 
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)

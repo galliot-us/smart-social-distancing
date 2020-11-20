@@ -16,7 +16,7 @@ from .models.config_keys import SourceConfigDTO
 from .settings import Settings
 from .utils import (
     extract_config, get_config, handle_response, reestructure_areas,
-    update_and_restart_config
+    update_config
 )
 
 logger = logging.getLogger(__name__)
@@ -142,7 +142,7 @@ async def get_camera(camera_id: str):
 
 
 @cameras_router.post("", response_model=SourceConfigDTO, status_code=status.HTTP_201_CREATED)
-async def create_camera(new_camera: SourceConfigDTO):
+async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Adds a new camera to the processor.
     """
@@ -153,12 +153,12 @@ async def create_camera(new_camera: SourceConfigDTO):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Camera already exists")
     camera_dict = map_to_camera_file_format(new_camera)
     config_dict[f"Source_{len(cameras)}"] = camera_dict
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(camera_dict, success, status.HTTP_201_CREATED)
 
 
 @cameras_router.put("/{camera_id}", response_model=SourceConfigDTO)
-async def edit_camera(camera_id: str, edited_camera: SourceConfigDTO):
+async def edit_camera(camera_id: str, edited_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Edits the configuration related to the camera <camera_id>
     """
@@ -175,12 +175,12 @@ async def edit_camera(camera_id: str, edited_camera: SourceConfigDTO):
     camera_dict = map_to_camera_file_format(edited_camera)
     config_dict[f"Source_{index}"] = map_to_camera_file_format(edited_camera)
 
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(camera_dict, success)
 
 
 @cameras_router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_camera(camera_id: str):
+async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the camera <camera_id>
     """
@@ -197,7 +197,7 @@ async def delete_camera(camera_id: str):
 
     config_dict.pop(f"Source_{index}")
     config_dict = reestructure_cameras((config_dict))
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 
 
@@ -230,7 +230,7 @@ async def replace_camera_image(camera_id: str, body: ImageModel):
 
 
 @cameras_router.post("/{camera_id}/homography_matrix", status_code=status.HTTP_204_NO_CONTENT)
-async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatrix):
+async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatrix, reboot_processor: Optional[bool] = True):
     """
     Calibrates the camera <camera_id> receiving as input the coordinates of a square of size 3ft 3" by 3ft 3" (1m by 1m).
     """
@@ -244,7 +244,7 @@ async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatri
     for section in sections:
         config_dict[section] = settings.config.get_section_dict(section)
     config_dict[dir_source["section"]]["DistMethod"] = "CalibratedDistance"
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 
 

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-from .utils import handle_response, update_and_restart_config
+from .utils import handle_response, update_config
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +29,12 @@ class SlackIsEnabled(BaseModel):
     enabled: bool
 
 
-def add_slack_channel_to_config(channel):
+def add_slack_channel_to_config(channel, reboot_processor):
     logger.info("Adding slack's channel on processor's config")
     config_dict = dict()
     config_dict["App"] = dict({"SlackChannel": channel})
 
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
     return handle_response(config_dict, success)
 
 
@@ -52,12 +52,12 @@ def write_user_token(token):
         slack_token.write(token)
 
 
-def enable_slack(token_config):
+def enable_slack(token_config, reboot_processor):
     write_user_token(token_config.user_token)
     logger.info("Enabling slack notification on processor's config")
     config_dict = dict()
     config_dict["App"] = dict({"EnableSlackNotifications": "yes", "SlackChannel": token_config.channel})
-    success = update_and_restart_config(config_dict)
+    success = update_config(config_dict, reboot_processor)
 
     return handle_response(config_dict, success)
 
@@ -81,16 +81,17 @@ def revoke_slack():
 
 
 @slack_router.post("/add-channel", status_code=status.HTTP_204_NO_CONTENT)
-def add_slack_channel(channel: str):
+def add_slack_channel(channel: str, reboot_processor: Optional[bool] = True):
     """
     Changes the slack's channel used by the processor to send notifications
     """
-    add_slack_channel_to_config(channel)
+    add_slack_channel_to_config(channel, reboot_processor)
 
 
 @slack_router.post("/enable", status_code=status.HTTP_204_NO_CONTENT)
-def enable(body: SlackConfig):
+def enable(body: SlackConfig, reboot_processor: Optional[bool] = True):
     """
     Changes the slack workspace configured in the processor
     """
-    enable_slack(body)
+    enable_slack(body, reboot_processor)
+
