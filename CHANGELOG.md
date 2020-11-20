@@ -2,25 +2,34 @@
 
 This file includes a list of notable changes to this project.
 
-### [0.2.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.2.0)
+## [0.2.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.2.0)
+Released on 2020-11-20.
 
-**Added/removed features:**
+#### Added:
 
-* Remove old frontend and ui backend. Update Readme. (#73)
 * Support for running on x86 with GPU (#72)
 * Added endpoint to get version, device and whether the processor has been set up (#84)
 * Add endpoints to export raw data (#74)
+* Improve fault tolerance (#82)
 
-**Fixes/improvements:**
+#### Updated:
 
-* Fix an error in face anonymizer when using PoseNet (#80, #81)
+* Updated documentation in Readme (several, mainly #73)
 * Refactor Endpoints to not end with / (#76)
 * Some improvements in face mask detection like adding a label on top of bounding boxes (#77)
 * Improved Object tracker (IOU tracker added) (#79)
-* Improve fault tolerance (#82)
 
+#### Fixes
 
-### First version [0.1.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.1.0)
+* Fix an error in face anonymizer when using PoseNet (#80, #81)
+
+#### Removed:
+
+* Remove deprecated frontend and ui backend (#73)
+
+---
+
+## [0.1.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.1.0)
 
 This is the first release of the Smart Social Distancing app.
 The app is dockerized and can run on Coral Dev Board, Coral USB Accelerator, Jetson Nano, x86 or Openvino.
