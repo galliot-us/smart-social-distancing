@@ -7,25 +7,25 @@ Released on 2020-11-20.
 
 #### Added:
 
-* Support for running on x86 with GPU (#72)
-* Added endpoint to get version, device and whether the processor has been set up (#84)
-* Add endpoints to export raw data (#74)
-* Improve fault tolerance (#82)
+* Support for running on x86 with GPU ([#72](https://github.com/neuralet/smart-social-distancing/pull/72))
+* Endpoint to get version, device and whether the processor has been set up ([#84](https://github.com/neuralet/smart-social-distancing/pull/84))
+* Endpoints to export raw data ([#74](https://github.com/neuralet/smart-social-distancing/pull/74))
+* Improve fault tolerance ([#82](https://github.com/neuralet/smart-social-distancing/pull/82))
 
 #### Updated:
 
-* Updated documentation in Readme (several, mainly #73)
-* Refactor Endpoints to not end with / (#76)
-* Some improvements in face mask detection like adding a label on top of bounding boxes (#77)
-* Improved Object tracker (IOU tracker added) (#79)
+* Documentation in Readme (several, mainly ([#73](https://github.com/neuralet/smart-social-distancing/pull/73))
+* Refactored Endpoints to not end with / ([#76](https://github.com/neuralet/smart-social-distancing/pull/76))
+* Some improvements in face mask detection like adding a label on top of bounding boxes ([#77](https://github.com/neuralet/smart-social-distancing/pull/77))
+* Improved Object tracker (IOU tracker added) ([#79](https://github.com/neuralet/smart-social-distancing/pull/79))
 
-#### Fixes
+#### Fixed:
 
-* Fix an error in face anonymizer when using PoseNet (#80, #81)
+* An error in face anonymizer when using PoseNet ([#80](https://github.com/neuralet/smart-social-distancing/pull/80), [#81](https://github.com/neuralet/smart-social-distancing/pull/81))
 
 #### Removed:
 
-* Remove deprecated frontend and ui backend (#73)
+* Deprecated frontend and ui backend ([#73](https://github.com/neuralet/smart-social-distancing/pull/73))
 
 ---
 
