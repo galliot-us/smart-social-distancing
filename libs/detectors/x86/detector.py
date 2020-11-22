@@ -22,6 +22,9 @@ class Detector:
         elif self.name == "openpifpaf":
             from libs.detectors.x86 import openpifpaf
             self.net = openpifpaf.Detector(self.config)
+        elif self.name == "openpifpaf_tensorrt":
+            from libs.detectors.x86.openpifpaf_tensorrt import openpifpaf_tensorrt
+            self.net = openpifpaf_tensorrt.Detector(self.config)
 
         else:
             raise ValueError('Not supported network named: ', self.name)
