@@ -70,6 +70,7 @@ class Distancing:
         self.bucket_screenshots = config.get_section_dict("App")["ScreenshotS3Bucket"]
         self.uploader = S3Uploader(self.config)
         self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
+        self.track_hist = dict()
         if not os.path.exists(self.screenshot_path):
             os.makedirs(self.screenshot_path)
 
@@ -125,6 +126,10 @@ class Distancing:
         face_mask_results, scores = self.classifier.inference(faces)
 
         tracks = self.tracker.update(detection_bboxes, class_ids, detection_scores)
+        self.update_history(tracks)
+        print("=========================================================")
+        print(self.track_hist)
+        print("=========================================================")
         tracked_objects_list = []
         idx = 0
         for obj in tmp_objects_list:
@@ -223,6 +228,9 @@ class Distancing:
             -1: "N/A",
         }
         # Draw bounding boxes and other visualization factors on input_frame
+        #print("=========================================================")
+        #print(output_dict["tacked_ids"])
+        #print("=========================================================")
         visualization_utils.visualize_boxes_and_labels_on_image_array(
             cv_image,
             output_dict["detection_boxes"],
@@ -620,3 +628,17 @@ class Distancing:
         if not os.path.exists(dir_path):
             logger.info(f"Saving default screenshot for {self.camera_id}")
             cv.imwrite(f'{self.screenshot_path}/default.jpg', cv_image)
+
+    def update_history(self, tracks):
+        _new_track_hist = dict()
+        prev_track_ids = list(self.track_hist.keys())
+        for track in tracks:
+            track_id = track[1]
+            if track_id in prev_track_ids:
+                prev_centroids = self.track_hist[track_id][0]
+                prev_colors = self.track_hist[track_id][1]
+                _new_track_hist[track_id] = (np.concatenate((prev_centroids, track[3][None, ...]), axis=0), prev_colors)
+            else:
+                _new_track_hist[track_id] = (track[3][None, ...], [])
+        self.track_hist = _new_track_hist
+
