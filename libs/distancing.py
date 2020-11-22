@@ -127,9 +127,6 @@ class Distancing:
 
         tracks = self.tracker.update(detection_bboxes, class_ids, detection_scores)
         self.update_history(tracks)
-        print("=========================================================")
-        print(self.track_hist)
-        print("=========================================================")
         tracked_objects_list = []
         idx = 0
         for obj in tmp_objects_list:
@@ -228,9 +225,8 @@ class Distancing:
             -1: "N/A",
         }
         # Draw bounding boxes and other visualization factors on input_frame
-        #print("=========================================================")
-        #print(output_dict["tacked_ids"])
-        #print("=========================================================")
+        for i, track_id in enumerate(output_dict["tacked_ids"]):
+            self.track_hist[track_id][1].append(output_dict["detection_colors"][i])
         visualization_utils.visualize_boxes_and_labels_on_image_array(
             cv_image,
             output_dict["detection_boxes"],
@@ -272,7 +268,15 @@ class Distancing:
         origin = (0.05, 0.98)
         visualization_utils.text_putter(cv_image, txt_env_score, origin)
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-        # endregion
+        # endregion 
+        for track in self.track_hist.values():
+            if len(track[0]) != len(track[1]): 
+                if len(track[1]) == 0:
+                    track[1].append((0, 255, 0))
+                    continue
+                track[1].append(track[1][-1])
+            for i, centroid in enumerate(track[0]):
+                cv_image = cv.circle(cv_image, (centroid[0], centroid[1]), color=track[1][i], radius=1, thickness=1)
 
         out.write(cv_image)
         out_birdseye.write(birds_eye_window)
@@ -638,6 +642,8 @@ class Distancing:
                 prev_centroids = self.track_hist[track_id][0]
                 prev_colors = self.track_hist[track_id][1]
                 _new_track_hist[track_id] = (np.concatenate((prev_centroids, track[3][None, ...]), axis=0), prev_colors)
+                if len(_new_track_hist[track_id][0]) > 50:
+                    _new_track_hist[track_id] = (_new_track_hist[track_id][0][1:,:], _new_track_hist[track_id][1][1:])
             else:
                 _new_track_hist[track_id] = (track[3][None, ...], [])
         self.track_hist = _new_track_hist
