@@ -42,8 +42,8 @@ def map_to_config_file_format(config_dto: ConfigDTO):
 
 
 def map_config(config, options):
-    cameras_name = [x for x in config.keys() if x.startswith("Source")]
-    areas_name = [x for x in config.keys() if x.startswith("Area")]
+    cameras_name = [x for x in config.keys() if x.startswith("Source_")]
+    areas_name = [x for x in config.keys() if x.startswith("Area_")]
     return {
         "cameras": [map_camera(x, config, options) for x in cameras_name],
         "areas": [map_area(x, config) for x in areas_name]

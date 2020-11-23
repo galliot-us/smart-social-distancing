@@ -1,7 +1,5 @@
 import cv2 as cv
 import numpy as np
-from scipy.spatial.distance import cdist
-import math
 import os
 import shutil
 import time
@@ -9,9 +7,11 @@ from libs.trackers.iou_tracker import IOUTracker
 from libs.loggers.loggers import Logger
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
+from libs.detectors.detector import Detector
 from libs.utils import visualization_utils
-from libs.utils.camera_calibration import get_camera_calibration_path
 from libs.uploaders.s3_uploader import S3Uploader
+from libs.source_post_processors.social_distance import SocialDistancePostProcessor
+from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
 import logging
 import functools
 
@@ -22,9 +22,6 @@ class Distancing:
 
     def __init__(self, config, source, live_feed_enabled=True):
         self.config = config
-        self.detector = None
-        self.device = self.config.get_section_dict('Detector')['Device']
-
         self.live_feed_enabled = live_feed_enabled
         self.log_time_interval = float(self.config.get_section_dict("Logger")["TimeInterval"])  # Seconds
 
@@ -42,28 +39,10 @@ class Distancing:
         self.camera_id = self.config.get_section_dict(source)['Id']
         self.logger = Logger(self.config, self.camera_id)
         self.image_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
-        self.default_dist_method = self.config.get_section_dict('PostProcessor')["DefaultDistMethod"]
-
-        if self.config.get_section_dict(source)["DistMethod"]:
-            self.dist_method = self.config.get_section_dict(source)["DistMethod"]
-        else:
-            self.dist_method = self.default_dist_method
 
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
-
-        if self.dist_method == "CalibratedDistance":
-            calibration_file = get_camera_calibration_path(
-                self.config, self.config.get_section_dict(source)["Id"])
-            try:
-                with open(calibration_file, "r") as file:
-                    self.h_inv = file.readlines()[0].split(" ")[1:]
-                    self.h_inv = np.array(self.h_inv, dtype="float").reshape((3, 3))
-            except FileNotFoundError:
-                logger.error("The specified 'CalibrationFile' does not exist")
-                logger.info(f"Falling back using {self.default_dist_method}")
-                self.dist_method = self.default_dist_method
 
         # config.ini uses minutes as unit
         self.screenshot_period = float(self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60
@@ -77,7 +56,14 @@ class Distancing:
             os.makedirs(self.screenshot_path)
 
         if "Classifier" in self.config.get_sections():
+            from libs.classifiers.edgetpu.classifier import Classifier
             self.face_threshold = float(self.config.get_section_dict("Classifier").get("MinScore", 0.75))
+            self.classifier = Classifier(self.config)
+            self.classifier_img_size = [
+                int(i) for i in self.config.get_section_dict("Classifier")["ImageSize"].split(",")]
+
+        self.distance = SocialDistancePostProcessor(self.config, source, 'SourcePostProcessor_1')
+        self.objects_filtering = ObjectsFilteringPostProcessor(self.config, source, 'SourcePostProcessor_0')
 
     def __process(self, cv_image):
         """
@@ -108,7 +94,6 @@ class Distancing:
                         int(ymin):int(ymin) + (int(ymax) - int(ymin)),
                         int(xmin):int(xmin) + (int(xmax) - int(xmin))
                     ]
-
                     # Resizing input image
                     croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
                     croped_face = cv.cvtColor(croped_face, cv.COLOR_BGR2RGB)
@@ -155,7 +140,8 @@ class Distancing:
                     obj["track_info"] = track_info
                     tracked_objects_list.append(obj)
 
-        objects_list, distancings = self.calculate_distancing(tracked_objects_list)
+        objects_list = self.objects_filtering.filter_objects(tmp_objects_list)
+        objects_list, distancings = self.distance.calculate_distancing(objects_list)
         anonymize = self.config.get_section_dict('PostProcessor')['Anonymize'] == "true"
         if anonymize:
             cv_image = self.anonymize_image(cv_image, objects_list)
@@ -246,11 +232,7 @@ class Distancing:
         # TODO: Implement perspective view for objects
         birds_eye_window = visualization_utils.birds_eye_view(
             birds_eye_window, output_dict["detection_boxes"], output_dict["violating_objects"])
-        try:
-            fps = self.detector.fps
-        except:
-            # fps is not implemented for the detector instance"
-            fps = None
+        fps = self.detector.fps
 
         # Put fps to the frame
         # region
@@ -283,34 +265,7 @@ class Distancing:
         out_birdseye.write(birds_eye_window)
 
     def process_video(self, video_uri):
-        if self.device == 'Jetson':
-            from libs.detectors.jetson.detector import Detector
-            self.detector = Detector(self.config)
-        elif self.device == 'EdgeTPU':
-            from libs.detectors.edgetpu.detector import Detector
-            from libs.classifiers.edgetpu.classifier import Classifier
-            self.detector = Detector(self.config)
-            if "Classifier" in self.config.get_sections():
-                self.classifier = Classifier(self.config)
-                self.classifier_img_size = [int(i) for i in
-                                            self.config.get_section_dict("Classifier")["ImageSize"].split(",")]
-        elif self.device == 'Dummy':
-            from libs.detectors.dummy.detector import Detector
-            self.detector = Detector(self.config)
-        elif self.device in ['x86', 'x86-gpu']:
-            from libs.detectors.x86.detector import Detector
-            from libs.classifiers.x86.classifier import Classifier
-            self.detector = Detector(self.config)
-            if "Classifier" in self.config.get_sections():
-                self.classifier = Classifier(self.config)
-                self.classifier_img_size = [int(i) for i in
-                                            self.config.get_section_dict("Classifier")["ImageSize"].split(",")]
-
-        if self.device != 'Dummy':
-            print('Device is: ', self.device)
-            print('Detector is: ', self.detector.name)
-            print('image size: ', self.image_size)
-
+        self.detector = Detector(self.config)
         input_cap = cv.VideoCapture(video_uri)
         fps = max(25, input_cap.get(cv.CAP_PROP_FPS))
 
@@ -368,231 +323,6 @@ class Distancing:
 
     def stop_process_video(self):
         self.running_video = False
-
-    def calculate_distancing(self, objects_list):
-        """
-        this function post-process the raw boxes of object detector and calculate a distance matrix
-        for detected bounding boxes.
-        post processing is consist of:
-        1. omitting large boxes by filtering boxes which are bigger than the 1/4 of the size the image.
-        2. omitting duplicated boxes by applying an auxilary non-maximum-suppression.
-        3. apply a simple object tracker to make the detection more robust.
-
-        params:
-        object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
-        "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
-        of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
-
-        returns:
-        object_list: the post processed version of the input
-        distances: a NxN ndarray which i,j element is distance between i-th and l-th bounding box
-
-        """
-        new_objects_list = self.ignore_large_boxes(objects_list)
-        new_objects_list = self.non_max_suppression_fast(new_objects_list,
-                                                         float(self.config.get_section_dict("PostProcessor")[
-                                                                   "NMSThreshold"]))
-        for i, item in enumerate(new_objects_list):
-            item["id"] = item["id"].split("-")[0] + "-" + str(i)
-        distances = self.calculate_box_distances(new_objects_list)
-
-        return new_objects_list, distances
-
-    @staticmethod
-    def ignore_large_boxes(object_list):
-
-        """
-        filtering boxes which are biger than the 1/4 of the size the image
-        params:
-            object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
-            "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
-            of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
-        returns:
-        object_list: input object list without large boxes
-        """
-        large_boxes = []
-        for i in range(len(object_list)):
-            if (object_list[i]["centroid"][2] * object_list[i]["centroid"][3]) > 0.25:
-                large_boxes.append(i)
-        updated_object_list = [j for i, j in enumerate(object_list) if i not in large_boxes]
-        return updated_object_list
-
-    @staticmethod
-    def non_max_suppression_fast(object_list, overlapThresh):
-
-        """
-        omitting duplicated boxes by applying an auxilary non-maximum-suppression.
-        params:
-        object_list: a list of dictionaries. each dictionary has attributes of a detected object such
-        "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
-        of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
-
-        overlapThresh: threshold of minimum IoU of to detect two box as duplicated.
-
-        returns:
-        object_list: input object list without duplicated boxes
-        """
-        # if there are no boxes, return an empty list
-        boxes = np.array([item["centroid"] for item in object_list])
-        corners = np.array([item["bbox"] for item in object_list])
-        if len(boxes) == 0:
-            return []
-        if boxes.dtype.kind == "i":
-            boxes = boxes.astype("float")
-        # initialize the list of picked indexes
-        pick = []
-        cy = boxes[:, 1]
-        cx = boxes[:, 0]
-        h = boxes[:, 3]
-        w = boxes[:, 2]
-        x1 = corners[:, 0]
-        x2 = corners[:, 2]
-        y1 = corners[:, 1]
-        y2 = corners[:, 3]
-        area = (h + 1) * (w + 1)
-        idxs = np.argsort(cy + (h / 2))
-        while len(idxs) > 0:
-            last = len(idxs) - 1
-            i = idxs[last]
-            pick.append(i)
-            xx1 = np.maximum(x1[i], x1[idxs[:last]])
-            yy1 = np.maximum(y1[i], y1[idxs[:last]])
-            xx2 = np.minimum(x2[i], x2[idxs[:last]])
-            yy2 = np.minimum(y2[i], y2[idxs[:last]])
-
-            w = np.maximum(0, xx2 - xx1 + 1)
-            h = np.maximum(0, yy2 - yy1 + 1)
-            # compute the ratio of overlap
-            overlap = (w * h) / area[idxs[:last]]
-            # delete all indexes from the index list that have
-            idxs = np.delete(idxs, np.concatenate(([last],
-                                                   np.where(overlap > overlapThresh)[0])))
-        updated_object_list = [j for i, j in enumerate(object_list) if i in pick]
-        return updated_object_list
-
-    def calculate_distance_of_two_points_of_boxes(self, first_point, second_point):
-
-        """
-        This function calculates a distance l for two input corresponding points of two detected bounding boxes.
-        it is assumed that each person is H = 170 cm tall in real scene to map the distances in the image (in pixels) to
-        physical distance measures (in meters).
-
-        params:
-        first_point: (x, y, h)-tuple, where x,y is the location of a point (center or each of 4 corners of a bounding box)
-        and h is the height of the bounding box.
-        second_point: same tuple as first_point for the corresponding point of other box
-
-        returns:
-        l:  Estimated physical distance (in centimeters) between first_point and second_point.
-
-
-        """
-
-        # estimate corresponding points distance
-        [xc1, yc1, h1] = first_point
-        [xc2, yc2, h2] = second_point
-
-        dx = xc2 - xc1
-        dy = yc2 - yc1
-
-        lx = dx * 170 * (1 / h1 + 1 / h2) / 2
-        ly = dy * 170 * (1 / h1 + 1 / h2) / 2
-
-        l = math.sqrt(lx ** 2 + ly ** 2)
-
-        return l
-
-    def calculate_box_distances(self, nn_out):
-
-        """
-        This function calculates a distance matrix for detected bounding boxes.
-        Three methods are implemented to calculate the distances, the first one estimates distance with a calibration matrix
-        which transform the points to the 3-d world coordinate, the second one estimates distance of center points of the
-        boxes and the third one uses minimum distance of each of 4 points of bounding boxes.
-
-        params:
-        object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
-        "id", "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and "bboxReal" (a tuple
-        of the (xmin,ymin,xmax,ymax) coordinate of the box)
-
-        returns:
-        distances: a NxN ndarray which i,j element is estimated distance between i-th and j-th bounding box in real scene (cm)
-
-        """
-        if self.dist_method == "CalibratedDistance":
-            world_coordinate_points = np.array([self.transform_to_world_coordinate(bbox) for bbox in nn_out])
-            if len(world_coordinate_points) == 0:
-                distances_asarray = np.array([])
-            else:
-                distances_asarray = cdist(world_coordinate_points, world_coordinate_points)
-
-        else:
-            distances = []
-            for i in range(len(nn_out)):
-                distance_row = []
-                for j in range(len(nn_out)):
-                    if i == j:
-                        l = 0
-                    else:
-                        if (self.dist_method == 'FourCornerPointsDistance'):
-                            lower_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][1],
-                                                       nn_out[i]["centroidReal"][3]]
-                            lower_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][1],
-                                                        nn_out[i]["centroidReal"][3]]
-                            upper_left_of_first_box = [nn_out[i]["bboxReal"][0], nn_out[i]["bboxReal"][3],
-                                                       nn_out[i]["centroidReal"][3]]
-                            upper_right_of_first_box = [nn_out[i]["bboxReal"][2], nn_out[i]["bboxReal"][3],
-                                                        nn_out[i]["centroidReal"][3]]
-
-                            lower_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][1],
-                                                        nn_out[j]["centroidReal"][3]]
-                            lower_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][1],
-                                                         nn_out[j]["centroidReal"][3]]
-                            upper_left_of_second_box = [nn_out[j]["bboxReal"][0], nn_out[j]["bboxReal"][3],
-                                                        nn_out[j]["centroidReal"][3]]
-                            upper_right_of_second_box = [nn_out[j]["bboxReal"][2], nn_out[j]["bboxReal"][3],
-                                                         nn_out[j]["centroidReal"][3]]
-
-                            l1 = self.calculate_distance_of_two_points_of_boxes(lower_left_of_first_box,
-                                                                                lower_left_of_second_box)
-                            l2 = self.calculate_distance_of_two_points_of_boxes(lower_right_of_first_box,
-                                                                                lower_right_of_second_box)
-                            l3 = self.calculate_distance_of_two_points_of_boxes(upper_left_of_first_box,
-                                                                                upper_left_of_second_box)
-                            l4 = self.calculate_distance_of_two_points_of_boxes(upper_right_of_first_box,
-                                                                                upper_right_of_second_box)
-
-                            l = min(l1, l2, l3, l4)
-                        elif (self.dist_method == 'CenterPointsDistance'):
-                            center_of_first_box = [nn_out[i]["centroidReal"][0], nn_out[i]["centroidReal"][1],
-                                                   nn_out[i]["centroidReal"][3]]
-                            center_of_second_box = [nn_out[j]["centroidReal"][0], nn_out[j]["centroidReal"][1],
-                                                    nn_out[j]["centroidReal"][3]]
-
-                            l = self.calculate_distance_of_two_points_of_boxes(center_of_first_box,
-                                                                               center_of_second_box)
-                    distance_row.append(l)
-                distances.append(distance_row)
-            distances_asarray = np.asarray(distances, dtype=np.float32)
-        return distances_asarray
-
-    def transform_to_world_coordinate(self, bbox):
-        """
-        This function will transform the center of the bottom line of a bounding box from image coordinate to world
-        coordinate via a homography matrix
-        Args:
-            bbox: a dictionary of a  coordinates of a detected instance with "id",
-            "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and "bboxReal" (a tuple
-            of the (xmin,ymin,xmax,ymax) coordinate of the box) keys
-
-        Returns:
-            A numpy array of (X,Y) of transformed point
-
-        """
-        floor_point = np.array([int((bbox["bboxReal"][0] + bbox["bboxReal"][2]) / 2), bbox["bboxReal"][3], 1])
-        floor_world_point = np.matmul(self.h_inv, floor_point)
-        floor_world_point = floor_world_point[:-1] / floor_world_point[-1]
-        return floor_world_point
 
     def anonymize_image(self, img, objects_list):
         """
