@@ -70,6 +70,9 @@ class Distancing:
         self.bucket_screenshots = config.get_section_dict("App")["ScreenshotS3Bucket"]
         self.uploader = S3Uploader(self.config)
         self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
+        # Store tracks centroids of last 50 frames for visualization, keys are track ids and values are tuples of
+        # tracks centroids and corresponding colors
+        self.track_hist = dict()
         if not os.path.exists(self.screenshot_path):
             os.makedirs(self.screenshot_path)
 
@@ -125,6 +128,7 @@ class Distancing:
         face_mask_results, scores = self.classifier.inference(faces)
 
         tracks = self.tracker.update(detection_bboxes, class_ids, detection_scores)
+        self.update_history(tracks)
         tracked_objects_list = []
         idx = 0
         for obj in tmp_objects_list:
@@ -222,6 +226,9 @@ class Distancing:
             1: "NO",
             -1: "N/A",
         }
+        # Assign object's color to corresponding track history
+        for i, track_id in enumerate(output_dict["track_ids"]):
+            self.track_hist[track_id][1].append(output_dict["detection_colors"][i])
         # Draw bounding boxes and other visualization factors on input_frame
         visualization_utils.visualize_boxes_and_labels_on_image_array(
             cv_image,
@@ -229,7 +236,7 @@ class Distancing:
             output_dict["detection_classes"],
             output_dict["detection_scores"],
             output_dict["detection_colors"],
-            output_dict["tacked_ids"],
+            output_dict["track_ids"],
             category_index,
             instance_masks=output_dict.get("detection_masks"),
             use_normalized_coordinates=True,
@@ -264,7 +271,14 @@ class Distancing:
         origin = (0.05, 0.98)
         visualization_utils.text_putter(cv_image, txt_env_score, origin)
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-        # endregion
+        # endregion 
+
+        # visualize tracks
+        # region
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        visualization_utils.draw_tracks(cv_image, self.track_hist, radius=1, thickness=1)
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        #endregion
 
         out.write(cv_image)
         out_birdseye.write(birds_eye_window)
@@ -620,3 +634,22 @@ class Distancing:
         if not os.path.exists(dir_path):
             logger.info(f"Saving default screenshot for {self.camera_id}")
             cv.imwrite(f'{self.screenshot_path}/default.jpg', cv_image)
+
+    def update_history(self, tracks):
+        """
+        This method updates self.track_hist with new tracks
+        """
+        _new_track_hist = dict()
+        prev_track_ids = list(self.track_hist.keys())
+        for track in tracks:
+            track_id = track[1]
+            if track_id in prev_track_ids:
+                prev_centroids = self.track_hist[track_id][0]
+                prev_colors = self.track_hist[track_id][1]
+                _new_track_hist[track_id] = (np.concatenate((prev_centroids, track[3][None, ...]), axis=0), prev_colors)
+                if len(_new_track_hist[track_id][0]) > 50:
+                    _new_track_hist[track_id] = (_new_track_hist[track_id][0][1:,:], _new_track_hist[track_id][1][1:])
+            else:
+                _new_track_hist[track_id] = (track[3][None, ...], [])
+        self.track_hist = _new_track_hist
+
