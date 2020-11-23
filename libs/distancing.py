@@ -227,7 +227,7 @@ class Distancing:
             -1: "N/A",
         }
         # Assign object's color to corresponding track history
-        for i, track_id in enumerate(output_dict["tacked_ids"]):
+        for i, track_id in enumerate(output_dict["track_ids"]):
             self.track_hist[track_id][1].append(output_dict["detection_colors"][i])
         # Draw bounding boxes and other visualization factors on input_frame
         visualization_utils.visualize_boxes_and_labels_on_image_array(
@@ -236,7 +236,7 @@ class Distancing:
             output_dict["detection_classes"],
             output_dict["detection_scores"],
             output_dict["detection_colors"],
-            output_dict["tacked_ids"],
+            output_dict["track_ids"],
             category_index,
             instance_masks=output_dict.get("detection_masks"),
             use_normalized_coordinates=True,

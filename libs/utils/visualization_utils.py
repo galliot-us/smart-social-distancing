@@ -458,7 +458,7 @@ def visualization_preparation(nn_out, distances, dist_threshold):
     output_dict["violating_objects"] = is_violating
     output_dict["detection_colors"] = colors
     output_dict["face_labels"] = face_labels
-    output_dict["tacked_ids"] = track_ids
+    output_dict["track_ids"] = track_ids
     return output_dict
 
 
