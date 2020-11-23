@@ -1,4 +1,5 @@
 import logging
+import os
 from slack import WebClient
 
 def is_slack_configured():
