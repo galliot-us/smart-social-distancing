@@ -80,7 +80,7 @@ RUN pip3 install tensorflow==2.1.0 Keras-Applications==1.0.8 Keras-Preprocessing
 RUN pip3 install h5py==2.10.0 
 
 
-RUN apt-get update && apt install -y git autoconf automake libtool curl make g++ unzip
+RUN apt-get update && apt install -y git autoconf automake libtool curl make g++ unzip supervisor
 
 
 RUN git clone https://github.com/protocolbuffers/protobuf.git \
@@ -103,12 +103,11 @@ RUN git clone https://github.com/onnx/onnx-tensorrt.git \
 && make -j$(nproc) \
 && make install
 
-
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
 ENV AWS_CONFIG_FILE=/repo/.aws/config
+ENV CONFIG_FILE=config-x86-gpu-tensorrt.ini
 
 COPY . /repo
 WORKDIR /repo
-ENTRYPOINT ["bash", "start_services.bash"]
-CMD ["config-x86-gpu-tensorrt.ini"]
+CMD supervisord -c supervisord.conf -n
