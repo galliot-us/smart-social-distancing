@@ -70,6 +70,8 @@ class Distancing:
         self.bucket_screenshots = config.get_section_dict("App")["ScreenshotS3Bucket"]
         self.uploader = S3Uploader(self.config)
         self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
+        # Store tracks centroids of last 50 frames for visualization, keys are track ids and values are tuples of
+        # tracks centroids and corresponding colors
         self.track_hist = dict()
         if not os.path.exists(self.screenshot_path):
             os.makedirs(self.screenshot_path)
@@ -224,9 +226,10 @@ class Distancing:
             1: "NO",
             -1: "N/A",
         }
-        # Draw bounding boxes and other visualization factors on input_frame
+        # Assign object's color to corresponding track history
         for i, track_id in enumerate(output_dict["tacked_ids"]):
             self.track_hist[track_id][1].append(output_dict["detection_colors"][i])
+        # Draw bounding boxes and other visualization factors on input_frame
         visualization_utils.visualize_boxes_and_labels_on_image_array(
             cv_image,
             output_dict["detection_boxes"],
@@ -269,14 +272,13 @@ class Distancing:
         visualization_utils.text_putter(cv_image, txt_env_score, origin)
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
         # endregion 
-        for track in self.track_hist.values():
-            if len(track[0]) != len(track[1]): 
-                if len(track[1]) == 0:
-                    track[1].append((0, 255, 0))
-                    continue
-                track[1].append(track[1][-1])
-            for i, centroid in enumerate(track[0]):
-                cv_image = cv.circle(cv_image, (centroid[0], centroid[1]), color=track[1][i], radius=1, thickness=1)
+
+        # visualize tracks
+        # region
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        visualization_utils.draw_tracks(cv_image, self.track_hist, radius=1, thickness=1)
+        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
+        #endregion
 
         out.write(cv_image)
         out_birdseye.write(birds_eye_window)
@@ -634,6 +636,9 @@ class Distancing:
             cv.imwrite(f'{self.screenshot_path}/default.jpg', cv_image)
 
     def update_history(self, tracks):
+        """
+        This method updates self.track_hist with new tracks
+        """
         _new_track_hist = dict()
         prev_track_ids = list(self.track_hist.keys())
         for track in tracks:
