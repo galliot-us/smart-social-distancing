@@ -7,6 +7,7 @@ from typing import Optional
 
 
 from .utils import handle_response, update_config
+from libs.notifications.slack_notifications import is_slack_configured
 
 logger = logging.getLogger(__name__)
 
@@ -36,14 +37,6 @@ def add_slack_channel_to_config(channel, reboot_processor):
 
     success = update_config(config_dict, reboot_processor)
     return handle_response(config_dict, success)
-
-
-def is_slack_configured():
-    if not os.path.exists("slack_token.txt"):
-        return False
-    with open("slack_token.txt", "r") as user_token:
-        value = user_token.read()
-        return bool(value)
 
 
 def write_user_token(token):

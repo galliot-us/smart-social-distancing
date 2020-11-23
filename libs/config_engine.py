@@ -4,7 +4,7 @@ import logging
 import configparser
 import threading
 from distutils.util import strtobool
-from api.slack import is_slack_configured
+from libs.notifications.slack_notifications import is_slack_configured
 
 class ConfigEngine:
     """
