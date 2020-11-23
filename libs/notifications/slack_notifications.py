@@ -1,6 +1,13 @@
 import logging
+import os
 from slack import WebClient
 
+def is_slack_configured():
+    if not os.path.exists("slack_token.txt"):
+        return False
+    with open("slack_token.txt", "r") as user_token:
+        value = user_token.read()
+        return bool(value)
 
 class SlackService:
     def __init__(self, config):
