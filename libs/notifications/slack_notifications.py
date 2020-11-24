@@ -67,3 +67,17 @@ class SlackService:
         msg = f"Occupancy threshold was exceeded in {entity_type} {entity_id}: {entity_name}." \
               f"We found {number} people out of a capacity of {entity_threshold}."
         self.post_message_to_channel(msg, self.channel)
+
+    def send_global_report(self, report_type, sources, areas, sources_violations_per_hour, areas_violations_per_hour):
+        msg = f"**{report_type.capitalize()} Report:** \n\n"
+        msg += "**Areas:**\n"
+        for index, area in enumerate(areas):
+            entity_id, entity_name = area['id'], area['name']
+            msg += f"{entity_id}: {entity_name} - {sum(areas_violations_per_hour[index])} Violations\n"
+        msg += "\n**Cameras:**\n"
+        for index, source in enumerate(sources):
+            entity_id, entity_name = source['id'], source['name']
+            msg += f"{entity_id}: {entity_name} - {sum(sources_violations_per_hour[index])} Violations\n"
+        self.post_message_to_channel(msg, self.channel)
+
+

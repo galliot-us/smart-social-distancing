@@ -10,11 +10,12 @@ import time
 import ast
 import numpy as np
 import logging
+import pandas as pd
 
 from datetime import date, datetime, timedelta
 from libs.config_engine import ConfigEngine
-from libs.notifications.slack_notifications import SlackService
-from libs.utils.mailing import MailService
+from libs.notifications.slack_notifications import SlackService, is_slack_configured
+from libs.utils.mailing import MailService, is_mailing_configured
 
 logger = logging.getLogger(__name__)
 
@@ -97,21 +98,20 @@ def create_daily_report(config):
         create_heatmap_report(config, yesterday_csv, detection_heatmap_file, 'Detections')
         create_heatmap_report(config, yesterday_csv, violation_heatmap_file, 'Violations')
 
-
-def send_daily_report_notification(config, entity_info):
+def get_daily_report(config, entity_info, report_date):
     entity_type = entity_info['type']
     all_violations_per_hour = []
     log_directory = config.get_section_dict("Logger")["LogDirectory"]
-    yesterday = str(date.today() - timedelta(days=1))
 
     if entity_type == 'Camera':
         objects_log_directory = os.path.join(log_directory, entity_info['id'], "objects_log")
-        daily_csv_file_paths = [os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')]
+        daily_csv_file_paths = [os.path.join(objects_log_directory, 'report_' + report_date + '.csv')]
     else:
         # entity == 'Area'
         camera_ids = entity_info['cameras']
         daily_csv_file_paths = [
-            os.path.join(log_directory, camera_id, "objects_log/report_" + yesterday + ".csv") for camera_id in camera_ids]
+            os.path.join(log_directory, camera_id, "objects_log/report_" + report_date + ".csv") for camera_id in
+            camera_ids]
 
     for file_path in daily_csv_file_paths:
         violations_per_hour = []
@@ -123,14 +123,48 @@ def send_daily_report_notification(config, entity_info):
             all_violations_per_hour = violations_per_hour
         else:
             all_violations_per_hour = list(map(operator.add, all_violations_per_hour, violations_per_hour))
+    return all_violations_per_hour
+
+def send_daily_report_notification(config, entity_info):
+    yesterday = str(date.today() - timedelta(days=1))
+    violations_per_hour = get_daily_report(config, entity_info, yesterday)
 
     if sum(violations_per_hour):
-        if entity_info['should_send_email_notifications']:
+        if is_mailing_configured() and entity_info['should_send_email_notifications']:
             ms = MailService(config)
             ms.send_daily_report(entity_info, sum(violations_per_hour), violations_per_hour)
-        if entity_info['should_send_slack_notifications']:
+        if is_slack_configured() and entity_info['should_send_slack_notifications']:
             slack_service = SlackService(config)
             slack_service.daily_report(entity_info, sum(violations_per_hour))
+
+
+def send_global_report(report_type, config, sources, areas, sources_violations_per_hour, areas_violations_per_hour):
+    emails = config.get_section_dict("App")["GlobalReportingEmails"].split(",")
+    if is_mailing_configured() and emails:
+        ms = MailService(config)
+        ms.send_global_report(report_type, sources, areas, sources_violations_per_hour, areas_violations_per_hour)
+    if is_slack_configured():
+        slack_service = SlackService(config)
+        slack_service.send_global_report(report_type, sources, areas, sources_violations_per_hour, areas_violations_per_hour)
+
+
+def send_daily_global_report(config, sources, areas):
+    yesterday = str(date.today() - timedelta(days=1))
+    sources_violations_per_hour = [get_daily_report(config, source, yesterday) for source in sources]
+    areas_violations_per_hour = [get_daily_report(config, area, yesterday) for area in areas]
+    send_global_report('daily', config, sources, areas, sources_violations_per_hour, areas_violations_per_hour)
+
+
+def send_weekly_global_report(config, sources, areas):
+    weekly_sources_violations_per_hour = np.zeros(24)
+    weekly_areas_violations_per_hour = np.zeros(24)
+    start_week = str(date.today() - timedelta(days=8))
+    yesterday = str(date.today() - timedelta(days=1))
+    date_range = pd.date_range(start=start_week, end=yesterday)
+    for report_date in date_range:
+        weekly_sources_violations_per_hour += np.array([get_daily_report(config, source, report_date) for source in sources])
+        weekly_areas_violations_per_hour += np.array([get_daily_report(config, area, report_date) for area in areas])
+    send_global_report('weekly', config, sources, areas, weekly_sources_violations_per_hour, weekly_areas_violations_per_hour)
 
 
 def main(config):
@@ -154,6 +188,16 @@ def main(config):
         if area['daily_report']:
             schedule.every().day.at(area['daily_report_time']).do(
                 send_daily_report_notification, config=config, entity_info=area)
+    if config.get_boolean("App", "DailyGlobalReport"):
+        schedule.every().day.at(config.get_section_dict("App")["GlobalReportTime"]).do(
+            send_daily_global_report, config=config, sources=sources, areas=areas
+        )
+    send_daily_global_report(config=config, sources=sources, areas=areas)
+    if config.get_boolean("App", "WeeklyGlobalReport"):
+        schedule.every().week.at(config.get_section_dict("App")["GlobalReportTime"]).do(
+            send_weekly_global_report, config=config, sources=sources, areas=areas
+        )
+    send_weekly_global_report(config=config, sources=sources, areas=areas)
 
     while True:
         schedule.run_pending()

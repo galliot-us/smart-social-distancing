@@ -5,6 +5,7 @@ import configparser
 import threading
 from distutils.util import strtobool
 from libs.notifications.slack_notifications import is_slack_configured
+from libs.utils.mailing import is_mailing_configured
 
 class ConfigEngine:
     """
@@ -196,7 +197,7 @@ class ConfigEngine:
 
     def should_send_email_notifications(self, entity):
         if "emails" in entity:
-            if os.path.isfile("oauth2_cred.json"):
+            if is_email_configured():
                 return True
             else:
                 self.logger.warning("Tried to enable email notifications but oauth2_cred.json is missing")

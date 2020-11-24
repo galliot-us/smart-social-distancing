@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 from .areas import map_area, map_to_area_file_format
 from .cameras import map_camera, map_to_camera_file_format
@@ -15,6 +15,17 @@ from constants import PROCESSOR_VERSION
 logger = logging.getLogger(__name__)
 
 config_router = APIRouter()
+
+
+class GlobalReportingEmailsInfo(BaseModel):
+    emails: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "emails": "john@email.com,doe@email.com"
+            }
+        }
 
 
 class ConfigInfo(BaseModel):
@@ -87,3 +98,18 @@ async def get_processor_info():
     Returns basic info regarding this processor
     """
     return processor_info(extract_config())
+
+
+@config_router.get("/global_report_emails", response_model=GlobalReportingEmailsInfo)
+async def get_report_emails():
+    return {
+        "emails": extract_config()["App"]["GlobalReportingEmails"]
+    }
+
+
+@config_router.put("/global_report_emails")
+async def get_report_emails(emails: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
+    config_dict = extract_config()
+    config_dict["App"]["GlobalReportingEmails"] = emails.emails
+    success = update_config(config_dict, reboot_processor)
+    return handle_response(config_dict, success)
