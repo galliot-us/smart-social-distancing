@@ -155,7 +155,6 @@ class Distancing:
                     obj["track_info"] = track_info
                     tracked_objects_list.append(obj)
 
-        # objects_list, distancings = self.calculate_distancing(tmp_objects_list)
         objects_list, distancings = self.calculate_distancing(tracked_objects_list)
         anonymize = self.config.get_section_dict('PostProcessor')['Anonymize'] == "true"
         if anonymize:
@@ -652,4 +651,3 @@ class Distancing:
             else:
                 _new_track_hist[track_id] = (track[3][None, ...], [])
         self.track_hist = _new_track_hist
-

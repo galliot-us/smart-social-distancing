@@ -1,4 +1,3 @@
-#FROM nvcr.io/nvidia/tensorflow:20.03-tf2-py3
 FROM nvcr.io/nvidia/tensorrt:20.03-py3
 
 # The `python3-opencv` package isn't built with gstreamer on Ubuntu. So we need to manually build opencv.

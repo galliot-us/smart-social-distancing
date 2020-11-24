@@ -41,7 +41,6 @@ class Detector:
     """
 
     def _load_engine(self):
-        
         precision=int(self.config.get_section_dict('Detector')['TensorrtPrecision'])
         TRTbinPath='/repo/data/tensorrt/openpifpaf_resnet50_{}_{}_d{}.trt'.format(self.w,self.h,precision)
         if not os.path.exists(TRTbinPath):
@@ -75,7 +74,7 @@ class Detector:
         self.stream = stream 
 
     def __del__(self):
-        """ Free CUDA memories. """
+        """ Free CUDA memory. """
 
         self.cuda_context.pop()
         del self.cuda_context
@@ -114,7 +113,7 @@ class Detector:
         cuda_outputs = self.cuda_outputs
         stream = self.stream
         
-        host_inputs[0] = np.ravel(np.zeros_like(np_img)) #np.ravel(np.zeros_like(np_img))
+        host_inputs[0] = np.ravel(np.zeros_like(np_img))
 
         self.cuda_context.push()
         t_begin = time.perf_counter()
@@ -193,7 +192,7 @@ class Detector:
                     "score": 0.9, "face": None}
             
 
-            # extracting face bounding box
+            # extract face bounding box
             if np.all(pred[[0, 1, 2, 5, 6], -1] > 0.15):
                 x_min_face = int(pred[6, 0])
                 x_max_face = int(pred[5, 0])
