@@ -184,4 +184,8 @@ class SocialDistancePostProcessor:
             item["id"] = item["id"].split("-")[0] + "-" + str(i)
         distances = self.calculate_box_distances(objects_list)
 
-        return objects_list, distances
+        return distances
+
+    def process(self, cv_image, objects_list, post_processing_data):
+        post_processing_data["distances"] = self.calculate_distancing(objects_list)
+        return cv_image, objects_list, post_processing_data

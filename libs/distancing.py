@@ -11,6 +11,7 @@ from libs.detectors.detector import Detector
 from libs.uploaders.s3_uploader import S3Uploader
 from libs.source_post_processors.social_distance import SocialDistancePostProcessor
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
+from libs.source_post_processors.anonymizer import AnonymizerPostProcesor
 import logging
 
 
@@ -52,6 +53,7 @@ class Distancing:
 
         self.distance = SocialDistancePostProcessor(self.config, source, 'SourcePostProcessor_1')
         self.objects_filtering = ObjectsFilteringPostProcessor(self.config, source, 'SourcePostProcessor_0')
+        self.anonymizer = AnonymizerPostProcesor(self.config, source, 'SourcePostProcessor_2')
 
         self.video_logger = None
         if self.live_feed_enabled:
@@ -81,12 +83,14 @@ class Distancing:
                     idx = idx + 1
                 else:
                     self.classifier.object_post_process(obj, None, None)
-        objects_list = self.objects_filtering.filter_objects(tmp_objects_list)
-        objects_list, distancings = self.distance.calculate_distancing(objects_list)
-        anonymize = self.config.get_section_dict('PostProcessor')['Anonymize'] == "true"
-        if anonymize:
-            cv_image = self.anonymize_image(cv_image, objects_list)
-        return cv_image, objects_list, distancings
+        post_processing_data = {}
+        cv_image, tmp_objects_list, post_processing_data = self.objects_filtering.process(
+            cv_image, tmp_objects_list, post_processing_data)
+        cv_image, tmp_objects_list, post_processing_data = self.distance.process(
+            cv_image, tmp_objects_list, post_processing_data)
+        cv_image, tmp_objects_list, post_processing_data = self.anonymizer.process(
+            cv_image, tmp_objects_list, post_processing_data)
+        return cv_image, tmp_objects_list, post_processing_data.get("distances")
 
     def process_video(self, video_uri):
         self.detector = Detector(self.config)
@@ -139,36 +143,6 @@ class Distancing:
 
     def stop_process_video(self):
         self.running_video = False
-
-    def anonymize_image(self, img, objects_list):
-        """
-        Anonymize every instance in the frame.
-        """
-        h, w = img.shape[:2]
-        for box in objects_list:
-            xmin = max(int(box["bboxReal"][0]), 0)
-            xmax = min(int(box["bboxReal"][2]), w)
-            ymin = max(int(box["bboxReal"][1]), 0)
-            ymax = min(int(box["bboxReal"][3]), h)
-            ymax = (ymax - ymin) // 3 + ymin
-            roi = img[ymin:ymax, xmin:xmax]
-            roi = self.anonymize_face(roi)
-            img[ymin:ymax, xmin:xmax] = roi
-        return img
-
-    @staticmethod
-    def anonymize_face(image):
-        """
-        Blur an image to anonymize the person's faces.
-        """
-        (h, w) = image.shape[:2]
-        kernel_w = int(w / 3)
-        kernel_h = int(h / 3)
-        if kernel_w % 2 == 0:
-            kernel_w = max(1, kernel_w - 1)
-        if kernel_h % 2 == 0:
-            kernel_h = max(1, kernel_h - 1)
-        return cv.GaussianBlur(image, (kernel_w, kernel_h), 0)
 
     # TODO: Make this an async task?
     def capture_violation(self, file_name, cv_image):

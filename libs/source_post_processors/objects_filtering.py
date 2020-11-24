@@ -84,3 +84,7 @@ class ObjectsFilteringPostProcessor:
         new_objects_list = self.ignore_large_boxes(objects_list)
         new_objects_list = self.non_max_suppression_fast(new_objects_list, self.overlap_threshold)
         return new_objects_list
+
+    def process(self, cv_image, objects_list, post_processing_data):
+        new_objects_list = self.filter_objects(objects_list)
+        return cv_image, new_objects_list, post_processing_data
