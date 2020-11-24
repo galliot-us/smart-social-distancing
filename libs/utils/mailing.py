@@ -109,6 +109,6 @@ class MailService:
         html_string = html_string.replace('{global_cameras_report}', cameras_report)
         html_string = html_string.replace('{url}', f'{frontend_url}/dashboard?source=email')
         subject = f"[Lanthorn] Global {report_type.capitalize()} Report"
-        to = self.config.get_section_dict("Email")["DashboardURL"]
+        to = self.config.get_section_dict("App")["GlobalReportingEmails"].split(",")
         send_email(self.email_from, to, subject, html_string)
         self.logger.info(f"Sent notification email to {to}")

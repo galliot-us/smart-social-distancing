@@ -115,10 +115,13 @@ def get_daily_report(config, entity_info, report_date):
 
     for file_path in daily_csv_file_paths:
         violations_per_hour = []
-        with open(file_path, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                violations_per_hour.append(int(row['ViolatingObjects']))
+        if not os.path.isfile(file_path):
+            violations_per_hour = list(np.zeros(24).astype(int))
+        else:
+            with open(file_path, newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    violations_per_hour.append(int(row['ViolatingObjects']))
         if not all_violations_per_hour:
             all_violations_per_hour = violations_per_hour
         else:
@@ -156,14 +159,14 @@ def send_daily_global_report(config, sources, areas):
 
 
 def send_weekly_global_report(config, sources, areas):
-    weekly_sources_violations_per_hour = np.zeros(24)
-    weekly_areas_violations_per_hour = np.zeros(24)
+    weekly_sources_violations_per_hour = np.zeros((len(sources), 24))
+    weekly_areas_violations_per_hour = np.zeros((len(areas), 24))
     start_week = str(date.today() - timedelta(days=8))
     yesterday = str(date.today() - timedelta(days=1))
     date_range = pd.date_range(start=start_week, end=yesterday)
     for report_date in date_range:
-        weekly_sources_violations_per_hour += np.array([get_daily_report(config, source, report_date) for source in sources])
-        weekly_areas_violations_per_hour += np.array([get_daily_report(config, area, report_date) for area in areas])
+        weekly_sources_violations_per_hour += np.array([get_daily_report(config, source, report_date.strftime('%Y-%m-%d')) for source in sources])
+        weekly_areas_violations_per_hour += np.array([get_daily_report(config, area, report_date.strftime('%Y-%m-%d')) for area in areas])
     send_global_report('weekly', config, sources, areas, weekly_sources_violations_per_hour, weekly_areas_violations_per_hour)
 
 
@@ -194,7 +197,7 @@ def main(config):
         )
     send_daily_global_report(config=config, sources=sources, areas=areas)
     if config.get_boolean("App", "WeeklyGlobalReport"):
-        schedule.every().week.at(config.get_section_dict("App")["GlobalReportTime"]).do(
+        schedule.every(7).days.at(config.get_section_dict("App")["GlobalReportTime"]).do(
             send_weekly_global_report, config=config, sources=sources, areas=areas
         )
     send_weekly_global_report(config=config, sources=sources, areas=areas)
