@@ -195,12 +195,10 @@ def main(config):
         schedule.every().day.at(config.get_section_dict("App")["GlobalReportTime"]).do(
             send_daily_global_report, config=config, sources=sources, areas=areas
         )
-    send_daily_global_report(config=config, sources=sources, areas=areas)
     if config.get_boolean("App", "WeeklyGlobalReport"):
         schedule.every(7).days.at(config.get_section_dict("App")["GlobalReportTime"]).do(
             send_weekly_global_report, config=config, sources=sources, areas=areas
         )
-    send_weekly_global_report(config=config, sources=sources, areas=areas)
 
     while True:
         schedule.run_pending()
