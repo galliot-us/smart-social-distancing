@@ -188,6 +188,20 @@ Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
 docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.ini":/repo/config-x86.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
 ```
 
+##### Run on x86 with GPU using TensorRT optimization
+
+Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
+```bash
+
+
+# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt" .
+
+# 2) Run Docker container:
+# Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86-gpu-tensorrt.ini":/repo/config-x86-gpu-tensorrt.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+```
+
 
 ##### Run on x86 using OpenVino
 ```bash
@@ -280,6 +294,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `ModelPath`: Some of the supported models allow you to overwrite the default one. For example, if you have a specific model trained for your scenario you can use it.
   - `ClassID`: When you are using a multi-class detection model, you can definde the class id related to pedestrian in this parameter.
   - `MinScore`: Defines the person detection threshold. Any person detected by the model with a score less than the threshold will be ignored.
+  - `TensorrtPrecision`: When you are using TensorRT version of Openpifpaf with GPU, Set TensorRT Precison 32 for float32 and 16 for float16 precision based on your GPU, if it supports both of them, float32 engine is more accurate and float16 is faster.
 
 - `[Classifier]`:
 

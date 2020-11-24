@@ -261,6 +261,7 @@ def visualize_boxes_and_labels_on_image_array(
         classes,
         scores,
         colors,
+        tracked_id,
         category_index,
         instance_masks=None,
         instance_boundaries=None,
@@ -347,7 +348,6 @@ def visualize_boxes_and_labels_on_image_array(
                             class_name = category_index[classes[i]]["name"]
                         else:
                             class_name = "N/A"
-                        display_str = str(class_name)
                 if not skip_scores:
                     if not display_str:
                         display_str = "{}%".format(int(100 * scores[i]))
@@ -355,6 +355,9 @@ def visualize_boxes_and_labels_on_image_array(
                         display_str = "{}: {}%".format(
                             display_str, int(100 * scores[i])
                         )
+                display_str = "{}, ID:{}".format(
+                        display_str, str(tracked_id[i]))
+
                 box_to_display_str_map[box].append(display_str)
                 if agnostic_mode:
                     box_to_color_map[box] = "DarkOrange"
@@ -417,6 +420,7 @@ def visualization_preparation(nn_out, distances, dist_threshold):
     is_violating = []
     colors = []
     face_labels = []
+    track_ids = []
 
     distance = np.amin(distances + np.identity(len(distances)) * dist_threshold * 2, 0) if distances != [] else [dist_threshold]
     for i, obj in enumerate(nn_out):
@@ -444,6 +448,9 @@ def visualization_preparation(nn_out, distances, dist_threshold):
         colors.append(color)
         if "face_label" in obj:
             face_labels.append(obj["face_label"])
+        if "tracked_id" in obj:
+            track_ids.append(obj["tracked_id"])
+
         is_violating.append(True) if distance[i] < dist_threshold else is_violating.append(False)
     output_dict["detection_boxes"] = np.array(detection_boxes)
     output_dict["detection_scores"] = detection_scores
@@ -451,6 +458,7 @@ def visualization_preparation(nn_out, distances, dist_threshold):
     output_dict["violating_objects"] = is_violating
     output_dict["detection_colors"] = colors
     output_dict["face_labels"] = face_labels
+    output_dict["track_ids"] = track_ids
     return output_dict
 
 
@@ -495,3 +503,26 @@ def text_putter(input_frame, txt, origin, fontscale=0.75, color=(255, 0, 20), th
     font = cv.FONT_HERSHEY_SIMPLEX
     cv.putText(input_frame, txt, origin, font, fontscale,
                color, thickness, cv.LINE_AA)
+
+
+def draw_tracks(input_frame, track_history, radius=1, thickness=1):
+    """
+    Visualize tracks based on history.
+    Args:
+    input_frame: The source image, is an RGB image.
+    track_history: Dictionary of track's centroids with track ids as keys and tuples of tracks centroids and 
+    corresponding colors as values
+    radius: Tracking circules radius
+    thickness: Thickness of tracking circlus
+    """
+    for track in track_history.values():
+        # assign last frame color for lost objects
+        if len(track[0]) != len(track[1]):
+            if len(track[1]) == 0:
+                track[1].append((0, 255, 0))
+                continue
+            track[1].append(track[1][-1])
+        for i, centroid in enumerate(track[0]):
+            cv.circle(input_frame, tuple(centroid), color=track[1][i], radius=radius, thickness=thickness)
+
+
