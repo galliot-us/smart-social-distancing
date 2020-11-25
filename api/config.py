@@ -121,9 +121,9 @@ async def get_report_info():
 async def update_report_info(global_report_info: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
     global_report_info = global_report_info.dict(exclude_unset=True, exclude_none=True)
     config_dict = extract_config()
-    keys = { "GlobalReportingEmails": "emails", "GlobalReportTime": "time",
-             "DailyGlobalReport": "daily", "WeeklyGlobalReport": "weekly" }
-    for key, value in keys.items():
+    key_mapping = {"GlobalReportingEmails": "emails", "GlobalReportTime": "time",
+                   "DailyGlobalReport": "daily", "WeeklyGlobalReport": "weekly"}
+    for key, value in key_mapping.items():
         if value in global_report_info:
             config_dict["App"][key] = str(global_report_info[value])
     success = update_config(config_dict, reboot_processor)
