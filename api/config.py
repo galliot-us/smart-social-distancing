@@ -83,7 +83,7 @@ async def get_config(options: Optional[str] = ""):
 
 
 @config_router.put("", response_model=ConfigDTO)
-async def update_config(config: ConfigDTO, reboot_processor: Optional[bool] = True):
+async def update_config_file(config: ConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Overwrites the configuration used by the processor.
     """

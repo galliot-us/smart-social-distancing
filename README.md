@@ -86,13 +86,13 @@ You may hardcode a value rather than using the `timezone.sh` script, such as `US
 
 Please note that the bash script may require permissions to execute `chmod +777 timezone.sh`
 
-**Persisting changes on the config.ini file**
+**Persisting changes files**
 
-Adding the respective `config.ini` as a volume (as for example `-v "$PWD/config-jetson.ini":/repo/config-jetson.ini`). Will allow for syncing changes of said file.
+We recommend adding the proyects folder as a mounted volume (`-v "$PWD":/repo`).
 
 ##### Enabling SSL
 
-We recommend exposing the processors' APIs using HTTPS. To do that, you need to add as a volume (for example  `-v "$PWD/certificates/processor":/repo/certs` ) a folder with a valid certificate for the processor (with its corresponding private key) and configure it in the `config-*.ini` file (`SSLCertificateFile` and `SSLKeyFile` configurations).
+We recommend exposing the processors' APIs using HTTPS. To do that, you need to create a folder named `certs` with a valid certificate for the processor (with its corresponding private key) and configure it in the `config-*.ini` file (`SSLCertificateFile` and `SSLKeyFile` configurations).
 
 If you don't have a certificate for the processor, you can create a self-signed one using [openssl](https://www.openssl.org/) and the scripts `create_ca.sh` and `create_processor_certificate.sh`.
 
@@ -119,7 +119,7 @@ As you are using a self-signed certificate you will need to import the created C
 docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-jetson.ini":/repo/config-jetson.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
 ```
 
 ##### Run on Jetson TX2
@@ -133,7 +133,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/r
 docker build -f jetson-tx2.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-tx2" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-jetson.ini":/repo/config-jetson.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-tx2
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-tx2
 ```
 
 ##### Run on Coral Dev Board
@@ -142,7 +142,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/r
 docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-coral.ini":/repo/config-coral.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
 ```
 
 ##### Run on AMD64 node with a connected Coral USB Accelerator
@@ -151,7 +151,7 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD
 docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-coral.ini":/repo/config-coral.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
 ```
 
 ##### Run on x86
@@ -167,7 +167,7 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD
 docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.ini":/repo/config-x86.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
 ```
 
 ##### Run on x86 with GPU
@@ -185,7 +185,7 @@ docker build -f x86-gpu.Dockerfile -t "neuralet/smart-social-distancing:latest-x
 
 # 2) Run Docker container:
 Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86.ini":/repo/config-x86.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
 ```
 
 ##### Run on x86 with GPU using TensorRT optimization
@@ -199,7 +199,7 @@ docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "neuralet/smart-social
 
 # 2) Run Docker container:
 # Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86-gpu-tensorrt.ini":/repo/config-x86-gpu-tensorrt.ini -v "$PWD/certificates/processor":/repo/certs -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
 ```
 
 
@@ -212,7 +212,7 @@ docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/c
 docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD/data":/repo/data -v "$PWD/config-x86-openvino.ini":/repo/config-x86-openvino.ini -v "$PWD/certificates/processor":/repo/certs  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
 ### Configurations
