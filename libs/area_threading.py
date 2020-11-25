@@ -5,7 +5,7 @@ import time
 
 from datetime import datetime
 from threading import Thread
-from libs.area_reporting import AreaReporting as AreaEngine
+from libs.area_engine import AreaEngine
 
 logger = logging.getLogger(__name__)
 

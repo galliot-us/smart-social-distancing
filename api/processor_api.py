@@ -46,7 +46,7 @@ class ProcessorAPI:
             logger_section = self.settings.config.get_section_dict(l_name)
             if logger_section["Name"] == "file_system_logger":
                 os.environ["LogDirectory"] = logger_section["LogDirectory"]
-        os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("Logger")["HeatmapResolution"]
+        os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("App")["HeatmapResolution"]
 
         # Create and return a fastapi instance
         app = FastAPI()

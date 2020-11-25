@@ -10,7 +10,7 @@ from .notifications.slack_notifications import SlackService
 logger = logging.getLogger(__name__)
 
 
-class AreaReporting:
+class AreaEngine:
 
     def __init__(self, config, area):
         self.processing_alerts = False

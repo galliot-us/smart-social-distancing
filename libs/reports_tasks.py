@@ -1,18 +1,11 @@
-"""
-Set of functions related to creating daily and hourly reports of detections and violations.
-"""
 import os
-import argparse
 import csv
-import schedule
 import operator
-import time
 import ast
 import numpy as np
 import logging
 
 from datetime import date, datetime, timedelta
-from libs.config_engine import ConfigEngine
 from libs.notifications.slack_notifications import SlackService
 from libs.utils.mailing import MailService
 
@@ -20,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
-    heatmap_resolution = config.get_section_dict("Logger")["HeatmapResolution"].split(",")
+    heatmap_resolution = config.get_section_dict("App")["HeatmapResolution"].split(",")
     heatmap_x = int(heatmap_resolution[0])
     heatmap_y = int(heatmap_resolution[1])
     heatmap_grid = np.zeros((heatmap_x, heatmap_y))
@@ -131,37 +124,3 @@ def send_daily_report_notification(config, entity_info):
         if entity_info['should_send_slack_notifications']:
             slack_service = SlackService(config)
             slack_service.daily_report(entity_info, sum(violations_per_hour))
-
-
-def main(config):
-    logging.basicConfig(level=logging.INFO)
-    if isinstance(config, str):
-        config = ConfigEngine(config)
-
-    if not config.get_boolean('Logger', 'EnableReports'):
-        logger.info("Reporting disabled!")
-    else:
-        logger.info("Reporting enabled!")
-        schedule.every().day.at("00:01").do(create_daily_report, config=config)
-
-    sources = config.get_video_sources()
-    areas = config.get_areas()
-    for src in sources:
-        if src['daily_report']:
-            schedule.every().day.at(src['daily_report_time']).do(
-                send_daily_report_notification, config=config, entity_info=src)
-    for area in areas:
-        if area['daily_report']:
-            schedule.every().day.at(area['daily_report_time']).do(
-                send_daily_report_notification, config=config, entity_info=area)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(10)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', required=True)
-    args = parser.parse_args()
-    main(args.config)
