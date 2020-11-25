@@ -13,7 +13,8 @@ class Detector:
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
         self.image_size = [int(i) for i in self.config.get_section_dict("Detector")["ImageSize"].split(",")]
 
-        if "Classifier" in self.config.get_sections():
+        self.has_classifier = "Classifier" in self.config.get_sections()
+        if self.has_classifier:
             self.classifier_img_size = [
                 int(i) for i in self.config.get_section_dict("Classifier")["ImageSize"].split(",")]
 
@@ -56,7 +57,7 @@ class Detector:
         detection_bboxes = []
         classifier_objects = []
         for itm in object_list:
-            if "face" in itm.keys():
+            if self.has_classifier and "face" in itm.keys():
                 face_bbox = itm["face"]  # [ymin, xmin, ymax, xmax]
                 if face_bbox is not None:
                     xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])

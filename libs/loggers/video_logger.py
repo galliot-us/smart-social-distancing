@@ -9,7 +9,7 @@ from tools.environment_score import mx_environment_scoring_consider_crowd
 
 class VideoLogger:
 
-    def __init__(self, config, source):
+    def __init__(self, config, source: str, logger: str):
         self.config = config
         self.camera_id = self.config.get_section_dict(source)["Id"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])

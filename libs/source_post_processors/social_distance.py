@@ -19,7 +19,10 @@ class SocialDistancePostProcessor:
         self.config = config
         self.post_processor = self.config.get_section_dict(post_processor)
         default_dist_method = self.post_processor["DefaultDistMethod"]
-        self.dist_method = self.config.get_section_dict(source).get("DistMethod", default_dist_method)
+        if self.config.get_section_dict(source).get("DistMethod"):
+            self.dist_method = self.config.get_section_dict(source).get("DistMethod")
+        else:
+            self.dist_method = default_dist_method
         if self.dist_method == self.CALIBRATED_DISTANCE:
             calibration_file = get_camera_calibration_path(
                 self.config, self.config.get_section_dict(source)["Id"])
@@ -55,6 +58,8 @@ class SocialDistancePostProcessor:
             return self.calculate_four_corner_distance(nn_out)
         elif self.dist_method == self.CENTER_POINTS_DISTANCE:
             return self.calculate_center_points_distance(nn_out)
+        else:
+            raise ValueError(f"Not supported distance method {self.dist_method}")
 
     def calculate_four_corner_distance(self, nn_out):
         distances = []

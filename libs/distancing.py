@@ -4,11 +4,9 @@ import os
 import time
 from libs.classifiers.classifier import Classifier
 from libs.trackers.tracker import Tracker
-from libs.loggers.loggers import Logger
-from libs.loggers.video_logger import VideoLogger
+from libs.loggers.logger import Logger
 from tools.objects_post_process import extract_violating_objects
 from libs.detectors.detector import Detector
-from libs.uploaders.s3_uploader import S3Uploader
 from libs.source_post_processors.social_distance import SocialDistancePostProcessor
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
 from libs.source_post_processors.anonymizer import AnonymizerPostProcesor
@@ -30,24 +28,12 @@ class Distancing:
         self.running_video = False
         self.tracker = Tracker(self.config)
         self.camera_id = self.config.get_section_dict(source)['Id']
-        self.logger = Logger(self.config, self.camera_id)
         self.image_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
 
         self.dist_threshold = self.config.get_section_dict("PostProcessor")["DistThreshold"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
         self.birds_eye_resolution = (200, 300)
-
-        # config.ini uses minutes as unit
-        self.screenshot_period = float(self.config.get_section_dict("App")["ScreenshotPeriod"]) * 60
-        self.bucket_screenshots = config.get_section_dict("App")["ScreenshotS3Bucket"]
-        self.uploader = S3Uploader(self.config)
-        self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
-        # Store tracks centroids of last 50 frames for visualization, keys are track ids and values are tuples of
-        # tracks centroids and corresponding colors
         self.track_hist = dict()
-        if not os.path.exists(self.screenshot_path):
-            os.makedirs(self.screenshot_path)
-
         if "Classifier" in self.config.get_sections():
             self.classifier = Classifier(self.config)
 
@@ -57,7 +43,10 @@ class Distancing:
 
         self.video_logger = None
         if self.live_feed_enabled:
-            self.video_logger = VideoLogger(self.config, source)
+            self.video_logger = Logger(self.config, source, "SourceLogger_0")
+        self.s3_logger = Logger(self.config, source, "SourceLogger_1")
+        self.file_system_logger = Logger(self.config, source, "SourceLogger_2")
+        self.web_hook_logger = Logger(self.config, source, "SourceLogger_3")
 
     def __process(self, cv_image):
         """
@@ -110,7 +99,6 @@ class Distancing:
             self.video_logger.start_logging(fps)
         dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
         frame_num = 0
-        start_time = time.time()
         last_processed_time = time.time()
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
@@ -125,16 +113,10 @@ class Distancing:
                 frame_num += 1
                 if frame_num % 100 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
-                # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period
-                # has occured
-                if (self.screenshot_period > 0) and (time.time() > start_time + self.screenshot_period) and (
-                        len(violating_objects) > 0):
-                    start_time = time.time()
-                    self.capture_violation(f"{start_time}_violation.jpg", cv_image)
-                self.save_screenshot(cv_image)
-            else:
-                continue
-            self.logger.update(objects, distancings)
+                self.s3_logger.update(cv_image, objects, distancings, violating_objects, self.detector.fps)
+                self.file_system_logger.update(cv_image, objects, distancings, violating_objects, self.detector.fps)
+                self.web_hook_logger.update(cv_image, objects, distancings, violating_objects, self.detector.fps)
+
         input_cap.release()
         if self.live_feed_enabled:
             self.video_logger.stop_logging()
@@ -143,16 +125,6 @@ class Distancing:
 
     def stop_process_video(self):
         self.running_video = False
-
-    # TODO: Make this an async task?
-    def capture_violation(self, file_name, cv_image):
-        self.uploader.upload_cv_image(self.bucket_screenshots, cv_image, file_name, self.camera_id)
-
-    def save_screenshot(self, cv_image):
-        dir_path = f'{self.screenshot_path}/default.jpg'
-        if not os.path.exists(dir_path):
-            logger.info(f"Saving default screenshot for {self.camera_id}")
-            cv.imwrite(f'{self.screenshot_path}/default.jpg', cv_image)
 
     def update_history(self, tracks):
         """

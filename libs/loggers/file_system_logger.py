@@ -1,10 +1,11 @@
-import itertools
+import csv
 import logging
-import requests
+import itertools
+import os
 import time
 
-from datetime import datetime
-from requests.exceptions import ConnectionError
+import cv2 as cv
+from datetime import date, datetime
 
 from tools.environment_score import mx_environment_scoring_consider_crowd
 from tools.objects_post_process import extract_violating_objects
@@ -13,37 +14,55 @@ LOG_FORMAT_VERSION = "1.0"
 logger = logging.getLogger(__name__)
 
 
-class WebHookLogger:
+class FileSystemLogger:
 
     def __init__(self, config, source: str, logger: str):
         self.config = config
         self.camera_id = self.config.get_section_dict(source)['Id']
-        self.web_hook_endpoint = config.get_section_dict(logger)["Endpoint"]
+ 
         self.time_interval = float(self.config.get_section_dict(logger)["TimeInterval"])  # Seconds
         self.submited_time = 0
         self.dist_threshold = config.get_section_dict("PostProcessor")["DistThreshold"]
+        self.log_directory = config.get_section_dict(logger)["LogDirectory"]
+        self.objects_log_directory = os.path.join(self.log_directory, self.camera_id, "objects_log")
+        os.makedirs(self.objects_log_directory, exist_ok=True)
+
+        self.screenshot_period = float(self.config.get_section_dict(logger)["ScreenshotPeriod"]) * 60
+        self.start_time = time.time()
+        # config.ini uses minutes as unit
+        self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
+        if not os.path.exists(self.screenshot_path):
+            os.makedirs(self.screenshot_path)
+
+    def save_screenshot(self, cv_image):
+        dir_path = f'{self.screenshot_path}/default.jpg'
+        if not os.path.exists(dir_path):
+            logger.info(f"Saving default screenshot for {self.camera_id}")
+            cv.imwrite(f'{self.screenshot_path}/default.jpg', cv_image)
 
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,
                     detected_objects_cout, environment_score, time_stamp, version):
-        request_data = {
-            "version": version,
-            "timestamp": time_stamp,
-            "detected_objects": detected_objects_cout,
-            "violating_objects": violating_objects_count,
-            "environment_score": environment_score,
-            "detections": str(objects),
-            "violations_indexes": str(violating_objects_index_list)
-        }
-        try:
-            requests.put(self.web_hook_endpoint, data=request_data)
-        except ConnectionError:
-            logger.error(f"Connection with endpoint {self.web_hook_endpoint} can't be established")
+        file_name = str(date.today())
+        file_path = os.path.join(self.objects_log_directory, file_name + ".csv")
+        file_exists = os.path.isfile(file_path)
+        with open(file_path, "a") as csvfile:
+            headers = ["Version", "Timestamp", "DetectedObjects", "ViolatingObjects",
+                       "EnvironmentScore", "Detections", 'ViolationsIndexes']
+            writer = csv.DictWriter(csvfile, fieldnames=headers)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(
+                {"Version": version, "Timestamp": time_stamp, "DetectedObjects": detected_objects_cout,
+                 "ViolatingObjects": violating_objects_count, "EnvironmentScore": environment_score,
+                 "Detections": str(objects), "ViolationsIndexes": str(violating_objects_index_list)})
 
     def update(self, cv_image, objects, distancings, violating_objects, fps):
         # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period
         # has occured
-        if not self.web_hook_endpoint:
-            return
+        if (self.screenshot_period > 0) and (time.time() > self.start_time + self.screenshot_period) and (
+                len(violating_objects) > 0):
+            self.start_time = time.time()
+            self.save_screenshot(cv_image)
         if time.time() - self.submited_time > self.time_interval:
             # Get timeline which is used for as Timestamp
             now = datetime.now()
