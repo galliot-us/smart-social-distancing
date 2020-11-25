@@ -7,7 +7,6 @@ from datetime import datetime
 from requests.exceptions import ConnectionError
 
 from tools.environment_score import mx_environment_scoring_consider_crowd
-from tools.objects_post_process import extract_violating_objects
 
 LOG_FORMAT_VERSION = "1.0"
 logger = logging.getLogger(__name__)
@@ -15,13 +14,12 @@ logger = logging.getLogger(__name__)
 
 class WebHookLogger:
 
-    def __init__(self, config, source: str, logger: str):
+    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
         self.config = config
         self.camera_id = self.config.get_section_dict(source)['Id']
         self.web_hook_endpoint = config.get_section_dict(logger)["Endpoint"]
         self.time_interval = float(self.config.get_section_dict(logger)["TimeInterval"])  # Seconds
         self.submited_time = 0
-        self.dist_threshold = config.get_section_dict("PostProcessor")["DistThreshold"]
 
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,
                     detected_objects_cout, environment_score, time_stamp, version):
@@ -39,9 +37,8 @@ class WebHookLogger:
         except ConnectionError:
             logger.error(f"Connection with endpoint {self.web_hook_endpoint} can't be established")
 
-    def update(self, cv_image, objects, distancings, violating_objects, fps):
-        # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period
-        # has occured
+    def update(self, cv_image, objects, post_processing_data, fps):
+        violating_objects = post_processing_data.get("violating_objects", [])
         if not self.web_hook_endpoint:
             return
         if time.time() - self.submited_time > self.time_interval:
@@ -50,7 +47,6 @@ class WebHookLogger:
             current_time = now.strftime("%Y-%m-%d %H:%M:%S")
             # Process objects
             objects_formated = self.format_objects(objects)
-            violating_objects = extract_violating_objects(distancings, self.dist_threshold)
             # Get unique objects that are in close contact
             violating_objects_index_list = list(set(itertools.chain(*violating_objects)))
             # Get the number of violating objects (people)

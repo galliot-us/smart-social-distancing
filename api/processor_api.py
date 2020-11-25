@@ -41,7 +41,11 @@ class ProcessorAPI:
         self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):
-        os.environ["LogDirectory"] = self.settings.config.get_section_dict("Logger")["LogDirectory"]
+        loggers_names = [x for x in self.settings.config.get_sections() if x.startswith("SourceLogger_")]
+        for l_name in loggers_names:
+            logger_section = self.settings.config.get_section_dict(l_name)
+            if logger_section["Name"] == "file_system_logger":
+                os.environ["LogDirectory"] = logger_section["LogDirectory"]
         os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("Logger")["HeatmapResolution"]
 
         # Create and return a fastapi instance

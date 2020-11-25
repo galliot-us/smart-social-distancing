@@ -2,8 +2,10 @@ import logging
 import math
 import numpy as np
 
-from libs.utils.camera_calibration import get_camera_calibration_path
 from scipy.spatial.distance import cdist
+
+from libs.utils.camera_calibration import get_camera_calibration_path
+from tools.objects_post_process import extract_violating_objects
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +20,7 @@ class SocialDistancePostProcessor:
     def __init__(self, config, source: str, post_processor: str):
         self.config = config
         self.post_processor = self.config.get_section_dict(post_processor)
+        self.dist_threshold = float(self.post_processor["DistThreshold"])
         default_dist_method = self.post_processor["DefaultDistMethod"]
         if self.config.get_section_dict(source).get("DistMethod"):
             self.dist_method = self.config.get_section_dict(source).get("DistMethod")
@@ -193,4 +196,7 @@ class SocialDistancePostProcessor:
 
     def process(self, cv_image, objects_list, post_processing_data):
         post_processing_data["distances"] = self.calculate_distancing(objects_list)
+        post_processing_data["violating_objects"] = extract_violating_objects(
+            post_processing_data["distances"], self.dist_threshold)
+        post_processing_data["dist_threshold"] = self.dist_threshold
         return cv_image, objects_list, post_processing_data

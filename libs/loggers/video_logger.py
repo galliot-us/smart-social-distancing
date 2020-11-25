@@ -9,15 +9,18 @@ from tools.environment_score import mx_environment_scoring_consider_crowd
 
 class VideoLogger:
 
-    def __init__(self, config, source: str, logger: str):
+    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
         self.config = config
         self.camera_id = self.config.get_section_dict(source)["Id"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
         self.birds_eye_resolution = (200, 300)
         self.out = None
         self.out_birdseye = None
+        self.live_feed_enabled = live_feed_enabled
 
     def start_logging(self, fps):
+        if not self.live_feed_enabled:
+            return
         self.out, self.out_birdseye = (
             self.gstreamer_writer(feed, fps, resolution)
             for (feed, resolution) in (
@@ -27,6 +30,8 @@ class VideoLogger:
         )
 
     def stop_logging(self):
+        if not self.live_feed_enabled:
+            return
         self.out.release()
         self.out_birdseye.release()
 
@@ -79,8 +84,14 @@ class VideoLogger:
             raise RuntimeError("Could not open gstreamer output for " + feed_name)
         return out
 
-    def update(self, cv_image, objects, distancings, violating_objects, fps):
-        dist_threshold = float(self.config.get_section_dict("PostProcessor")["DistThreshold"])
+    def update(self, cv_image, objects, post_processing_data, fps):
+        if not self.live_feed_enabled:
+            return
+
+        distancings = post_processing_data.get("distances", [])
+        violating_objects = post_processing_data.get("violating_objects", [])
+        dist_threshold = post_processing_data.get("dist_threshold", 0)
+
         birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
         class_id = int(self.config.get_section_dict('Detector')['ClassID'])
 

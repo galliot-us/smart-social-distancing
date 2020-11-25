@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 from shutil import rmtree
 from threading import Thread
-from libs.distancing import Distancing as CvEngine
+from libs.cv_engine import CvEngine
 
 logger = logging.getLogger(__name__)
 

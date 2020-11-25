@@ -8,7 +8,6 @@ import cv2 as cv
 from datetime import date, datetime
 
 from tools.environment_score import mx_environment_scoring_consider_crowd
-from tools.objects_post_process import extract_violating_objects
 
 LOG_FORMAT_VERSION = "1.0"
 logger = logging.getLogger(__name__)
@@ -16,13 +15,12 @@ logger = logging.getLogger(__name__)
 
 class FileSystemLogger:
 
-    def __init__(self, config, source: str, logger: str):
+    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
         self.config = config
         self.camera_id = self.config.get_section_dict(source)['Id']
- 
+
         self.time_interval = float(self.config.get_section_dict(logger)["TimeInterval"])  # Seconds
         self.submited_time = 0
-        self.dist_threshold = config.get_section_dict("PostProcessor")["DistThreshold"]
         self.log_directory = config.get_section_dict(logger)["LogDirectory"]
         self.objects_log_directory = os.path.join(self.log_directory, self.camera_id, "objects_log")
         os.makedirs(self.objects_log_directory, exist_ok=True)
@@ -56,7 +54,8 @@ class FileSystemLogger:
                  "ViolatingObjects": violating_objects_count, "EnvironmentScore": environment_score,
                  "Detections": str(objects), "ViolationsIndexes": str(violating_objects_index_list)})
 
-    def update(self, cv_image, objects, distancings, violating_objects, fps):
+    def update(self, cv_image, objects, post_processing_data, fps):
+        violating_objects = post_processing_data.get("violating_objects", [])
         # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period
         # has occured
         if (self.screenshot_period > 0) and (time.time() > self.start_time + self.screenshot_period) and (
@@ -69,7 +68,6 @@ class FileSystemLogger:
             current_time = now.strftime("%Y-%m-%d %H:%M:%S")
             # Process objects
             objects_formated = self.format_objects(objects)
-            violating_objects = extract_violating_objects(distancings, self.dist_threshold)
             # Get unique objects that are in close contact
             violating_objects_index_list = list(set(itertools.chain(*violating_objects)))
             # Get the number of violating objects (people)
