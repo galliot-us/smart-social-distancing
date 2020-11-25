@@ -197,7 +197,7 @@ class ConfigEngine:
 
     def should_send_email_notifications(self, entity):
         if "emails" in entity:
-            if is_email_configured():
+            if is_mailing_configured():
                 return True
             else:
                 self.logger.warning("Tried to enable email notifications but oauth2_cred.json is missing")
