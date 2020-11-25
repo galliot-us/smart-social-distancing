@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 from .areas import map_area, map_to_area_file_format
@@ -18,10 +18,10 @@ config_router = APIRouter()
 
 
 class GlobalReportingEmailsInfo(BaseModel):
-    emails: str
-    time: str
-    daily: bool
-    weekly: bool
+    emails: Optional[str] = Field("", example='john@email.com,doe@email.com')
+    time: Optional[str] = Field("06:00")
+    daily: Optional[bool] = Field(False, example=True)
+    weekly: Optional[bool] = Field(False, example=True)
 
     class Config:
         schema_extra = {
@@ -107,7 +107,7 @@ async def get_processor_info():
 
 
 @config_router.get("/global_report", response_model=GlobalReportingEmailsInfo)
-async def get_report_emails():
+async def get_report_info():
     app_config = extract_config()["App"]
     return {
         "emails": app_config["GlobalReportingEmails"],
@@ -118,19 +118,13 @@ async def get_report_emails():
 
 
 @config_router.put("/global_report")
-async def update_report_emails(global_report_info: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
+async def update_report_info(global_report_info: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
     global_report_info = global_report_info.dict(exclude_unset=True, exclude_none=True)
     config_dict = extract_config()
     keys = { "GlobalReportingEmails": "emails", "GlobalReportTime": "time",
              "DailyGlobalReport": "daily", "WeeklyGlobalReport": "weekly" }
     for key, value in keys.items():
         if value in global_report_info:
-            config_dict["App"][key] = global_report_info[value]
-    if "GlobalReportingEmails" in global_report_info:
-
-    config_dict["App"]["GlobalReportingEmails"] = global_report_info.emails
-    config_dict["App"]["GlobalReportTime"] = global_report_info.time
-    config_dict["App"]["DailyGlobalReport"] = global_report_info.daily
-    config_dict["App"]["WeeklyGlobalReport"] = global_report_info.weekly
+            config_dict["App"][key] = str(global_report_info[value])
     success = update_config(config_dict, reboot_processor)
     return handle_response(config_dict, success)
