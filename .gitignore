@@ -17,3 +17,4 @@ oauth2_cred.json
 venv/
 slack_token.txt
 .env
+supervisord.log

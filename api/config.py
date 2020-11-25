@@ -108,7 +108,7 @@ async def get_report_emails():
 
 
 @config_router.put("/global_report_emails")
-async def get_report_emails(emails: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
+async def update_report_emails(emails: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
     config_dict = extract_config()
     config_dict["App"]["GlobalReportingEmails"] = emails.emails
     success = update_config(config_dict, reboot_processor)
