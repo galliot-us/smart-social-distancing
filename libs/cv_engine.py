@@ -18,7 +18,6 @@ class CvEngine:
         self.config = config
         self.live_feed_enabled = live_feed_enabled
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
-        self.track_hist = dict()
 
         # Init detector, tracker and classifier
         self.detector = Detector(self.config)
@@ -65,7 +64,6 @@ class CvEngine:
         if self.classifier:
             classifier_results, classifier_scores = self.classifier.inference(classifier_objects)
         tracks = self.tracker.update(detection_bboxes, class_ids, detection_scores)
-        self.update_history(tracks)
         idx = 0
         for obj in tmp_objects_list:
             self.tracker.object_post_process(obj, tracks)
@@ -77,7 +75,9 @@ class CvEngine:
                     self.classifier.object_post_process(obj, None, None)
 
         # Execute post processors
-        post_processing_data = {}
+        post_processing_data = {
+            "tracks": tracks
+        }
         for post_processor in self.post_processors:
             cv_image, tmp_objects_list, post_processing_data = post_processor.process(
                 cv_image, tmp_objects_list, post_processing_data)
@@ -121,20 +121,3 @@ class CvEngine:
     def stop_process_video(self):
         self.running_video = False
 
-    def update_history(self, tracks):
-        """
-        This method updates self.track_hist with new tracks
-        """
-        _new_track_hist = dict()
-        prev_track_ids = list(self.track_hist.keys())
-        for track in tracks:
-            track_id = track[1]
-            if track_id in prev_track_ids:
-                prev_centroids = self.track_hist[track_id][0]
-                prev_colors = self.track_hist[track_id][1]
-                _new_track_hist[track_id] = (np.concatenate((prev_centroids, track[3][None, ...]), axis=0), prev_colors)
-                if len(_new_track_hist[track_id][0]) > 50:
-                    _new_track_hist[track_id] = (_new_track_hist[track_id][0][1:,:], _new_track_hist[track_id][1][1:])
-            else:
-                _new_track_hist[track_id] = (track[3][None, ...], [])
-        self.track_hist = _new_track_hist

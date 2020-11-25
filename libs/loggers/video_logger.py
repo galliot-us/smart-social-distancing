@@ -17,6 +17,7 @@ class VideoLogger:
         self.out = None
         self.out_birdseye = None
         self.live_feed_enabled = live_feed_enabled
+        self.track_hist = dict()
 
     def start_logging(self, fps):
         if not self.live_feed_enabled:
@@ -35,7 +36,7 @@ class VideoLogger:
         self.out.release()
         self.out_birdseye.release()
 
-        def gstreamer_writer(self, feed_name, fps, resolution):
+    def gstreamer_writer(self, feed_name, fps, resolution):
         """
         This method creates and returns an OpenCV Video Writer instance. The VideoWriter expects its `.write()` method
         to be called with a single frame image multiple times. It encodes frames into live video segments and produces
@@ -87,7 +88,7 @@ class VideoLogger:
     def update(self, cv_image, objects, post_processing_data, fps):
         if not self.live_feed_enabled:
             return
-
+        self.update_history(post_processing_data["tracks"])
         distancings = post_processing_data.get("distances", [])
         violating_objects = post_processing_data.get("violating_objects", [])
         dist_threshold = post_processing_data.get("dist_threshold", 0)
@@ -126,7 +127,6 @@ class VideoLogger:
         # TODO: Implement perspective view for objects
         birds_eye_window = visualization_utils.birds_eye_view(
             birds_eye_window, output_dict["detection_boxes"], output_dict["violating_objects"])
-        fps = self.detector.fps
 
         # Put fps to the frame
         # region
@@ -155,5 +155,23 @@ class VideoLogger:
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
         #endregion
 
-        out.write(cv_image)
-        out_birdseye.write(birds_eye_window)
+        self.out.write(cv_image)
+        self.out_birdseye.write(birds_eye_window)
+    
+    def update_history(self, tracks):
+        """
+        This method updates self.track_hist with new tracks
+        """
+        _new_track_hist = dict()
+        prev_track_ids = list(self.track_hist.keys())
+        for track in tracks:
+            track_id = track[1]
+            if track_id in prev_track_ids:
+                prev_centroids = self.track_hist[track_id][0]
+                prev_colors = self.track_hist[track_id][1]
+                _new_track_hist[track_id] = (np.concatenate((prev_centroids, track[3][None, ...]), axis=0), prev_colors)
+                if len(_new_track_hist[track_id][0]) > 50:
+                    _new_track_hist[track_id] = (_new_track_hist[track_id][0][1:,:], _new_track_hist[track_id][1][1:])
+            else:
+                _new_track_hist[track_id] = (track[3][None, ...], [])
+        self.track_hist = _new_track_hist
