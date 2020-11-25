@@ -8,7 +8,7 @@ from .areas import map_area, map_to_area_file_format
 from .cameras import map_camera, map_to_camera_file_format
 from .models.config_keys import ConfigDTO
 from .utils import (
-    extract_config, handle_response, update_config
+    get_config, extract_config, handle_response, update_config
 )
 from constants import PROCESSOR_VERSION
 
@@ -19,11 +19,17 @@ config_router = APIRouter()
 
 class GlobalReportingEmailsInfo(BaseModel):
     emails: str
+    time: str
+    daily: bool
+    weekly: bool
 
     class Config:
         schema_extra = {
             "example": {
-                "emails": "john@email.com,doe@email.com"
+                "emails": "john@email.com,doe@email.com",
+                "time": "06:00",
+                "daily": True,
+                "weekly": True
             }
         }
 
@@ -74,7 +80,7 @@ def processor_info(config):
 
 
 @config_router.get("", response_model=ConfigDTO)
-async def get_config(options: Optional[str] = ""):
+async def get_config_file(options: Optional[str] = ""):
     """
     Returns the configuration used by the processor
     """
@@ -100,16 +106,31 @@ async def get_processor_info():
     return processor_info(extract_config())
 
 
-@config_router.get("/global_report_emails", response_model=GlobalReportingEmailsInfo)
+@config_router.get("/global_report", response_model=GlobalReportingEmailsInfo)
 async def get_report_emails():
+    app_config = extract_config()["App"]
     return {
-        "emails": extract_config()["App"]["GlobalReportingEmails"]
+        "emails": app_config["GlobalReportingEmails"],
+        "time": app_config["GlobalReportTime"],
+        "daily": get_config().get_boolean("App", "DailyGlobalReport"),
+        "weekly": get_config().get_boolean("App", "WeeklyGlobalReport")
     }
 
 
-@config_router.put("/global_report_emails")
-async def update_report_emails(emails: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
+@config_router.put("/global_report")
+async def update_report_emails(global_report_info: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
+    global_report_info = global_report_info.dict(exclude_unset=True, exclude_none=True)
     config_dict = extract_config()
-    config_dict["App"]["GlobalReportingEmails"] = emails.emails
+    keys = { "GlobalReportingEmails": "emails", "GlobalReportTime": "time",
+             "DailyGlobalReport": "daily", "WeeklyGlobalReport": "weekly" }
+    for key, value in keys.items():
+        if value in global_report_info:
+            config_dict["App"][key] = global_report_info[value]
+    if "GlobalReportingEmails" in global_report_info:
+
+    config_dict["App"]["GlobalReportingEmails"] = global_report_info.emails
+    config_dict["App"]["GlobalReportTime"] = global_report_info.time
+    config_dict["App"]["DailyGlobalReport"] = global_report_info.daily
+    config_dict["App"]["WeeklyGlobalReport"] = global_report_info.weekly
     success = update_config(config_dict, reboot_processor)
     return handle_response(config_dict, success)
