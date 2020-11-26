@@ -287,7 +287,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `DistMethod`: Configures the chosen distance method used by the processor to detect the violations. There are three different values: CalibratedDistance, CenterPointsDistance and FourCornerPointsDistance. If you want to use *CalibratedDistance* you will need to calibrate the camera from the [UI](https://beta.lanthorn.ai).
 
 - `[Detector]`:
-  - `Device`: Specifies the device. The available values are *Jetson*, *EdgeTPU*, *Dummy*, *x86*
+  - `Device`: Specifies the device. The available values are *Jetson*, *EdgeTPU*, *Dummy*, *x86*, *x86-gpu*
   - `Name`: Defines the detector's models used by the processor. The models available varies from device to device. Information about the supported models are specified in a comment in the corresponding *config-<device>.ini* file.
   - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
   - `ModelPath`: Some of the supported models allow you to overwrite the default one. For example, if you have a specific model trained for your scenario you can use it.
@@ -298,6 +298,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 - `[Classifier]`:
 
   Some of the supported devices includes the *facemask detection* feature. If you want to include this feature, you need to specify the classifier section.
+  - `Device`: Specifies the device. The available values are *Jetson*, *EdgeTPU*, *Dummy*, *x86*, *x86-gpu*
   - `Name`: Name of the facemask classifier used.
   - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
   - `ModelPath`: The same behavior as in the section `Detector`.
