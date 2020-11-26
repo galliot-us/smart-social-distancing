@@ -88,7 +88,7 @@ Please note that the bash script may require permissions to execute `chmod +777 
 
 **Persisting changes files**
 
-We recommend adding the proyects folder as a mounted volume (`-v "$PWD":/repo`).
+We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`).
 
 ##### Enabling SSL
 
