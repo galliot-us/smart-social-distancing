@@ -2,6 +2,7 @@ __pycache__/
 /tasks/overrides.yaml
 /data
 /certificates
+/certs
 oauth2_cred.json
 *~
 *.swp
@@ -17,3 +18,4 @@ oauth2_cred.json
 venv/
 slack_token.txt
 .env
+supervisord.log

@@ -1,20 +1,37 @@
 import logging
 
 from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Optional, List
 
 from .areas import map_area, map_to_area_file_format
 from .cameras import map_camera, map_to_camera_file_format
 from .models.config_keys import ConfigDTO
 from .utils import (
-    extract_config, handle_response, update_config
+    get_config, extract_config, handle_response, update_config
 )
 from constants import PROCESSOR_VERSION
 
 logger = logging.getLogger(__name__)
 
 config_router = APIRouter()
+
+
+class GlobalReportingEmailsInfo(BaseModel):
+    emails: Optional[str] = Field("", example='john@email.com,doe@email.com')
+    time: Optional[str] = Field("06:00")
+    daily: Optional[bool] = Field(False, example=True)
+    weekly: Optional[bool] = Field(False, example=True)
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "emails": "john@email.com,doe@email.com",
+                "time": "06:00",
+                "daily": True,
+                "weekly": True
+            }
+        }
 
 
 class ConfigInfo(BaseModel):
@@ -63,7 +80,7 @@ def processor_info(config):
 
 
 @config_router.get("", response_model=ConfigDTO)
-async def get_config(options: Optional[str] = ""):
+async def get_config_file(options: Optional[str] = ""):
     """
     Returns the configuration used by the processor
     """
@@ -72,7 +89,7 @@ async def get_config(options: Optional[str] = ""):
 
 
 @config_router.put("", response_model=ConfigDTO)
-async def update_config(config: ConfigDTO, reboot_processor: Optional[bool] = True):
+async def update_config_file(config: ConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Overwrites the configuration used by the processor.
     """
@@ -87,3 +104,27 @@ async def get_processor_info():
     Returns basic info regarding this processor
     """
     return processor_info(extract_config())
+
+
+@config_router.get("/global_report", response_model=GlobalReportingEmailsInfo)
+async def get_report_info():
+    app_config = extract_config()["App"]
+    return {
+        "emails": app_config["GlobalReportingEmails"],
+        "time": app_config["GlobalReportTime"],
+        "daily": get_config().get_boolean("App", "DailyGlobalReport"),
+        "weekly": get_config().get_boolean("App", "WeeklyGlobalReport")
+    }
+
+
+@config_router.put("/global_report")
+async def update_report_info(global_report_info: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
+    global_report_info = global_report_info.dict(exclude_unset=True, exclude_none=True)
+    config_dict = extract_config()
+    key_mapping = {"GlobalReportingEmails": "emails", "GlobalReportTime": "time",
+                   "DailyGlobalReport": "daily", "WeeklyGlobalReport": "weekly"}
+    for key, value in key_mapping.items():
+        if value in global_report_info:
+            config_dict["App"][key] = str(global_report_info[value])
+    success = update_config(config_dict, reboot_processor)
+    return handle_response(config_dict, success)

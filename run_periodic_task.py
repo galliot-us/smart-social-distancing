@@ -4,7 +4,8 @@ import schedule
 import time
 
 from libs.config_engine import ConfigEngine
-from libs.reports_tasks import create_daily_report, send_daily_report_notification
+from libs.reports_tasks import (
+    create_daily_report, send_daily_report_notification, send_daily_global_report, send_weekly_global_report)
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,14 @@ def schedule_reports_tasks(config):
         if area['daily_report']:
             schedule.every().day.at(area['daily_report_time']).do(
                 send_daily_report_notification, config=config, entity_info=area)
+    if config.get_boolean("App", "DailyGlobalReport"):
+        schedule.every().day.at(config.get_section_dict("App")["GlobalReportTime"]).do(
+            send_daily_global_report, config=config, sources=sources, areas=areas
+        )
+    if config.get_boolean("App", "WeeklyGlobalReport"):
+        schedule.every(7).days.at(config.get_section_dict("App")["GlobalReportTime"]).do(
+            send_weekly_global_report, config=config, sources=sources, areas=areas
+        )
 
 
 def main(config):
