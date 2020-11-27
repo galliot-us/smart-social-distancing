@@ -1,26 +1,20 @@
 import csv
 import logging
-import itertools
 import os
 import time
 
 import cv2 as cv
-from datetime import date, datetime
+from datetime import date
 
-from tools.environment_score import mx_environment_scoring_consider_crowd
+from .raw_data_logger import RawDataLogger
 
-LOG_FORMAT_VERSION = "1.0"
 logger = logging.getLogger(__name__)
 
 
-class FileSystemLogger:
+class FileSystemLogger(RawDataLogger):
 
     def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
-        self.config = config
-        self.camera_id = self.config.get_section_dict(source)['Id']
-
-        self.time_interval = float(self.config.get_section_dict(logger)["TimeInterval"])  # Seconds
-        self.submited_time = 0
+        super().__init__(config, source, logger, live_feed_enabled)
         self.log_directory = config.get_section_dict(logger)["LogDirectory"]
         self.objects_log_directory = os.path.join(self.log_directory, self.camera_id, "objects_log")
         os.makedirs(self.objects_log_directory, exist_ok=True)
@@ -62,53 +56,4 @@ class FileSystemLogger:
                 len(violating_objects) > 0):
             self.start_time = time.time()
             self.save_screenshot(cv_image)
-        if time.time() - self.submited_time > self.time_interval:
-            # Get timeline which is used for as Timestamp
-            now = datetime.now()
-            current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-            # Process objects
-            objects_formated = self.format_objects(objects)
-            # Get unique objects that are in close contact
-            violating_objects_index_list = list(set(itertools.chain(*violating_objects)))
-            # Get the number of violating objects (people)
-            violating_objects_count = len(violating_objects)
-            # Get the number of detected objects (people)
-            detected_objects_count = len(objects)
-            # Get environment score
-            environment_score = mx_environment_scoring_consider_crowd(detected_objects_count, violating_objects_count)
-            self.log_objects(
-                objects_formated,
-                violating_objects,
-                violating_objects_index_list,
-                violating_objects_count,
-                detected_objects_count,
-                environment_score,
-                current_time,
-                version=LOG_FORMAT_VERSION
-            )
-            self.submited_time = time.time()
-
-    def format_objects(self, objects_list):
-        """ Format the attributes of the objects in a way ready to be saved
-
-            Args:
-                objects_list: a list of dictionary where each dictionary stores information of an object (person) in a frame.
-        """
-        objects = []
-        for obj_dict in objects_list:
-            obj = {}
-            # TODO: Get 3D position of objects
-            obj["position"] = [0.0, 0.0, 0.0]
-            obj["bbox"] = obj_dict["bbox"]
-            obj["tracking_id"] = obj_dict["id"]
-            if "face_label" in obj_dict and obj_dict["face_label"] != -1:
-                obj["face_label"] = obj_dict["face_label"]
-            # TODO: Add more optional parameters
-            objects.append(obj)
-        return objects
-
-    def start_logging(self, fps):
-        pass
-
-    def stop_logging(self):
-        pass
+        super().update(cv_image, objects, post_processing_data, fps)
