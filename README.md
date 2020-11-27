@@ -313,7 +313,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
   In the config files, we use the *SourcePostProcessor* sections to specifies additional processing steps in the sources. We support 3 different ones (identified by the field *Name*) that you enable/disable uncommenting/commenting them.
     - `objects_filtering`: Used to remove invalid objects (duplicates or large).
-        - `NMSThreshold`: Configures the threshold of minimum IoU to detect two boxes as referring to the same object.
+      - `NMSThreshold`: Configures the threshold of minimum IoU to detect two boxes as referring to the same object.
     - `social_distance`: Used to measure the distance between objects and detect social distancing violations.
       - `DefaultDistMethod`: Defines the default distance algorithm for the cameras without *DistMethod* configuration.
       - `DistThreshold`: Configures the distance threshold for the *social distancing violations*
@@ -323,13 +323,13 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
   Similar to the section *SourcePostProcessor_N*, we support multiple loggers (right now 4) that you enable/disable uncommenting/commenting them.
   - `video_logger`: Generates a video stream with the processing results. It is a useful logger to monitor in real-time your sources.
-  - `s3_logger`: Store the processed data in a S3 bucket.
+  - `s3_logger`: Stores a screenshot of all the cameras and in a S3 bucket.
     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them in S3. If you set the value to 0, no screenshots will be taken.
     - `ScreenshotS3Bucket`: Configures the S3 Bucket used to store the screenshot.
-  - `file_system_logger`: Store the processed data in a folder inside the processor.
+  - `file_system_logger`: Stores the processed data in a folder inside the processor.
     - `TimeInterval`: Sets the desired logging interval for objects detections and violations.
     - `LogDirectory`: Defines the location where the generated files will be stored.
-     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them. If you set the value to 0, no screenshots will be taken.
+    - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them. If you set the value to 0, no screenshots will be taken.
   - `web_hook_logger`: Allows you to configure an external endpoint to receive in real-time the objects detections and violations.
     - `Endpoint`: Configures an endpoint url.
  
