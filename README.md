@@ -329,13 +329,8 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `file_system_logger`: Stores the processed data in a folder inside the processor.
     - `TimeInterval`: Sets the desired logging interval for objects detections and violations.
     - `LogDirectory`: Defines the location where the generated files will be stored.
-<<<<<<< HEAD
     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them. If you set the value to 0, no screenshots will be taken.
-  - `web_hook_logger`: Allows you to configure an external endpoint to receive in real-time the objects detections and violations.
-=======
-     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them. If you set the value to 0, no screenshots will be taken.
   - `web_hook_logger`: Allows you to configure an external endpoint to receive in real-time the object detections and violations.
->>>>>>> 63ba744736172016017a4f8e12d81306512c7664
     - `Endpoint`: Configures an endpoint url.
  
 - `[PeriodicTask_N]`:
