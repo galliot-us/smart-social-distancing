@@ -9,6 +9,7 @@ import pandas as pd
 from datetime import date, datetime, timedelta
 from libs.notifications.slack_notifications import SlackService, is_slack_configured
 from libs.utils.mailing import MailService, is_mailing_configured
+from libs.utils.loggers import get_source_log_directory
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
 
 
 def create_daily_report(config):
-    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+    log_directory = get_source_log_directory(config)
     sources = config.get_video_sources()
     for src in sources:
         # A directory inside the log_directory that stores object log files.
@@ -95,7 +96,7 @@ def create_daily_report(config):
 def get_daily_report(config, entity_info, report_date):
     entity_type = entity_info['type']
     all_violations_per_hour = []
-    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+    log_directory = get_source_log_directory(config)
 
     if entity_type == 'Camera':
         objects_log_directory = os.path.join(log_directory, entity_info['id'], "objects_log")
