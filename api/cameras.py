@@ -255,8 +255,6 @@ async def get_camera_calibration_image(camera_id: str):
     """
     Gets the image required to calibrate the camera <camera_id>
     """
-    logger.info("Camera id")
-    logger.info(camera_id)
     camera = next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_id), None)
     camera_cap = cv.VideoCapture(camera["videoPath"])
     if not camera_cap.isOpened():
