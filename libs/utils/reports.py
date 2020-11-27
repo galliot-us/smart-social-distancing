@@ -39,7 +39,7 @@ class ReportsService:
                 Ex: {'dates': [00, 01, ...], 'detected_objects': [7273.0, 0.5, ...], 'violating_objects': [4920.3, 0.4, ...]}
         """
         log_dir = os.getenv('LogDirectory')
-        dir_path = os.path.join(log_dir, camera_id, "objects_log")
+        dir_path = os.path.join(log_dir, camera_id, "reports")
         date_range = pd.date_range(start=from_date, end=to_date)
         hours = list(range(0, 24))
         detected_objects = np.zeros(24)
@@ -91,7 +91,7 @@ class ReportsService:
         base_results = {key.strftime('%Y-%m-%d'): {'DetectedObjects': 0, 'ViolatingObjects': 0} for key in date_range}
 
         log_dir = os.getenv('LogDirectory')
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if os.path.exists(file_path):
             df = pd.read_csv(file_path).drop(['Number'], axis=1)
             df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
@@ -167,7 +167,6 @@ class ReportsService:
         for (start_date, end_date) in week_span:
             week_data = self.daily_report(camera_id, start_date, end_date)
             weeks.append(f"{start_date.strftime('%Y-%m-%d')} {end_date.strftime('%Y-%m-%d')}")
-            print(week_data)
             detected_objects.append(sum(week_data['detected_objects']))
             violating_objects.append(sum(week_data['violating_objects']))
             detected_faces.append(sum(week_data['detected_faces']))
@@ -200,7 +199,7 @@ class ReportsService:
         heatmap_resolution = os.getenv('HeatmapResolution').split(",")
         heatmap_x = int(heatmap_resolution[0])
         heatmap_y = int(heatmap_resolution[1])
-        file_path = os.path.join(log_dir, camera_id, "objects_log", f"{report_type}_heatmap_")
+        file_path = os.path.join(log_dir, camera_id, "heatmaps", f"{report_type}_heatmap_")
 
         date_range = pd.date_range(start=from_date, end=to_date)
         heatmap_total = np.zeros((heatmap_x, heatmap_y))
@@ -218,7 +217,7 @@ class ReportsService:
 
     def peak_hour_violations(self, camera_id):
         log_dir = os.getenv('LogDirectory')
-        dir_path = os.path.join(log_dir, camera_id, "objects_log")
+        dir_path = os.path.join(log_dir, camera_id, "reports")
         if not os.path.exists(os.path.join(dir_path, 'report.csv')):
             return 0
 
@@ -233,7 +232,7 @@ class ReportsService:
 
     def average_violations(self, camera_id):
         log_dir = os.getenv('LogDirectory')
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if not os.path.exists(file_path):
             return 0.0
         df = pd.read_csv(file_path).drop(['Number'], axis=1)
@@ -244,7 +243,7 @@ class ReportsService:
         cameras = [directory for directory in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, directory))]
         cameras_violations = {}
         for camera_id in cameras:
-            file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+            file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path).drop(['Number'], axis=1)
                 cameras_violations[camera_id] = df['ViolatingObjects'].mean()
@@ -255,7 +254,7 @@ class ReportsService:
 
     def face_mask_stats(self, camera_id):
         log_dir = os.getenv('LogDirectory')
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if not os.path.exists(file_path):
             return 0, 0
         df = pd.read_csv(file_path).drop(['Number'], axis=1)

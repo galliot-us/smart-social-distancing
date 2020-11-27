@@ -41,15 +41,20 @@ def create_daily_report(config):
     log_directory = get_source_log_directory(config)
     sources = config.get_video_sources()
     for src in sources:
-        # A directory inside the log_directory that stores object log files.
-        objects_log_directory = os.path.join(log_directory, src['id'], "objects_log")
+        source_directory = os.path.join(log_directory, src['id'])
+        objects_log_directory = os.path.join(source_directory, "objects_log")
+        heatmaps_directory = os.path.join(source_directory, "heatmaps")
+        reports_directory = os.path.join(source_directory, "reports")
+        # Create missing directories
         os.makedirs(objects_log_directory, exist_ok=True)
+        os.makedirs(heatmaps_directory, exist_ok=True)
+        os.makedirs(reports_directory, exist_ok=True)
         yesterday = str(date.today() - timedelta(days=1))
         yesterday_csv = os.path.join(objects_log_directory, yesterday + '.csv')
-        daily_csv = os.path.join(objects_log_directory, 'report_' + yesterday + '.csv')
-        report_csv = os.path.join(objects_log_directory, 'report.csv')
-        detection_heatmap_file = os.path.join(objects_log_directory, 'detections_heatmap_' + yesterday)
-        violation_heatmap_file = os.path.join(objects_log_directory, 'violations_heatmap_' + yesterday)
+        daily_csv = os.path.join(reports_directory, 'report_' + yesterday + '.csv')
+        report_csv = os.path.join(reports_directory, 'report.csv')
+        detection_heatmap_file = os.path.join(heatmaps_directory, 'detections_heatmap_' + yesterday)
+        violation_heatmap_file = os.path.join(heatmaps_directory, 'violations_heatmap_' + yesterday)
 
         if os.path.isfile(daily_csv):
             logger.warn("Report was already generated!")
