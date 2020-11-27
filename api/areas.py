@@ -89,7 +89,7 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     if new_area.id in [area["id"] for area in areas]:
         raise HTTPException(status_code=400, detail="Area already exists")
 
-    cameras = [x for x in config_dict.keys() if x.startswith("Source")]
+    cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict, []) for x in cameras]
     camera_ids = [camera["id"] for camera in cameras]
     if not all(x in camera_ids for x in new_area.cameras.split(",")):
@@ -117,7 +117,7 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     except ValueError:
         raise HTTPException(status_code=404, detail=f"The area: {area_id} does not exist")
 
-    cameras = [x for x in config_dict.keys() if x.startswith("Source")]
+    cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict, []) for x in cameras]
     camera_ids = [camera["id"] for camera in cameras]
     if not all(x in camera_ids for x in edited_area.cameras.split(",")):
