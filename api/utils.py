@@ -1,5 +1,7 @@
 import logging
 import humps
+import os
+import shutil
 
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -77,3 +79,15 @@ def reestructure_areas(config_dict):
             config_dict[f"Area_{index}"] = config_dict[area_name]
             config_dict.pop(area_name)
     return config_dict
+
+
+def clean_up_file(filename):
+    if os.path.exists(filename):
+        if os.path.isdir(filename):
+            shutil.rmtree(filename, ignore_errors=True)
+        else:
+            os.remove(filename)
+    else:
+        logger.info("The file does not exist")
+
+    logger.info(f'Clean up of {filename} complete')
