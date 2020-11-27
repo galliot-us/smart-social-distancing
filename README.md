@@ -323,7 +323,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
   Similar to the section *SourcePostProcessor_N*, we support multiple loggers (right now 4) that you enable/disable uncommenting/commenting them.
   - `video_logger`: Generates a video stream with the processing results. It is a useful logger to monitor in real-time your sources.
-  - `s3_logger`: Stores a screenshot of all the cameras and in a S3 bucket.
+  - `s3_logger`: Stores a screenshot of all the cameras in a S3 bucket.
     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them in S3. If you set the value to 0, no screenshots will be taken.
     - `ScreenshotS3Bucket`: Configures the S3 Bucket used to store the screenshot.
   - `file_system_logger`: Stores the processed data in a folder inside the processor.
