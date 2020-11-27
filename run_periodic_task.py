@@ -10,8 +10,24 @@ from libs.reports_tasks import (
 logger = logging.getLogger(__name__)
 
 
-def schedule_reports_tasks(config):
-    schedule.every().day.at("00:01").do(create_daily_report, config=config)
+def main(config):
+    logging.basicConfig(level=logging.INFO)
+    if isinstance(config, str):
+        config = ConfigEngine(config)
+
+    # Schedule configured periodic tasks
+    periodic_tasks_names = [x for x in config.get_sections() if x.startswith("PeriodicTask_")]
+    for p_task in periodic_tasks_names:
+        if not config.get_boolean(p_task, "Enabled"):
+            continue
+        task_name = config.get_section_dict(p_task).get("Name")
+        if task_name == "reports":
+            logger.info("Reporting enabled!")
+            schedule.every().day.at("00:01").do(create_daily_report, config=config)
+        else:
+            raise ValueError(f"Not supported periodic task named: {task_name}")
+
+    # Schedule daily/weekly reports for sources and areas
     sources = config.get_video_sources()
     areas = config.get_areas()
     for src in sources:
@@ -30,21 +46,6 @@ def schedule_reports_tasks(config):
         schedule.every(7).days.at(config.get_section_dict("App")["GlobalReportTime"]).do(
             send_weekly_global_report, config=config, sources=sources, areas=areas
         )
-
-
-def main(config):
-    logging.basicConfig(level=logging.INFO)
-    if isinstance(config, str):
-        config = ConfigEngine(config)
-
-    periodic_tasks_names = [x for x in config.get_sections() if x.startswith("PeriodicTask_")]
-    for p_task in periodic_tasks_names:
-        task_name = config.get_section_dict(p_task).get("Name")
-        if task_name == "reports":
-            logger.info("Reporting enabled!")
-            schedule_reports_tasks(config)
-        else:
-            raise ValueError(f"Not supported periodic task named: {task_name}")
 
     while True:
         schedule.run_pending()

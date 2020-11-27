@@ -31,20 +31,22 @@ class CvEngine:
         self.post_processors = []
         post_processors_names = [x for x in self.config.get_sections() if x.startswith("SourcePostProcessor_")]
         for p_name in post_processors_names:
-            self.post_processors.append(SourcePostProcessor(self.config, source, p_name))
+            if self.config.get_boolean(p_name, "Enabled"):
+                self.post_processors.append(SourcePostProcessor(self.config, source, p_name))
 
         # Init loggers
         self.loggers = []
         loggers_names = [x for x in self.config.get_sections() if x.startswith("SourceLogger_")]
         self.log_time_interval = None
         for l_name in loggers_names:
-            self.loggers.append(Logger(self.config, source, l_name, self.live_feed_enabled))
-            if self.config.get_section_dict(l_name).get("TimeInterval"):
-                if not self.log_time_interval:
-                    self.log_time_interval = float(self.config.get_section_dict(l_name).get("TimeInterval"))
-                else:
-                    self.log_time_interval = min(
-                        self.log_time_interval, float(self.config.get_section_dict(l_name).get("TimeInterval")))
+            if self.config.get_boolean(l_name, "Enabled"):
+                self.loggers.append(Logger(self.config, source, l_name, self.live_feed_enabled))
+                if self.config.get_section_dict(l_name).get("TimeInterval"):
+                    if not self.log_time_interval:
+                        self.log_time_interval = float(self.config.get_section_dict(l_name).get("TimeInterval"))
+                    else:
+                        self.log_time_interval = min(
+                            self.log_time_interval, float(self.config.get_section_dict(l_name).get("TimeInterval")))
 
         self.running_video = False
 
@@ -120,4 +122,3 @@ class CvEngine:
 
     def stop_process_video(self):
         self.running_video = False
-

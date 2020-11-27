@@ -311,7 +311,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[SourcePostProcessor_N]`:
 
-  In the config files, we use the *SourcePostProcessor* sections to specify additional processing steps after running the detector and face mask classifier (if available) on the video sources. We support 3 different ones (identified by the field *Name*) that you enable/disable uncommenting/commenting them.
+  In the config files, we use the *SourcePostProcessor* sections to specify additional processing steps after running the detector and face mask classifier (if available) on the video sources. We support 3 different ones (identified by the field *Name*) that you enable/disable uncommenting/commenting them or with the *Enabled* flag.
     - `objects_filtering`: Used to remove invalid objects (duplicates or large).
       - `NMSThreshold`: Configures the threshold of minimum IoU to detect two boxes as referring to the same object.
     - `social_distance`: Used to measure the distance between objects and detect social distancing violations.
@@ -321,7 +321,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[SourceLogger_N]`:
 
-  Similar to the section *SourcePostProcessor_N*, we support multiple loggers (right now 4) that you enable/disable uncommenting/commenting them.
+  Similar to the section *SourcePostProcessor_N*, we support multiple loggers (right now 4) that you enable/disable uncommenting/commenting them or with the *Enabled* flag.
   - `video_logger`: Generates a video stream with the processing results. It is a useful logger to monitor in real-time your sources.
   - `s3_logger`: Stores a screenshot of all the cameras in a S3 bucket.
     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them in S3. If you set the value to 0, no screenshots will be taken.
