@@ -311,7 +311,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[SourcePostProcessor_N]`:
 
-  In the config files, we use the *SourcePostProcessor* sections to specifies additional processing steps in the sources. We support 3 different ones (identified by the field *Name*) that you enable/disable uncommenting/commenting them.
+  In the config files, we use the *SourcePostProcessor* sections to specify additional processing steps after running the detector and face mask classifier (if available) on the video sources. We support 3 different ones (identified by the field *Name*) that you enable/disable uncommenting/commenting them.
     - `objects_filtering`: Used to remove invalid objects (duplicates or large).
       - `NMSThreshold`: Configures the threshold of minimum IoU to detect two boxes as referring to the same object.
     - `social_distance`: Used to measure the distance between objects and detect social distancing violations.
@@ -329,13 +329,18 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `file_system_logger`: Stores the processed data in a folder inside the processor.
     - `TimeInterval`: Sets the desired logging interval for objects detections and violations.
     - `LogDirectory`: Defines the location where the generated files will be stored.
+<<<<<<< HEAD
     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them. If you set the value to 0, no screenshots will be taken.
   - `web_hook_logger`: Allows you to configure an external endpoint to receive in real-time the objects detections and violations.
+=======
+     - `ScreenshotPeriod`: Defines a time period (expressed in minutes) to take a screenshot of all the cameras and store them. If you set the value to 0, no screenshots will be taken.
+  - `web_hook_logger`: Allows you to configure an external endpoint to receive in real-time the object detections and violations.
+>>>>>>> 63ba744736172016017a4f8e12d81306512c7664
     - `Endpoint`: Configures an endpoint url.
  
 - `[PeriodicTask_N]`:
 
-  The processor also supports the execution of periodic tasks to generated reports, accumulated metrics, etc. For now, we support only the *reports* task.
+  The processor also supports the execution of periodic tasks to generate reports, accumulate metrics, etc. For now, we support only the *reports* task.
 
 ### API usage
 After you run the processor on your node, you can use the exposed API to control the Processor's Core, where all the process is getting done.
