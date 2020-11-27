@@ -27,7 +27,7 @@ class FileSystemLogger:
 
         self.screenshot_period = float(self.config.get_section_dict(logger)["ScreenshotPeriod"]) * 60
         self.start_time = time.time()
-        # config.ini uses minutes as unit
+        # config.ini uses minutes as the unit for ScreenshotPeriod
         self.screenshot_path = os.path.join(self.config.get_section_dict("App")["ScreenshotsDirectory"], self.camera_id)
         if not os.path.exists(self.screenshot_path):
             os.makedirs(self.screenshot_path)
