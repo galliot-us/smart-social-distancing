@@ -38,7 +38,7 @@ class ReportsService:
                 }
                 Ex: {'dates': [00, 01, ...], 'detected_objects': [7273.0, 0.5, ...], 'violating_objects': [4920.3, 0.4, ...]}
         """
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         dir_path = os.path.join(log_dir, camera_id, "reports")
         date_range = pd.date_range(start=from_date, end=to_date)
         hours = list(range(0, 24))
@@ -90,7 +90,7 @@ class ReportsService:
         date_range = pd.date_range(start=from_date, end=to_date)
         base_results = {key.strftime('%Y-%m-%d'): {'DetectedObjects': 0, 'ViolatingObjects': 0} for key in date_range}
 
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if os.path.exists(file_path):
             df = pd.read_csv(file_path).drop(['Number'], axis=1)
@@ -195,7 +195,7 @@ class ReportsService:
                 'not_found_dates': [array[str]]
             }
         """
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         heatmap_resolution = os.getenv('HeatmapResolution').split(",")
         heatmap_x = int(heatmap_resolution[0])
         heatmap_y = int(heatmap_resolution[1])
@@ -216,7 +216,7 @@ class ReportsService:
                 "not_found_dates": not_found_dates}
 
     def peak_hour_violations(self, camera_id):
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         dir_path = os.path.join(log_dir, camera_id, "reports")
         if not os.path.exists(os.path.join(dir_path, 'report.csv')):
             return 0
@@ -231,7 +231,7 @@ class ReportsService:
         return int(np.argmax(violating_objects))
 
     def average_violations(self, camera_id):
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if not os.path.exists(file_path):
             return 0.0
@@ -239,7 +239,7 @@ class ReportsService:
         return round(df['ViolatingObjects'].mean(), 1)
 
     def camera_with_most_violations(self):
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         cameras = [directory for directory in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, directory))]
         cameras_violations = {}
         for camera_id in cameras:
@@ -253,7 +253,7 @@ class ReportsService:
         return max(cameras_violations, key=cameras_violations.get)
 
     def face_mask_stats(self, camera_id):
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if not os.path.exists(file_path):
             return 0, 0
