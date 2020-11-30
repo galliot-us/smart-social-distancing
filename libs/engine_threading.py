@@ -46,7 +46,7 @@ class EngineThread(Thread):
 
     def run(self):
         try:
-            self.engine = CvEngine(self.config, self.source['section'], self.live_feed_enabled)
+            self.engine = CvEngine(self.config, self.source["section"], self.live_feed_enabled)
             restarts = 0
             max_restarts = int(self.config.get_section_dict("App")["MaxThreadRestarts"])
             while True:

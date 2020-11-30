@@ -32,4 +32,4 @@ class WebHookLogger(RawDataLogger):
 
     def update(self, cv_image, objects, post_processing_data, fps):
         if self.web_hook_endpoint:
-            super().update(cv_image, objects, post_processing_data, fps) 
+            super().update(cv_image, objects, post_processing_data, fps)

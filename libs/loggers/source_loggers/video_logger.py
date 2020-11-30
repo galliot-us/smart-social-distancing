@@ -146,18 +146,18 @@ class VideoLogger:
         origin = (0.05, 0.98)
         visualization_utils.text_putter(cv_image, txt_env_score, origin)
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-        # endregion 
+        # endregion
 
         # visualize tracks
         # region
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
         visualization_utils.draw_tracks(cv_image, self.track_hist, radius=1, thickness=1)
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-        #endregion
+        # endregion
 
         self.out.write(cv_image)
         self.out_birdseye.write(birds_eye_window)
-    
+
     def update_history(self, tracks):
         """
         This method updates self.track_hist with new tracks
@@ -171,7 +171,7 @@ class VideoLogger:
                 prev_colors = self.track_hist[track_id][1]
                 _new_track_hist[track_id] = (np.concatenate((prev_centroids, track[3][None, ...]), axis=0), prev_colors)
                 if len(_new_track_hist[track_id][0]) > 50:
-                    _new_track_hist[track_id] = (_new_track_hist[track_id][0][1:,:], _new_track_hist[track_id][1][1:])
+                    _new_track_hist[track_id] = (_new_track_hist[track_id][0][1:, :], _new_track_hist[track_id][1][1:])
             else:
                 _new_track_hist[track_id] = (track[3][None, ...], [])
         self.track_hist = _new_track_hist
