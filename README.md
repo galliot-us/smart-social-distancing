@@ -251,7 +251,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `Post`: Configures the port of the processor's API (inside docker). Take care that if you change the default value (*8000*) you will need to change the startup command to expose the configured endpoint.
   - `SSLEnabled`: A boolean parameter to enable/disable https/ssl in the API. We recommend setting this value in *True*. 
   - `SSLCertificateFile`: Specifies the location of the SSL certificate (required when you have *SSL enabled*). If you generate it following the steps defined in this Readme you should put */repo/certs/<your_ip>.crt*
-  - [`SSLKeyFile`]: Specifies the location of the SSL key file (required when you have *SSL enabled*). If you generate it following the steps defined in this Readme you should put */repo/certs/<your_ip>.crt*
+  - [`SSLKeyFile`]: Specifies the location of the SSL key file (required when you have *SSL enabled*). If you generate it following the steps defined in this Readme you should put */repo/certs/<your_ip>.key*
 
 - `[Core]`:
   - `Host`: Sets the host IP of the *QueueManager* (inside docker).
