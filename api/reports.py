@@ -283,7 +283,7 @@ async def export_all_data(background_tasks: BackgroundTasks):
             export_folder_into_zip(object_logs_path, os.path.join(
                 "cameras", f"{cam_id}-{name}", "raw_data"), export_zip)
             export_folder_into_zip(reports_path, os.path.join(
-                "cameras", f"{cam_id}-{name}", "reports-pablo"), export_zip)
+                "cameras", f"{cam_id}-{name}", "reports"), export_zip)
         for (area_id, name) in areas:
             occupancy_logs_path = os.path.join(os.getenv("AreaLogDirectory"), area_id, "occupancy_log")
             export_folder_into_zip(occupancy_logs_path, os.path.join(
