@@ -43,11 +43,18 @@ You should have [Docker](https://docs.docker.com/get-docker/) on your device.
 
 ### Install
 
-Make sure you have the prerequisites and then clone this repository to your local system by running this command:
+Make sure you have the prerequisites and then clone th repository to your local system by running this command:
 
 ```bash
 git clone https://github.com/neuralet/smart-social-distancing.git
 cd smart-social-distancing
+```
+
+After that, `checkout` to the latest relase:
+```bash
+git fetch --tags
+# Checkout to the latest release tag
+git checkout $(git tag | tail -1)
 ```
 
 ### Download a sample video
