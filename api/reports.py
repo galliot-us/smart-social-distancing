@@ -23,10 +23,6 @@ class Report(BaseModel):
 
 class HourlyReport(Report):
     hours: List[int]
-    detected_objects: List[float]
-    violating_objects: List[float]
-    detected_faces: List[float]
-    faces_with_mask: List[float]
 
     class Config:
         schema_extra = {
@@ -126,16 +122,13 @@ def validate_area_existence(area_id: str):
 
 
 @reports_router.get("/{camera_id}/hourly", response_model=HourlyReport)
-def get_hourly_report(camera_id: str,
-                      from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
-                      to_date: date = Query(date.today().isoformat())):
+def get_hourly_report(camera_id: str, date: date = Query(date.today().isoformat())):
     """
-    Returns a hourly report (for the date range specified) with information about the infractions detected in
+    Returns a hourly report (for the date specified) with information about the infractions detected in
     the camera <camera_id>
     """
-    validate_dates(from_date, to_date)
     validate_camera_existence(camera_id)
-    return reports.hourly_report(camera_id, from_date, to_date)
+    return reports.hourly_report(camera_id, date)
 
 
 @reports_router.get("/{camera_id}/daily", response_model=DailyReport)
