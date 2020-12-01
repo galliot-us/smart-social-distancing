@@ -6,9 +6,10 @@ import numpy as np
 import logging
 import pandas as pd
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, time
 from libs.notifications.slack_notifications import SlackService, is_slack_configured
 from libs.utils.mailing import MailService, is_mailing_configured
+from libs.utils.metrics import generate_metrics_from_objects_logs
 from libs.utils.loggers import get_source_log_directory
 
 logger = logging.getLogger(__name__)
@@ -40,10 +41,39 @@ def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
         np.save(heatmap_file, heatmap_grid)
 
 
+def process_csv_raw_data(camera_id: str, source_file: str, time_from: datetime, time_until: datetime):
+    if not os.path.isfile(source_file):
+        logger.warn(f"No data for day! [Camera: {camera_id}]")
+        return
+    objects_logs = {}
+    with open(source_file, newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            row_time = datetime.strptime(row['Timestamp'], "%Y-%m-%d %H:%M:%S")
+            if time_from <= row_time < time_until:
+                row_hour = row_time.hour
+                if not objects_logs.get(row_hour):
+                    objects_logs[row_hour] = {}
+                detections = ast.literal_eval(row['Detections'])
+                for index, d in enumerate(detections):
+                    if not objects_logs[row_hour].get(d["tracking_id"]):
+                        objects_logs[row_hour][d["tracking_id"]] = {
+                            "distance_violations": [],
+                            "face_labels": []
+                        }
+                    # Append social distancing violations and face labels
+                    objects_logs[row_hour][d["tracking_id"]]["distance_violations"].append(
+                        index in ast.literal_eval(row["ViolationsIndexes"]))
+                    objects_logs[row_hour][d["tracking_id"]]["face_labels"].append(d.get("face_label", -1))
+        summary = generate_metrics_from_objects_logs(objects_logs)
+    return summary
+
+
 def create_hourly_report(config):
     log_directory = get_source_log_directory(config)
     sources = config.get_video_sources()
     current_hour = datetime.now().hour
+
     for src in sources:
         source_directory = os.path.join(log_directory, src["id"])
         objects_log_directory = os.path.join(source_directory, "objects_log")
@@ -53,39 +83,27 @@ def create_hourly_report(config):
         os.makedirs(reports_directory, exist_ok=True)
         if current_hour == 0:
             # Pending to process the latest hour from yesterday
-            hours_until = 24
+            time_until = datetime.combine(date.today(), time(0, 0))
             report_date = date.today() - timedelta(days=1)
         else:
-            hours_until = current_hour - 1
+            time_until = datetime.combine(date.today(), time(current_hour, 0))
             report_date = date.today()
         source_csv = os.path.join(objects_log_directory, str(report_date) + '.csv')
         daily_csv = os.path.join(reports_directory, 'report_' + str(report_date) + '.csv')
 
-        hours_from = 0
+        time_from = datetime.combine(report_date, time(0, 0))
         if os.path.isfile(daily_csv):
             with open(daily_csv, "r", newline='') as csvfile:
-                hours_from = sum(1 for line in csv.reader(csvfile)) - 1
+                processed_hours = sum(1 for line in csv.reader(csvfile)) - 1
+                time_from = datetime.combine(report_date, time(processed_hours + 1, 0))
         else:
             with open(daily_csv, "a", newline='') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=HOURLY_HEADERS)
                 writer.writeheader()
-        summary = np.zeros((hours_until - hours_from, 5), dtype=np.long)
 
-        if not os.path.isfile(source_csv):
-            logger.warn(f"No data for day! [Camera: {src['id']}]")
+        summary = process_csv_raw_data(src["id"], source_csv, time_from, time_until)
+        if summary is None:
             continue
-
-        with open(source_csv, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                hour = datetime.strptime(row['Timestamp'], "%Y-%m-%d %H:%M:%S").hour
-                if hours_from <= hour < hours_until:
-                    detections = ast.literal_eval(row['Detections'])
-                    faces = [d["face_label"] for d in detections if "face_label" in d]
-                    masks = [f for f in faces if f == 0]
-                    summary[hour - hours_from] += (1, int(row['DetectedObjects']), int(row['ViolatingObjects']),
-                                                   len(faces), len(masks))
-
         with open(daily_csv, "a", newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=HOURLY_HEADERS)
             for item in summary:
