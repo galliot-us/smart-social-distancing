@@ -13,6 +13,9 @@ from libs.utils.loggers import get_source_log_directory
 
 logger = logging.getLogger(__name__)
 
+HOURLY_HEADERS = ["Number", "DetectedObjects", "ViolatingObjects", "DetectedFaces", "UsingFacemask"]
+DAILY_HEADERS = ["Date", "Number", "DetectedObjects", "ViolatingObjects", "DetectedFaces", "UsingFacemask"]
+
 
 def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
     heatmap_resolution = config.get_section_dict("App")["HeatmapResolution"].split(",")
@@ -37,11 +40,64 @@ def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
         np.save(heatmap_file, heatmap_grid)
 
 
+def create_hourly_report(config):
+    log_directory = get_source_log_directory(config)
+    sources = config.get_video_sources()
+    current_hour = datetime.now().hour
+    for src in sources:
+        source_directory = os.path.join(log_directory, src["id"])
+        objects_log_directory = os.path.join(source_directory, "objects_log")
+        reports_directory = os.path.join(source_directory, "reports")
+        # Create missing directories
+        os.makedirs(objects_log_directory, exist_ok=True)
+        os.makedirs(reports_directory, exist_ok=True)
+        if current_hour == 0:
+            # Pending to process the latest hour from yesterday
+            hours_until = 24
+            report_date = date.today() - timedelta(days=1)
+        else:
+            hours_until = current_hour - 1
+            report_date = date.today()
+        source_csv = os.path.join(objects_log_directory, str(report_date) + '.csv')
+        daily_csv = os.path.join(reports_directory, 'report_' + str(report_date) + '.csv')
+
+        hours_from = 0
+        if os.path.isfile(daily_csv):
+            with open(daily_csv, "r", newline='') as csvfile:
+                hours_from = sum(1 for line in csv.reader(csvfile)) - 1
+        else:
+            with open(daily_csv, "a", newline='') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=HOURLY_HEADERS)
+                writer.writeheader()
+        summary = np.zeros((hours_until - hours_from, 5), dtype=np.long)
+
+        if not os.path.isfile(source_csv):
+            logger.warn(f"No data for day! [Camera: {src['id']}]")
+            continue
+
+        with open(source_csv, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                hour = datetime.strptime(row['Timestamp'], "%Y-%m-%d %H:%M:%S").hour
+                if hours_from <= hour < hours_until:
+                    detections = ast.literal_eval(row['Detections'])
+                    faces = [d["face_label"] for d in detections if "face_label" in d]
+                    masks = [f for f in faces if f == 0]
+                    summary[hour - hours_from] += (1, int(row['DetectedObjects']), int(row['ViolatingObjects']),
+                                                   len(faces), len(masks))
+
+        with open(daily_csv, "a", newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=HOURLY_HEADERS)
+            for item in summary:
+                writer.writerow({'Number': item[0], 'DetectedObjects': item[1], 'ViolatingObjects': item[2],
+                                 'DetectedFaces': item[3], 'UsingFacemask': item[4]})
+
+
 def create_daily_report(config):
     log_directory = get_source_log_directory(config)
     sources = config.get_video_sources()
     for src in sources:
-        source_directory = os.path.join(log_directory, src['id'])
+        source_directory = os.path.join(log_directory, src["id"])
         objects_log_directory = os.path.join(source_directory, "objects_log")
         heatmaps_directory = os.path.join(source_directory, "heatmaps")
         reports_directory = os.path.join(source_directory, "reports")
@@ -51,49 +107,39 @@ def create_daily_report(config):
         os.makedirs(reports_directory, exist_ok=True)
         yesterday = str(date.today() - timedelta(days=1))
         yesterday_csv = os.path.join(objects_log_directory, yesterday + '.csv')
-        daily_csv = os.path.join(reports_directory, 'report_' + yesterday + '.csv')
+        hourly_csv = os.path.join(reports_directory, 'report_' + yesterday + '.csv')
         report_csv = os.path.join(reports_directory, 'report.csv')
         detection_heatmap_file = os.path.join(heatmaps_directory, 'detections_heatmap_' + yesterday)
         violation_heatmap_file = os.path.join(heatmaps_directory, 'violations_heatmap_' + yesterday)
-
-        if os.path.isfile(daily_csv):
-            logger.warn("Report was already generated!")
-            continue
 
         if not os.path.isfile(yesterday_csv):
             logger.warn(f"No data for previous day! [Camera: {src['id']}]")
             continue
 
-        summary = np.zeros((24, 5), dtype=np.long)
-        with open(yesterday_csv, newline='') as csvfile:
+        if not os.path.isfile(hourly_csv):
+            logger.warn(f"Daily report for date {str(yesterday)} not generated! [Camera: {src['id']}]")
+            continue
+
+        total_number, total_detections, total_violations, total_faces, total_masks = 0, 0, 0, 0, 0
+        with open(hourly_csv, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                hour = datetime.strptime(row['Timestamp'], "%Y-%m-%d %H:%M:%S").hour
-                detections = ast.literal_eval(row['Detections'])
-                faces = [d["face_label"] for d in detections if "face_label" in d]
-                masks = [f for f in faces if f == 0]
-                summary[hour] += (1, int(row['DetectedObjects']), int(row['ViolatingObjects']), len(faces), len(masks))
-
-        with open(daily_csv, "w", newline='') as csvfile:
-            headers = ["Number", "DetectedObjects", "ViolatingObjects", "DetectedFaces", "UsingFacemask"]
-            writer = csv.DictWriter(csvfile, fieldnames=headers)
-            writer.writeheader()
-            for item in summary:
-                writer.writerow({'Number': item[0], 'DetectedObjects': item[1], 'ViolatingObjects': item[2],
-                                 'DetectedFaces': item[3], 'UsingFacemask': item[4]})
+                total_number += int(row["Number"])
+                total_detections += int(row["DetectedObjects"])
+                total_violations += int(row["ViolatingObjects"])
+                total_faces += int(row["DetectedFaces"])
+                total_masks += int(row["UsingFacemask"])
 
         report_file_exists = os.path.isfile(report_csv)
         with open(report_csv, "a") as csvfile:
-            headers = ["Date", "Number", "DetectedObjects", "ViolatingObjects", "DetectedFaces", "UsingFacemask"]
-            writer = csv.DictWriter(csvfile, fieldnames=headers)
+            writer = csv.DictWriter(csvfile, fieldnames=DAILY_HEADERS)
 
             if not report_file_exists:
                 writer.writeheader()
-            totals = np.sum(summary, 0)
             writer.writerow(
-                {'Date': yesterday, 'Number': totals[0], 'DetectedObjects': totals[1], 'ViolatingObjects': totals[2],
-                 'DetectedFaces': totals[3], 'UsingFacemask': totals[4]})
-
+                {'Date': yesterday, 'Number': total_number, 'DetectedObjects': total_detections,
+                 'ViolatingObjects': total_violations, 'DetectedFaces': total_faces, 'UsingFacemask': total_masks}
+            )
         create_heatmap_report(config, yesterday_csv, detection_heatmap_file, 'Detections')
         create_heatmap_report(config, yesterday_csv, violation_heatmap_file, 'Violations')
 
