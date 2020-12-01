@@ -124,8 +124,10 @@ class Distancing:
             detection_scores.append(itm['score'])
             class_ids.append(int(itm['id'].split('-')[0]))
             detection_bboxes.append((int(x0 * w), int(y0 * h), int(x1 * w), int(y1 * h)))
-        faces = np.array(faces)
-        face_mask_results, scores = self.classifier.inference(faces)
+        
+        if self.classifier is not None:
+            faces = np.array(faces)
+            face_mask_results, scores = self.classifier.inference(faces)
 
         tracks = self.tracker.update(detection_bboxes, class_ids, detection_scores)
         self.update_history(tracks)
