@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 
 from .areas import map_area, map_to_area_file_format
 from .cameras import map_camera, map_to_camera_file_format

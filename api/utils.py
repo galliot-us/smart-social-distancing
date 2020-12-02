@@ -91,3 +91,11 @@ def clean_up_file(filename):
         logger.info("The file does not exist")
 
     logger.info(f'Clean up of {filename} complete')
+
+
+def pascal_to_camel_case(pascal_case_string: str) -> str:
+    return pascal_case_string[0].lower() + pascal_case_string[1:]
+
+
+def camel_to_pascal_case(pascal_case_string: str) -> str:
+    return pascal_case_string[0].upper() + pascal_case_string[1:]

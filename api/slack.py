@@ -1,5 +1,4 @@
 import logging
-import os
 
 from fastapi import APIRouter, status
 from pydantic import BaseModel
@@ -87,4 +86,3 @@ def enable(body: SlackConfig, reboot_processor: Optional[bool] = True):
     Changes the slack workspace configured in the processor
     """
     enable_slack(body, reboot_processor)
-
