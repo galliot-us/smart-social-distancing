@@ -27,7 +27,7 @@ def map_to_detector_file_format(detector: DetectorDTO):
 @detector_router.get("", response_model=DetectorDTO)
 def get_core_config():
     """
-    Returns the core configuration of the processor
+    Returns the detector configuration of the processor
     """
     return map_detector(get_config())
 
@@ -35,7 +35,7 @@ def get_core_config():
 @detector_router.put("", response_model=DetectorDTO)
 def update_core_config(detector: DetectorDTO, reboot_processor: Optional[bool] = True):
     """
-    Updates the core configuration of the processor
+    Updates the detector configuration of the processor
     """
     config_dict = extract_config()
     detector_dict = map_to_detector_file_format(detector)

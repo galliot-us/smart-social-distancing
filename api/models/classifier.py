@@ -4,10 +4,9 @@ from typing import Optional
 from .config_keys import SnakeModel
 
 
-class DetectorDTO(SnakeModel):
+class ClassifierDTO(SnakeModel):
     device: str = Field(example="EdgeTPU")
-    name: str = Field(example="posenet")
-    imageSize: str = Field(example="641,481,3")
+    name: str = Field(example="OFMClassifier")
+    imageSize: str = Field(example="45,45,3")
     modelPath: Optional[str] = Field(example="/repo/data/custom-model")
-    classID: str = Field(example=0)
-    minScore: float = Field(0.25, example=0.5)
+    minScore: float = Field(0.75, example=0.5)

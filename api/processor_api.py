@@ -15,11 +15,12 @@ from libs.utils.loggers import get_area_log_directory, get_source_log_directory
 from .queue_manager import QueueManager
 from .routers.app import app_router
 from .routers.api import api_router
+from .routers.areas import areas_router
 from .routers.core import core_router
 from .routers.cameras import cameras_router
+from .routers.classifier import classifier_router
 from .routers.config import config_router
 from .routers.detector import detector_router
-from .routers.areas import areas_router
 from .routers.reports import reports_router
 from .routers.slack import slack_router
 from .settings import Settings
@@ -63,6 +64,7 @@ class ProcessorAPI:
         app.include_router(detector_router, prefix="/detector", tags=["detector"])
         app.include_router(reports_router, prefix="/reports", tags=["reports"])
         app.include_router(slack_router, prefix="/slack", tags=["slack"])
+        app.include_router(classifier_router, prefix="/classifier", tags=["classifier"])
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
