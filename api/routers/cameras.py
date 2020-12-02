@@ -12,12 +12,12 @@ from typing import List, Optional
 from libs.utils.camera_calibration import (get_camera_calibration_path, compute_and_save_inv_homography_matrix,
                                            ConfigHomographyMatrix)
 
-from .models.config_keys import SourceConfigDTO
-from .settings import Settings
-from .utils import (
+from api.settings import Settings
+from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas,
     update_config
 )
+from api.models.config_keys import SourceConfigDTO
 
 logger = logging.getLogger(__name__)
 

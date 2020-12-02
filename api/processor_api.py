@@ -3,7 +3,6 @@ import os
 import logging
 
 from fastapi import FastAPI, status, Request
-
 from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
@@ -12,14 +11,16 @@ from fastapi.openapi.utils import get_openapi
 from share.commands import Commands
 
 from libs.utils.loggers import get_area_log_directory, get_source_log_directory
-from .app import app_router
-from .cameras import cameras_router
-from .config import config_router
-from .areas import areas_router
+
 from .queue_manager import QueueManager
-from .reports import reports_router
+from .routers.app import app_router
+from .routers.api import api_router
+from .routers.cameras import cameras_router
+from .routers.config import config_router
+from .routers.areas import areas_router
+from .routers.reports import reports_router
+from .routers.slack import slack_router
 from .settings import Settings
-from .slack import slack_router
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +55,10 @@ class ProcessorAPI:
         app.include_router(config_router, prefix="/config", tags=["config"])
         app.include_router(cameras_router, prefix="/cameras", tags=["cameras"])
         app.include_router(areas_router, prefix="/areas", tags=["areas"])
+        app.include_router(app_router, prefix="/app", tags=["app"])
+        app.include_router(api_router, prefix="/api", tags=["api"])
         app.include_router(reports_router, prefix="/reports", tags=["reports"])
         app.include_router(slack_router, prefix="/slack", tags=["slack"])
-        app.include_router(app_router, prefix="/app", tags=["app"])
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):

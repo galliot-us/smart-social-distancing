@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-from .utils import handle_response, update_config
+from api.utils import handle_response, update_config
 from libs.notifications.slack_notifications import is_slack_configured
 
 logger = logging.getLogger(__name__)

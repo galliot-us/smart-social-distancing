@@ -6,8 +6,8 @@ from typing import Optional
 
 from .areas import map_area, map_to_area_file_format
 from .cameras import map_camera, map_to_camera_file_format
-from .models.config_keys import ConfigDTO
-from .utils import (
+from api.models.config_keys import ConfigDTO
+from api.utils import (
     get_config, extract_config, handle_response, update_config
 )
 from constants import PROCESSOR_VERSION

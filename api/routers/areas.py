@@ -4,9 +4,9 @@ from typing import List, Optional
 
 from starlette.exceptions import HTTPException
 
-from .models.config_keys import AreaConfigDTO
+from api.models.config_keys import AreaConfigDTO
 from .cameras import map_camera
-from .utils import (
+from api.utils import (
     extract_config, handle_response, reestructure_areas, update_config
 )
 
