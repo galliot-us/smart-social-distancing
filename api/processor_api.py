@@ -23,6 +23,7 @@ from .routers.config import config_router
 from .routers.detector import detector_router
 from .routers.reports import reports_router
 from .routers.slack import slack_router
+from .routers.tracker import tracker_router
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ class ProcessorAPI:
         app.include_router(reports_router, prefix="/reports", tags=["reports"])
         app.include_router(slack_router, prefix="/slack", tags=["slack"])
         app.include_router(classifier_router, prefix="/classifier", tags=["classifier"])
+        app.include_router(tracker_router, prefix="/tracker", tags=["tracker"])
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
