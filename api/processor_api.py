@@ -18,6 +18,7 @@ from .routers.api import api_router
 from .routers.core import core_router
 from .routers.cameras import cameras_router
 from .routers.config import config_router
+from .routers.detector import detector_router
 from .routers.areas import areas_router
 from .routers.reports import reports_router
 from .routers.slack import slack_router
@@ -59,6 +60,7 @@ class ProcessorAPI:
         app.include_router(app_router, prefix="/app", tags=["app"])
         app.include_router(api_router, prefix="/api", tags=["api"])
         app.include_router(core_router, prefix="/core", tags=["core"])
+        app.include_router(detector_router, prefix="/detector", tags=["detector"])
         app.include_router(reports_router, prefix="/reports", tags=["reports"])
         app.include_router(slack_router, prefix="/slack", tags=["slack"])
 

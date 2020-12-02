@@ -10,18 +10,18 @@ core_router = APIRouter()
 
 def map_core(config):
     core_section = config.get_section_dict("CORE")
-    config_mapped = {}
+    core_mapped = {}
     for key, value in core_section.items():
-        config_mapped[pascal_to_camel_case(key)] = value
-    return config_mapped
+        core_mapped[pascal_to_camel_case(key)] = value
+    return core_mapped
 
 
-def map_to_core_file_format(app: CoreDTO):
-    app_dict = app.dict()
-    app_file_dict = {}
-    for key, value in app_dict.items():
-        app_file_dict[camel_to_pascal_case(key)] = str(value)
-    return app_file_dict
+def map_to_core_file_format(core: CoreDTO):
+    core_dict = core.dict()
+    core_file_dict = {}
+    for key, value in core_dict.items():
+        core_file_dict[camel_to_pascal_case(key)] = str(value)
+    return core_file_dict
 
 
 @core_router.get("", response_model=CoreDTO)
