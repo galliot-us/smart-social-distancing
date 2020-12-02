@@ -15,6 +15,7 @@ from libs.utils.loggers import get_area_log_directory, get_source_log_directory
 from .queue_manager import QueueManager
 from .routers.app import app_router
 from .routers.api import api_router
+from .routers.core import core_router
 from .routers.cameras import cameras_router
 from .routers.config import config_router
 from .routers.areas import areas_router
@@ -57,6 +58,7 @@ class ProcessorAPI:
         app.include_router(areas_router, prefix="/areas", tags=["areas"])
         app.include_router(app_router, prefix="/app", tags=["app"])
         app.include_router(api_router, prefix="/api", tags=["api"])
+        app.include_router(core_router, prefix="/core", tags=["core"])
         app.include_router(reports_router, prefix="/reports", tags=["reports"])
         app.include_router(slack_router, prefix="/slack", tags=["slack"])
 

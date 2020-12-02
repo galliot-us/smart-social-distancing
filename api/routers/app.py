@@ -39,6 +39,6 @@ def update_app_config(app: AppDTO, reboot_processor: Optional[bool] = True):
     """
     config_dict = extract_config()
     app_dict = map_to_app_file_format(app)
-    config_dict[f"App"] = app_dict
+    config_dict["App"] = app_dict
     success = update_config(config_dict, reboot_processor)
     return handle_response(app_dict, success)
