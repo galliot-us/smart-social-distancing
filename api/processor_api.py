@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
 from share.commands import Commands
 
+from libs.utils.loggers import get_source_log_directory
 from .cameras import cameras_router
 from .config import config_router
 from .areas import areas_router
@@ -37,12 +38,12 @@ class ProcessorAPI:
         self.queue_manager = QueueManager(config=self.settings.config)
         self._host = self.settings.config.get_section_dict("API")["Host"]
         self._port = int(self.settings.config.get_section_dict("API")["Port"])
-        self._screenshot_directory = self.settings.config.get_section_dict("App")["ScreenshotsDirectory"]
         self.app = self.create_fastapi_app()
 
     def create_fastapi_app(self):
-        os.environ["LogDirectory"] = self.settings.config.get_section_dict("Logger")["LogDirectory"]
-        os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("Logger")["HeatmapResolution"]
+        os.environ["LogDirectory"] = get_source_log_directory(self.settings.config)
+        os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("App")["HeatmapResolution"]
+        os.environ["Resolution"] = self.settings.config.get_section_dict("App")["Resolution"]
 
         # Create and return a fastapi instance
         app = FastAPI()

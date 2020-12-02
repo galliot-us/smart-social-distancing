@@ -20,9 +20,9 @@ def get_config():
 def extract_config(config_type="all"):
     sections = get_config().get_sections()
     if config_type == "cameras":
-        sections = [x for x in sections if x.startswith("Source")]
+        sections = [x for x in sections if x.startswith("Source_")]
     elif config_type == "areas":
-        sections = [x for x in sections if x.startswith("Area")]
+        sections = [x for x in sections if x.startswith("Area_")]
     config = {}
 
     for section in sections:

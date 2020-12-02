@@ -1,27 +1,21 @@
-"""
-Set of functions related to creating daily and hourly reports of detections and violations.
-"""
 import os
-import argparse
 import csv
-import schedule
 import operator
-import time
 import ast
 import numpy as np
 import logging
 import pandas as pd
 
 from datetime import date, datetime, timedelta
-from libs.config_engine import ConfigEngine
 from libs.notifications.slack_notifications import SlackService, is_slack_configured
 from libs.utils.mailing import MailService, is_mailing_configured
+from libs.utils.loggers import get_source_log_directory
 
 logger = logging.getLogger(__name__)
 
 
 def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
-    heatmap_resolution = config.get_section_dict("Logger")["HeatmapResolution"].split(",")
+    heatmap_resolution = config.get_section_dict("App")["HeatmapResolution"].split(",")
     heatmap_x = int(heatmap_resolution[0])
     heatmap_y = int(heatmap_resolution[1])
     heatmap_grid = np.zeros((heatmap_x, heatmap_y))
@@ -44,7 +38,7 @@ def create_heatmap_report(config, yesterday_csv, heatmap_file, column):
 
 
 def create_daily_report(config):
-    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+    log_directory = get_source_log_directory(config)
     sources = config.get_video_sources()
     for src in sources:
         # A directory inside the log_directory that stores object log files.
@@ -98,10 +92,11 @@ def create_daily_report(config):
         create_heatmap_report(config, yesterday_csv, detection_heatmap_file, 'Detections')
         create_heatmap_report(config, yesterday_csv, violation_heatmap_file, 'Violations')
 
+
 def get_daily_report(config, entity_info, report_date):
     entity_type = entity_info['type']
     all_violations_per_hour = []
-    log_directory = config.get_section_dict("Logger")["LogDirectory"]
+    log_directory = get_source_log_directory(config)
 
     if entity_type == 'Camera':
         objects_log_directory = os.path.join(log_directory, entity_info['id'], "objects_log")
@@ -127,6 +122,7 @@ def get_daily_report(config, entity_info, report_date):
         else:
             all_violations_per_hour = list(map(operator.add, all_violations_per_hour, violations_per_hour))
     return all_violations_per_hour
+
 
 def send_daily_report_notification(config, entity_info):
     yesterday = str(date.today() - timedelta(days=1))
@@ -165,48 +161,8 @@ def send_weekly_global_report(config, sources, areas):
     yesterday = str(date.today() - timedelta(days=1))
     date_range = pd.date_range(start=start_week, end=yesterday)
     for report_date in date_range:
-        weekly_sources_violations_per_hour += np.array([get_daily_report(config, source, report_date.strftime('%Y-%m-%d')) for source in sources])
-        weekly_areas_violations_per_hour += np.array([get_daily_report(config, area, report_date.strftime('%Y-%m-%d')) for area in areas])
+        weekly_sources_violations_per_hour += np.array(
+            [get_daily_report(config, source, report_date.strftime('%Y-%m-%d')) for source in sources])
+        weekly_areas_violations_per_hour += np.array(
+            [get_daily_report(config, area, report_date.strftime('%Y-%m-%d')) for area in areas])
     send_global_report('weekly', config, sources, areas, weekly_sources_violations_per_hour, weekly_areas_violations_per_hour)
-
-
-def main(config):
-    logging.basicConfig(level=logging.INFO)
-    if isinstance(config, str):
-        config = ConfigEngine(config)
-
-    if not config.get_boolean('Logger', 'EnableReports'):
-        logger.info("Reporting disabled!")
-    else:
-        logger.info("Reporting enabled!")
-        schedule.every().day.at("00:01").do(create_daily_report, config=config)
-
-    sources = config.get_video_sources()
-    areas = config.get_areas()
-    for src in sources:
-        if src['daily_report']:
-            schedule.every().day.at(src['daily_report_time']).do(
-                send_daily_report_notification, config=config, entity_info=src)
-    for area in areas:
-        if area['daily_report']:
-            schedule.every().day.at(area['daily_report_time']).do(
-                send_daily_report_notification, config=config, entity_info=area)
-    if config.get_boolean("App", "DailyGlobalReport"):
-        schedule.every().day.at(config.get_section_dict("App")["GlobalReportTime"]).do(
-            send_daily_global_report, config=config, sources=sources, areas=areas
-        )
-    if config.get_boolean("App", "WeeklyGlobalReport"):
-        schedule.every(7).days.at(config.get_section_dict("App")["GlobalReportTime"]).do(
-            send_weekly_global_report, config=config, sources=sources, areas=areas
-        )
-
-    while True:
-        schedule.run_pending()
-        time.sleep(10)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', required=True)
-    args = parser.parse_args()
-    main(args.config)

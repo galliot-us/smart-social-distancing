@@ -4,13 +4,14 @@ import logging
 import csv
 from datetime import date, datetime
 from collections import deque
+from .utils.loggers import get_source_log_directory, get_source_logging_interval
 from .utils.mailing import MailService
 from .notifications.slack_notifications import SlackService
 
 logger = logging.getLogger(__name__)
 
 
-class AreaReporting:
+class AreaEngine:
 
     def __init__(self, config, area):
         self.processing_alerts = False
@@ -18,8 +19,8 @@ class AreaReporting:
         self.area = area
 
         self.occupancy_sleep_time_interval = float(self.config.get_section_dict("App")["OccupancyAlertsMinInterval"])
-        self.log_dir = self.config.get_section_dict("Logger")["LogDirectory"]
-        self.idle_time = float(self.config.get_section_dict('Logger')['TimeInterval'])
+        self.log_dir = get_source_log_directory(config)
+        self.idle_time = get_source_logging_interval(config)
         self.area_id = self.area['id']
         self.area_name = self.area['name']
         self.occupancy_threshold = self.area['occupancy_threshold']

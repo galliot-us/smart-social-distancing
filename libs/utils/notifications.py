@@ -1,9 +1,9 @@
 import os
 import csv
-import logging
 from datetime import date, datetime
 from threading import Thread
 from .mailing import MailService
+from .loggers import get_source_log_directory
 from ..notifications.slack_notifications import SlackService
 
 
@@ -21,8 +21,7 @@ def get_violations(file_path, interval):
 
 # Some vars are only used to pass through to mail service/ Maybe this could be refactored.
 def check_violations(entity_type, threshold, config, entity_info, interval, should_send_email, should_send_slack):
-    log_dir = config.get_section_dict("Logger")["LogDirectory"]
-    logger = logging.getLogger(__name__)
+    log_dir = get_source_log_directory(config)
     today = str(date.today())
 
     violations = 0

@@ -106,7 +106,7 @@ def delete_camera_from_areas(camera_id, config_dict):
 
 def reestructure_cameras(config_dict):
     """Ensure that all [Source_0, Source_1, ...] are consecutive"""
-    source_names = [x for x in config_dict.keys() if x.startswith("Source")]
+    source_names = [x for x in config_dict.keys() if x.startswith("Source_")]
     source_names.sort()
     for index, source_name in enumerate(source_names):
         if f"Source_{index}" != source_name:
@@ -149,7 +149,7 @@ async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[
     Adds a new camera to the processor.
     """
     config_dict = extract_config()
-    cameras_name = [x for x in config_dict.keys() if x.startswith("Source")]
+    cameras_name = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict, []) for x in cameras_name]
     if new_camera.id in [camera["id"] for camera in cameras]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Camera already exists")
@@ -166,7 +166,7 @@ async def edit_camera(camera_id: str, edited_camera: SourceConfigDTO, reboot_pro
     """
     edited_camera.id = camera_id
     config_dict = extract_config()
-    camera_names = [x for x in config_dict.keys() if x.startswith("Source")]
+    camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict, []) for x in camera_names]
     cameras_ids = [camera["id"] for camera in cameras]
     try:
@@ -187,7 +187,7 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     Deletes the configuration related to the camera <camera_id>
     """
     config_dict = extract_config()
-    camera_names = [x for x in config_dict.keys() if x.startswith("Source")]
+    camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict) for x in camera_names]
     cameras_ids = [camera["id"] for camera in cameras]
     try:
@@ -262,6 +262,8 @@ async def get_camera_calibration_image(camera_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"The camera: {camera_id} is not available.")
     _, cv_image = camera_cap.read()
+    resolution = tuple([int(i) for i in os.environ.get("Resolution").split(",")])
+    cv_image = cv.resize(cv_image, resolution)
     _, buffer = cv.imencode(".jpg", cv_image)
     encoded_string = base64.b64encode(buffer)
     camera_cap.release()

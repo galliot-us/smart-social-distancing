@@ -6,6 +6,8 @@ from pathlib import Path
 from pydantic import conlist, BaseModel
 from scipy.spatial import distance
 
+from .loggers import get_source_log_directory
+
 
 class ConfigHomographyMatrix(BaseModel):
     pts_destination: conlist(conlist(float, min_items=2, max_items=2), min_items=4, max_items=4)
@@ -31,4 +33,4 @@ def compute_and_save_inv_homography_matrix(points: ConfigHomographyMatrix, desti
 
 
 def get_camera_calibration_path(config, camera_id):
-    return f"{config.get_section_dict('Logger')['LogDirectory']}/{camera_id}/homography_matrix/h_inverse.txt"
+    return f"{get_source_log_directory(config)}/{camera_id}/homography_matrix/h_inverse.txt"

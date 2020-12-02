@@ -23,7 +23,7 @@ class Classifier:
         self.model_path = '/repo/data/edgetpu/' + self.model_name
         self.fps = None
         if not os.path.isfile(self.model_path):
-            url = "https://raw.githubusercontent.com/neuralet/neuralet-models/master/edge-tpu/OFMClassifier/OFMClassifier_edgetpu.tflite"
+            url = "https://raw.githubusercontent.com/neuralet/neuralet-models/master/edge-tpu/OFMClassifier/OFMClassifier_edgetpu.tflite" # noqa
             print("model does not exist under: ", self.model_path, "downloading from ", url)
             wget.download(url, self.model_path)
 
@@ -64,5 +64,5 @@ class Classifier:
         scores = []
         for i, itm in enumerate(net_results):
             scores.append((itm[result[i]] - 1)/255.0)
-        
+
         return result, scores
