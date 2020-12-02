@@ -49,12 +49,12 @@ def process_csv_raw_data(camera_id: str, source_file: str, time_from: datetime, 
     with open(source_file, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            row_time = datetime.strptime(row['Timestamp'], "%Y-%m-%d %H:%M:%S")
+            row_time = datetime.strptime(row["Timestamp"], "%Y-%m-%d %H:%M:%S")
             if time_from <= row_time < time_until:
                 row_hour = row_time.hour
                 if not objects_logs.get(row_hour):
                     objects_logs[row_hour] = {}
-                detections = ast.literal_eval(row['Detections'])
+                detections = ast.literal_eval(row["Detections"])
                 for index, d in enumerate(detections):
                     if not objects_logs[row_hour].get(d["tracking_id"]):
                         objects_logs[row_hour][d["tracking_id"]] = {
@@ -88,8 +88,8 @@ def create_hourly_report(config):
         else:
             time_until = datetime.combine(date.today(), time(current_hour, 0))
             report_date = date.today()
-        source_csv = os.path.join(objects_log_directory, str(report_date) + '.csv')
-        daily_csv = os.path.join(reports_directory, 'report_' + str(report_date) + '.csv')
+        source_csv = os.path.join(objects_log_directory, str(report_date) + ".csv")
+        daily_csv = os.path.join(reports_directory, "report_" + str(report_date) + ".csv")
 
         time_from = datetime.combine(report_date, time(0, 0))
         if os.path.isfile(daily_csv):
@@ -107,8 +107,8 @@ def create_hourly_report(config):
         with open(daily_csv, "a", newline='') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=HOURLY_HEADERS)
             for item in summary:
-                writer.writerow({'Number': item[0], 'DetectedObjects': item[1], 'ViolatingObjects': item[2],
-                                 'DetectedFaces': item[3], 'UsingFacemask': item[4]})
+                writer.writerow({"Number": item[0], "DetectedObjects": item[1], "ViolatingObjects": item[2],
+                                 "DetectedFaces": item[3], "UsingFacemask": item[4]})
 
 
 def create_daily_report(config):
@@ -124,11 +124,11 @@ def create_daily_report(config):
         os.makedirs(heatmaps_directory, exist_ok=True)
         os.makedirs(reports_directory, exist_ok=True)
         yesterday = str(date.today() - timedelta(days=1))
-        yesterday_csv = os.path.join(objects_log_directory, yesterday + '.csv')
-        hourly_csv = os.path.join(reports_directory, 'report_' + yesterday + '.csv')
-        report_csv = os.path.join(reports_directory, 'report.csv')
-        detection_heatmap_file = os.path.join(heatmaps_directory, 'detections_heatmap_' + yesterday)
-        violation_heatmap_file = os.path.join(heatmaps_directory, 'violations_heatmap_' + yesterday)
+        yesterday_csv = os.path.join(objects_log_directory, yesterday + ".csv")
+        hourly_csv = os.path.join(reports_directory, "report_" + yesterday + ".csv")
+        report_csv = os.path.join(reports_directory, "report.csv")
+        detection_heatmap_file = os.path.join(heatmaps_directory, "detections_heatmap_" + yesterday)
+        violation_heatmap_file = os.path.join(heatmaps_directory, "violations_heatmap_" + yesterday)
 
         if not os.path.isfile(yesterday_csv):
             logger.warn(f"No data for previous day! [Camera: {src['id']}]")
@@ -155,11 +155,11 @@ def create_daily_report(config):
             if not report_file_exists:
                 writer.writeheader()
             writer.writerow(
-                {'Date': yesterday, 'Number': total_number, 'DetectedObjects': total_detections,
-                 'ViolatingObjects': total_violations, 'DetectedFaces': total_faces, 'UsingFacemask': total_masks}
+                {"Date": yesterday, "Number": total_number, "DetectedObjects": total_detections,
+                 "ViolatingObjects": total_violations, "DetectedFaces": total_faces, "UsingFacemask": total_masks}
             )
-        create_heatmap_report(config, yesterday_csv, detection_heatmap_file, 'Detections')
-        create_heatmap_report(config, yesterday_csv, violation_heatmap_file, 'Violations')
+        create_heatmap_report(config, yesterday_csv, detection_heatmap_file, "Detections")
+        create_heatmap_report(config, yesterday_csv, violation_heatmap_file, "Violations")
 
 
 def get_daily_report(config, entity_info, report_date):
