@@ -73,6 +73,7 @@ class ProcessorAPI:
                            tags=["source_loggers"])
         app.include_router(reports_router, prefix="/reports", tags=["reports"])
         app.include_router(slack_router, prefix="/slack", tags=["slack"])
+        app.include_router(classifier_router, prefix="/classifier", tags=["classifier"])
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):
