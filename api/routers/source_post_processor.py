@@ -2,7 +2,6 @@ from fastapi import APIRouter
 from pydantic import ValidationError
 from starlette import status
 from starlette.exceptions import HTTPException
-import logging
 from typing import Optional
 
 from api.models.source_post_processor import (
@@ -10,7 +9,6 @@ from api.models.source_post_processor import (
 from api.utils import (
     extract_config, handle_response, update_config, pascal_to_camel_case, camel_to_pascal_case)
 
-logger = logging.getLogger(__name__)
 
 source_post_processor_router = APIRouter()
 
@@ -122,7 +120,6 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
         post_processor_model(**edited_post_processor.dict())
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    logger.info(edited_post_processor)
     post_processor_file = map_to_source_post_processor_file_format(edited_post_processor)
     config_dict[edited_post_processor_section] = post_processor_file
     success = update_config(config_dict, reboot_processor)

@@ -25,6 +25,8 @@ def extract_config(config_type="all"):
         sections = [x for x in sections if x.startswith("Area_")]
     elif config_type == "source_post_processors":
         sections = [x for x in sections if x.startswith("SourcePostProcessor_")]
+    elif config_type == "source_loggers":
+        sections = [x for x in sections if x.startswith("SourceLogger_")]
     config = {}
 
     for section in sections:
