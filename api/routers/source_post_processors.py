@@ -9,8 +9,7 @@ from api.models.source_post_processor import (
 from api.utils import (
     extract_config, handle_response, update_config, pascal_to_camel_case, camel_to_pascal_case)
 
-
-source_post_processor_router = APIRouter()
+source_post_processors_router = APIRouter()
 
 
 def map_source_post_processor(post_processor_name, config):
@@ -51,8 +50,8 @@ def get_source_post_processor_model(post_processor):
         raise ValueError(f"Not supported post processor named: {post_processor.name}")
 
 
-@source_post_processor_router.get("", response_model=SourcePostProcessorListDTO,
-                                  response_model_exclude_none=True)
+@source_post_processors_router.get("", response_model=SourcePostProcessorListDTO,
+                                   response_model_exclude_none=True)
 def list_source_post_processors():
     """
         Returns the list of source post processor configured in the processor.
@@ -62,8 +61,8 @@ def list_source_post_processors():
     }
 
 
-@source_post_processor_router.get("/{post_processor_name}", response_model=SourcePostProcessorDTO,
-                                  response_model_exclude_none=True)
+@source_post_processors_router.get("/{post_processor_name}", response_model=SourcePostProcessorDTO,
+                                   response_model_exclude_none=True)
 def get_source_post_processors(post_processor_name: str):
     """
     Returns the configuration related to the source post processor <post_processor_name>.
@@ -75,8 +74,8 @@ def get_source_post_processors(post_processor_name: str):
     return post_processor
 
 
-@source_post_processor_router.post("", response_model=SourcePostProcessorDTO,
-                                   status_code=status.HTTP_201_CREATED, response_model_exclude_none=True)
+@source_post_processors_router.post("", response_model=SourcePostProcessorDTO,
+                                    status_code=status.HTTP_201_CREATED, response_model_exclude_none=True)
 async def create_post_processor(new_post_processor: SourcePostProcessorDTO, reboot_processor: Optional[bool] = True):
     """
     Adds a post processor.
@@ -93,12 +92,15 @@ async def create_post_processor(new_post_processor: SourcePostProcessorDTO, rebo
     if new_post_processor.name in [ps["name"] for ps in post_processors]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="PostProcessor already exists")
     post_processor_file = map_to_source_post_processor_file_format(new_post_processor)
-    config_dict[f"SourcePostProcessor_{max(post_processors_index) + 1}"] = post_processor_file
+    index = 0
+    if post_processors_index:
+        index = max(post_processors_index) + 1
+    config_dict[f"SourcePostProcessor_{index}"] = post_processor_file
     success = update_config(config_dict, reboot_processor)
     return handle_response(post_processor_file, success, status.HTTP_201_CREATED)
 
 
-@source_post_processor_router.put("/{post_processor_name}", response_model=SourcePostProcessorDTO)
+@source_post_processors_router.put("/{post_processor_name}", response_model=SourcePostProcessorDTO)
 async def edit_post_processor(post_processor_name: str, edited_post_processor: SourcePostProcessorDTO,
                               reboot_processor: Optional[bool] = True):
     """
@@ -126,7 +128,7 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
     return handle_response(post_processor_file, success)
 
 
-@source_post_processor_router.delete("/{post_processor_name}", status_code=status.HTTP_204_NO_CONTENT)
+@source_post_processors_router.delete("/{post_processor_name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_camera(post_processor_name: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the postprocessor <post_processor_name>
