@@ -28,12 +28,12 @@ def map_to_source_logger_file_format(logger: SourceLoggerDTO):
     return logger_file_dict
 
 
-def get_source_logger():
+def get_source_loggers():
     config = extract_config(config_type="source_loggers")
     return [map_source_logger(x, config) for x in config.keys()]
 
 
-def get_source_logger_model(logger):
+def get_source_loggers_model(logger):
     if logger.name == "video_logger":
         return VideoLoggerDTO
     elif logger.name == "s3_logger":
@@ -53,17 +53,17 @@ def list_source_loggers():
         Returns the list of source logger configured in the processor.
     """
     return {
-        "sourcesLoggers": get_source_logger()
+        "sourcesLoggers": get_source_loggers()
     }
 
 
 @source_loggers_router.get("/{logger_name}", response_model=SourceLoggerDTO,
                            response_model_exclude_none=True)
-def get_source_loggers(logger_name: str):
+def get_source_loggerss(logger_name: str):
     """
     Returns the configuration related to the source logger <logger_name>.
     """
-    logger = next((ps for ps in get_source_logger() if ps["name"] == logger_name), None)
+    logger = next((ps for ps in get_source_loggers() if ps["name"] == logger_name), None)
     if not logger:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"The logger: {logger_name} does not exist")
@@ -78,8 +78,8 @@ async def create_logger(new_logger: SourceLoggerDTO, reboot_processor: Optional[
     """
     config_dict = extract_config()
     loggers_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("SourceLogger_")]
-    loggers = get_source_logger()
-    logger_model = get_source_logger_model(new_logger)
+    loggers = get_source_loggers()
+    logger_model = get_source_loggers_model(new_logger)
     # Validate that the specific logger's fields are correctly set
     try:
         logger_model(**new_logger.dict())
@@ -112,7 +112,7 @@ async def edit_logger(logger_name: str, edited_logger: SourceLoggerDTO,
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The logger: {logger_name} does not exist")
-    logger_model = get_source_logger_model(edited_logger)
+    logger_model = get_source_loggers_model(edited_logger)
     # Validate that the specific logger's fields are correctly set
     try:
         logger_model(**edited_logger.dict())
@@ -125,9 +125,9 @@ async def edit_logger(logger_name: str, edited_logger: SourceLoggerDTO,
 
 
 @source_loggers_router.delete("/{logger_name}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_camera(logger_name: str, reboot_processor: Optional[bool] = True):
+async def delete_logger(logger_name: str, reboot_processor: Optional[bool] = True):
     """
-    Deletes the configuration related to the postprocessor <logger_name>
+    Deletes the configuration related to the logger <logger_name>
     """
     config_dict = extract_config()
     logger_section = next((

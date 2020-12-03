@@ -29,6 +29,8 @@ def extract_config(config_type="all"):
         sections = [x for x in sections if x.startswith("SourceLogger_")]
     elif config_type == "area_loggers":
         sections = [x for x in sections if x.startswith("AreaLogger_")]
+    elif config_type == "periodic_tasks":
+        sections = [x for x in sections if x.startswith("PeriodicTask_")]
     config = {}
 
     for section in sections:

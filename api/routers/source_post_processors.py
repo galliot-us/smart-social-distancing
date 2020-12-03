@@ -34,12 +34,12 @@ def map_to_source_post_processor_file_format(post_processor: SourcePostProcessor
     return post_processor_file_dict
 
 
-def get_source_post_processor():
+def get_source_post_processors():
     config = extract_config(config_type="source_post_processors")
     return [map_source_post_processor(x, config) for x in config.keys()]
 
 
-def get_source_post_processor_model(post_processor):
+def get_source_post_processors_model(post_processor):
     if post_processor.name == "objects_filtering":
         return ObjectFilteringDTO
     elif post_processor.name == "social_distance":
@@ -57,17 +57,17 @@ def list_source_post_processors():
         Returns the list of source post processor configured in the processor.
     """
     return {
-        "sourcesPostProcessors": get_source_post_processor()
+        "sourcesPostProcessors": get_source_post_processors()
     }
 
 
 @source_post_processors_router.get("/{post_processor_name}", response_model=SourcePostProcessorDTO,
                                    response_model_exclude_none=True)
-def get_source_post_processors(post_processor_name: str):
+def get_source_post_processorss(post_processor_name: str):
     """
     Returns the configuration related to the source post processor <post_processor_name>.
     """
-    post_processor = next((ps for ps in get_source_post_processor() if ps["name"] == post_processor_name), None)
+    post_processor = next((ps for ps in get_source_post_processors() if ps["name"] == post_processor_name), None)
     if not post_processor:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"The post_processor: {post_processor_name} does not exist")
@@ -82,8 +82,8 @@ async def create_post_processor(new_post_processor: SourcePostProcessorDTO, rebo
     """
     config_dict = extract_config()
     post_processors_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("SourcePostProcessor_")]
-    post_processors = get_source_post_processor()
-    post_processor_model = get_source_post_processor_model(new_post_processor)
+    post_processors = get_source_post_processors()
+    post_processor_model = get_source_post_processors_model(new_post_processor)
     # Validate that the specific post processor's fields are correctly set
     try:
         post_processor_model(**new_post_processor.dict())
@@ -116,7 +116,7 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The post processor: {post_processor_name} does not exist")
-    post_processor_model = get_source_post_processor_model(edited_post_processor)
+    post_processor_model = get_source_post_processors_model(edited_post_processor)
     # Validate that the specific post processor's fields are correctly set
     try:
         post_processor_model(**edited_post_processor.dict())
@@ -129,7 +129,7 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
 
 
 @source_post_processors_router.delete("/{post_processor_name}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_camera(post_processor_name: str, reboot_processor: Optional[bool] = True):
+async def delete_post_processor(post_processor_name: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the postprocessor <post_processor_name>
     """

@@ -27,12 +27,12 @@ def map_to_area_logger_file_format(logger: AreaLoggerDTO):
     return logger_file_dict
 
 
-def get_area_logger():
+def get_area_loggers():
     config = extract_config(config_type="area_loggers")
     return [map_area_logger(x, config) for x in config.keys()]
 
 
-def get_area_logger_model(logger):
+def get_area_loggers_model(logger):
     if logger.name == "file_system_logger":
         return FileSystemLoggerDTO
     else:
@@ -46,17 +46,17 @@ def list_area_loggers():
         Returns the list of area logger configured in the processor.
     """
     return {
-        "areasLoggers": get_area_logger()
+        "areasLoggers": get_area_loggers()
     }
 
 
 @area_loggers_router.get("/{logger_name}", response_model=AreaLoggerDTO,
                          response_model_exclude_none=True)
-def get_area_loggers(logger_name: str):
+def get_area_loggerss(logger_name: str):
     """
     Returns the configuration related to the area logger <logger_name>.
     """
-    logger = next((ps for ps in get_area_logger() if ps["name"] == logger_name), None)
+    logger = next((ps for ps in get_area_loggers() if ps["name"] == logger_name), None)
     if not logger:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"The logger: {logger_name} does not exist")
@@ -71,8 +71,8 @@ async def create_logger(new_logger: AreaLoggerDTO, reboot_processor: Optional[bo
     """
     config_dict = extract_config()
     loggers_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("AreaLogger_")]
-    loggers = get_area_logger()
-    logger_model = get_area_logger_model(new_logger)
+    loggers = get_area_loggers()
+    logger_model = get_area_loggers_model(new_logger)
     # Validate that the specific logger's fields are correctly set
     try:
         logger_model(**new_logger.dict())
@@ -105,7 +105,7 @@ async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The logger: {logger_name} does not exist")
-    logger_model = get_area_logger_model(edited_logger)
+    logger_model = get_area_loggers_model(edited_logger)
     # Validate that the specific logger's fields are correctly set
     try:
         logger_model(**edited_logger.dict())
@@ -118,7 +118,7 @@ async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
 
 
 @area_loggers_router.delete("/{logger_name}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_camera(logger_name: str, reboot_processor: Optional[bool] = True):
+async def delete_logger(logger_name: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the postprocessor <logger_name>
     """
