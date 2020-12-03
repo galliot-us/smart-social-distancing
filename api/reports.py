@@ -259,7 +259,7 @@ def get_area_daily_data(area_id: str, date: date = Query(date.today().isoformat(
 
 def export_folder_into_zip(source_path, destination_path, zip_file):
     if not os.path.exists(source_path):
-        return
+        return None
     for filename in os.listdir(source_path):
         if filename.endswith(".csv"):
             zip_file.write(os.path.join(source_path, filename), arcname=os.path.join(destination_path, filename))

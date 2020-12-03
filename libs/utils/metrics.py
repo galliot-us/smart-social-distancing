@@ -1,10 +1,21 @@
 import numpy as np
 
+from typing import List, Tuple
+
 # TODO: In the future maybe make sense allow the users to configure this parameter
-PROCESSING_COUNT_THRESHOLD = 2
+PROCESSING_COUNT_THRESHOLD = 3
 
 
-def process_distance_violation_for_object(distance_violations):
+def process_distance_violation_for_object(distance_violations: List[bool]) -> Tuple[int, int]:
+    """
+    Receives a list with the "social distancing detections" (for a single person) and returns a
+    tuple with the summary of detections and violations. Consecutive detections in the same state are
+    grouped and returned as a single one. Detections lower than the constant PROCESSING_COUNT_THRESHOLD
+    are ignored.
+
+    For example, the input [True, True, True, True, True, True, False, True, True, True, True, True, False,
+    False, False, False, False, False, True, True, True, True, True] returns (3, 2).
+    """
     # TODO: This is the first version of the metrics and is implemented to feed the current dashboard.
     # When we define the new metrics we will need to change that logic
     object_detections = 0
@@ -18,7 +29,7 @@ def process_distance_violation_for_object(distance_violations):
             processing_status = dist_violation
             processing_count = 0
         processing_count += 1
-        if current_status != processing_status and processing_count > PROCESSING_COUNT_THRESHOLD:
+        if current_status != processing_status and processing_count >= PROCESSING_COUNT_THRESHOLD:
             # Object was enouth time in the same state, change it
             current_status = processing_status
             object_detections += 1
@@ -28,7 +39,16 @@ def process_distance_violation_for_object(distance_violations):
     return object_detections, object_violations
 
 
-def process_face_labels_for_object(face_labels):
+def process_face_labels_for_object(face_labels: List[int])-> Tuple[int, int]:
+    """
+    Receives a list with the "facesmask detections" (for a single person) and returns a
+    tuple with the summary of faces and mask detected. Consecutive detections in the same state are
+    grouped and returned as a single one. Detections lower than the constant PROCESSING_COUNT_THRESHOLD
+    are ignored.
+
+    For example, the input [0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 1, 1,
+    -1, -1, -1, -1, -1, -1, 0, 0, 0, 0] returns (3, 2).
+    """
     # TODO: This is the first version of the metrics and is implemented to feed the current dashboard.
     # When we define the new metrics we will need to change that logic
     face_detections = 0
@@ -42,7 +62,7 @@ def process_face_labels_for_object(face_labels):
             processing_status = face_label
             processing_count = 0
         processing_count += 1
-        if current_status != processing_status and processing_count > PROCESSING_COUNT_THRESHOLD:
+        if current_status != processing_status and processing_count >= PROCESSING_COUNT_THRESHOLD:
             # FaceLabel was enouth time in the same state, change it
             current_status = processing_status
             if current_status != -1:
