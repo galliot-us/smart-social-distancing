@@ -18,7 +18,7 @@ def map_api(config):
 
 
 @api_router.get("", response_model=ApiDTO)
-def get_app_config():
+def get_api_config():
     """
     Returns the api configuration of the processor
     """

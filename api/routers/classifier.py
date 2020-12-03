@@ -25,7 +25,7 @@ def map_to_classifier_file_format(classifier: ClassifierDTO):
 
 
 @classifier_router.get("", response_model=ClassifierDTO)
-def get_core_config():
+def get_classifier_config():
     """
     Returns the classifier configuration of the processor
     """
@@ -33,7 +33,7 @@ def get_core_config():
 
 
 @classifier_router.put("", response_model=ClassifierDTO)
-def update_core_config(classifier: ClassifierDTO, reboot_processor: Optional[bool] = True):
+def update_classifier_config(classifier: ClassifierDTO, reboot_processor: Optional[bool] = True):
     """
     Updates the classifier configuration of the processor
     """

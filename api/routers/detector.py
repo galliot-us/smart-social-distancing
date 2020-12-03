@@ -17,15 +17,15 @@ def map_detector(config):
 
 
 def map_to_detector_file_format(detector: DetectorDTO):
-    detector_dicr = detector.dict()
+    detector_dict = detector.dict()
     detector_file_dict = {}
-    for key, value in detector_dicr.items():
+    for key, value in detector_dict.items():
         detector_file_dict[camel_to_pascal_case(key)] = str(value)
     return detector_file_dict
 
 
 @detector_router.get("", response_model=DetectorDTO)
-def get_core_config():
+def get_detector_config():
     """
     Returns the detector configuration of the processor
     """
@@ -33,7 +33,7 @@ def get_core_config():
 
 
 @detector_router.put("", response_model=DetectorDTO)
-def update_core_config(detector: DetectorDTO, reboot_processor: Optional[bool] = True):
+def update_detector_config(detector: DetectorDTO, reboot_processor: Optional[bool] = True):
     """
     Updates the detector configuration of the processor
     """

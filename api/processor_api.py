@@ -23,6 +23,7 @@ from .routers.config import config_router
 from .routers.detector import detector_router
 from .routers.reports import reports_router
 from .routers.slack import slack_router
+from .routers.source_post_processor import source_post_processor_router
 from .routers.tracker import tracker_router
 from .settings import Settings
 
@@ -63,10 +64,12 @@ class ProcessorAPI:
         app.include_router(api_router, prefix="/api", tags=["api"])
         app.include_router(core_router, prefix="/core", tags=["core"])
         app.include_router(detector_router, prefix="/detector", tags=["detector"])
-        app.include_router(reports_router, prefix="/reports", tags=["reports"])
-        app.include_router(slack_router, prefix="/slack", tags=["slack"])
         app.include_router(classifier_router, prefix="/classifier", tags=["classifier"])
         app.include_router(tracker_router, prefix="/tracker", tags=["tracker"])
+        app.include_router(source_post_processor_router, prefix="/source_post_processor",
+                           tags=["source_post_processo"])
+        app.include_router(reports_router, prefix="/reports", tags=["reports"])
+        app.include_router(slack_router, prefix="/slack", tags=["slack"])
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):

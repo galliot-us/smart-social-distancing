@@ -23,6 +23,8 @@ def extract_config(config_type="all"):
         sections = [x for x in sections if x.startswith("Source_")]
     elif config_type == "areas":
         sections = [x for x in sections if x.startswith("Area_")]
+    elif config_type == "source_post_processors":
+        sections = [x for x in sections if x.startswith("SourcePostProcessor_")]
     config = {}
 
     for section in sections:

@@ -25,7 +25,7 @@ def map_to_tracker_file_format(tracker: TrackerDTO):
 
 
 @tracker_router.get("", response_model=TrackerDTO)
-def get_core_config():
+def get_tracker_config():
     """
     Returns the tracker configuration of the processor
     """
@@ -33,7 +33,7 @@ def get_core_config():
 
 
 @tracker_router.put("", response_model=TrackerDTO)
-def update_core_config(tracker: TrackerDTO, reboot_processor: Optional[bool] = True):
+def update_tracker_config(tracker: TrackerDTO, reboot_processor: Optional[bool] = True):
     """
     Updates the tracker configuration of the processor
     """
