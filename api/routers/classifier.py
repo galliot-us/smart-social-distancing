@@ -25,11 +25,7 @@ def map_to_classifier_file_format(classifier: ClassifierDTO):
 
 
 @classifier_router.get("", response_model=ClassifierDTO)
-<<<<<<< HEAD
 def get_classifier_config():
-=======
-def get_core_config():
->>>>>>> 875f8ee... Create classifier endpoint.
     """
     Returns the classifier configuration of the processor
     """
@@ -37,11 +33,7 @@ def get_core_config():
 
 
 @classifier_router.put("", response_model=ClassifierDTO)
-<<<<<<< HEAD
 def update_classifier_config(classifier: ClassifierDTO, reboot_processor: Optional[bool] = True):
-=======
-def update_core_config(classifier: ClassifierDTO, reboot_processor: Optional[bool] = True):
->>>>>>> 875f8ee... Create classifier endpoint.
     """
     Updates the classifier configuration of the processor
     """
