@@ -25,3 +25,8 @@ class NotificationConfig(SnakeModel):
     enableSlackNotifications: Optional[bool] = Field(False, example=False)
     dailyReport: Optional[bool] = Field(False, example=True)
     dailyReportTime: Optional[str] = Field('06:00', example='06:00')
+
+
+class OptionalSectionConfig(SnakeModel):
+    name: str = Field(example="objects_filtering")
+    enabled: bool

@@ -1,19 +1,14 @@
 from pydantic import Field
 from typing import List, Optional
 
-from .base import SnakeModel
+from .base import OptionalSectionConfig, SnakeModel
 
 
-class BaseAreaLoggerDTO(SnakeModel):
-    name: str = Field(example="objects_filtering")
-    enabled: bool
-
-
-class AreaLoggerDTO(BaseAreaLoggerDTO):
+class AreaLoggerDTO(OptionalSectionConfig):
     logDirectory: Optional[str] = Field(example="/repo/data/processor/static/data/areas")
 
 
-class FileSystemLoggerDTO(BaseAreaLoggerDTO):
+class FileSystemLoggerDTO(OptionalSectionConfig):
     logDirectory: str = Field("/repo/data/processor/static/data/sources",
                               example="/repo/data/processor/static/data/areas")
 

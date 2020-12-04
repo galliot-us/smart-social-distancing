@@ -1,12 +1,10 @@
-from pydantic import Field
 from typing import List
 
-from .base import SnakeModel
+from .base import OptionalSectionConfig, SnakeModel
 
 
-class PeriodicTaskDTO(SnakeModel):
-    name: str = Field(example="objects_filtering")
-    enabled: bool
+class PeriodicTaskDTO(OptionalSectionConfig):
+    pass
 
 
 class PeriodicTaskListDTO(SnakeModel):

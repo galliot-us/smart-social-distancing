@@ -1,30 +1,25 @@
 from pydantic import Field
 from typing import List, Optional
 
-from .base import SnakeModel
+from .base import OptionalSectionConfig, SnakeModel
 
 
-class BaseSourcePostProcessorDTO(SnakeModel):
-    name: str = Field(example="objects_filtering")
-    enabled: bool
-
-
-class SourcePostProcessorDTO(BaseSourcePostProcessorDTO):
+class SourcePostProcessorDTO(OptionalSectionConfig):
     NMSThreshold: Optional[float] = Field(example=0.98)
     defaultDistMethod: Optional[str] = Field(example="CenterPointsDistance")
     distThreshold: Optional[int] = Field(example=150)
 
 
-class ObjectFilteringDTO(BaseSourcePostProcessorDTO):
+class ObjectFilteringDTO(OptionalSectionConfig):
     NMSThreshold: float
 
 
-class SocialDistanceDTO(BaseSourcePostProcessorDTO):
+class SocialDistanceDTO(OptionalSectionConfig):
     defaultDistMethod: str
     distThreshold: int
 
 
-class AnonymizerDTO(BaseSourcePostProcessorDTO):
+class AnonymizerDTO(OptionalSectionConfig):
     pass
 
 
