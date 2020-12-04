@@ -23,52 +23,49 @@ class ReportsService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-    def hourly_report(self, camera_id, from_date, to_date):
-        """Returns a report of hourly detection and violations for a specific camera taking the mean for each hour in a range of dates
+    def hourly_report(self, camera_id, date):
+        """Returns a report of hourly detection and violations for a specific camera for the selected date
             Args:
                 camera_id (str): id of an existing camera
-                from_date (date): start of the date range
-                to_date (date): end of the date range
+                date (date): report date
 
             Returns:
                 result (dict): {
                     'hours': [str],
-                    'detected_objects': [float],
-                    'violating_objects': [float]
+                    'detected_objects': [int],
+                    'violating_objects': [int]
                 }
-                Ex: {'dates': [00, 01, ...], 'detected_objects': [7273.0, 0.5, ...], 'violating_objects': [4920.3, 0.4, ...]}
+                Ex: {'hours': [00, 01, ...], 'detected_objects': [7273, 1, ...], 'violating_objects': [4920, 0, ...],
+                     'DetectedFaces': [1001, 0, ...], 'UsingFacemask': [406, 0, ...]
+                    }
         """
-        log_dir = os.getenv('LogDirectory')
-        dir_path = os.path.join(log_dir, camera_id, "objects_log")
-        date_range = pd.date_range(start=from_date, end=to_date)
+        log_dir = os.getenv('SourceLogDirectory')
+        dir_path = os.path.join(log_dir, camera_id, "reports")
         hours = list(range(0, 24))
         detected_objects = np.zeros(24)
         violating_objects = np.zeros(24)
         detected_faces = np.zeros(24)
         faces_with_mask = np.zeros(24)
 
-        if os.path.exists(os.path.join(dir_path, 'report.csv')):
-            iters = 0
-            for date in date_range:
-                file_path = os.path.join(dir_path, f"report_{date.strftime('%Y-%m-%d')}.csv")
-                if os.path.exists(file_path):
-                    iters += 1
-                    df = pd.read_csv(file_path).drop(['Number'], axis=1)
-                    detected_objects = detected_objects + df['DetectedObjects'].to_numpy()
-                    violating_objects = violating_objects + df['ViolatingObjects'].to_numpy()
-                    detected_faces = detected_faces + df.get('DetectedFaces', 0).to_numpy()
-                    faces_with_mask = faces_with_mask + df.get('UsingFacemask', 0).to_numpy()
-
-            if iters != 0:
-                detected_objects = detected_objects/iters
-                violating_objects = violating_objects/iters
+        if os.path.join(dir_path, f"report_{date}.csv"):
+            file_path = os.path.join(dir_path, f"report_{date}.csv")
+            if os.path.exists(file_path):
+                df = pd.read_csv(file_path).drop(['Number'], axis=1)
+                detected_objects = df['DetectedObjects'].to_numpy()
+                violating_objects = df['ViolatingObjects'].to_numpy()
+                detected_faces = df.get('DetectedFaces', 0).to_numpy()
+                faces_with_mask = df.get('UsingFacemask', 0).to_numpy()
 
         report = {
             'hours': hours,
-            'detected_objects': np.around(detected_objects).tolist(),
-            'violating_objects': np.around(violating_objects).tolist(),
-            'detected_faces': np.around(detected_faces).tolist(),
-            'faces_with_mask': np.around(faces_with_mask).tolist(),
+            'detected_objects': np.pad(
+                detected_objects, (0, 24 - detected_objects.size), mode="constant").tolist(),
+            'violating_objects': np.pad(
+                violating_objects, (0, 24 - violating_objects.size), mode="constant").tolist(),
+            'detected_faces': np.pad(
+                detected_faces, (0, 24 - detected_faces.size), mode="constant").tolist(),
+            'faces_with_mask': np.pad(
+                faces_with_mask, (0, 24 - faces_with_mask.size), mode="constant").tolist(),
         }
         return report
 
@@ -90,8 +87,8 @@ class ReportsService:
         date_range = pd.date_range(start=from_date, end=to_date)
         base_results = {key.strftime('%Y-%m-%d'): {'DetectedObjects': 0, 'ViolatingObjects': 0} for key in date_range}
 
-        log_dir = os.getenv('LogDirectory')
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        log_dir = os.getenv('SourceLogDirectory')
+        file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if os.path.exists(file_path):
             df = pd.read_csv(file_path).drop(['Number'], axis=1)
             df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
@@ -112,12 +109,12 @@ class ReportsService:
         detected_faces = []
         faces_with_mask = []
 
-        for date in sorted(merged_report):
-            dates.append(date.strftime('%A %Y-%m-%d'))
-            detected_objects.append(merged_report[date]['DetectedObjects'])
-            violating_objects.append(merged_report[date]['ViolatingObjects'])
-            detected_faces.append(merged_report[date].get('DetectedFaces', 0))
-            faces_with_mask.append(merged_report[date].get('UsingFacemask', 0))
+        for report_date in sorted(merged_report):
+            dates.append(report_date.strftime('%A %Y-%m-%d'))
+            detected_objects.append(merged_report[report_date]['DetectedObjects'])
+            violating_objects.append(merged_report[report_date]['ViolatingObjects'])
+            detected_faces.append(merged_report[report_date].get('DetectedFaces', 0))
+            faces_with_mask.append(merged_report[report_date].get('UsingFacemask', 0))
 
         report = {
             'dates': dates,
@@ -167,7 +164,6 @@ class ReportsService:
         for (start_date, end_date) in week_span:
             week_data = self.daily_report(camera_id, start_date, end_date)
             weeks.append(f"{start_date.strftime('%Y-%m-%d')} {end_date.strftime('%Y-%m-%d')}")
-            print(week_data)
             detected_objects.append(sum(week_data['detected_objects']))
             violating_objects.append(sum(week_data['violating_objects']))
             detected_faces.append(sum(week_data['detected_faces']))
@@ -196,29 +192,29 @@ class ReportsService:
                 'not_found_dates': [array[str]]
             }
         """
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         heatmap_resolution = os.getenv('HeatmapResolution').split(",")
         heatmap_x = int(heatmap_resolution[0])
         heatmap_y = int(heatmap_resolution[1])
-        file_path = os.path.join(log_dir, camera_id, "objects_log", f"{report_type}_heatmap_")
+        file_path = os.path.join(log_dir, camera_id, "heatmaps", f"{report_type}_heatmap_")
 
         date_range = pd.date_range(start=from_date, end=to_date)
         heatmap_total = np.zeros((heatmap_x, heatmap_y))
         not_found_dates = []
 
-        for date in date_range:
+        for report_date in date_range:
             try:
-                heatmap = np.load(f"{file_path}{date.strftime('%Y-%m-%d')}.npy")
+                heatmap = np.load(f"{file_path}{report_date.strftime('%Y-%m-%d')}.npy")
                 heatmap_total = np.add(heatmap_total, heatmap)
             except IOError:
-                not_found_dates.append(date.strftime('%Y-%m-%d'))
+                not_found_dates.append(report_date.strftime('%Y-%m-%d'))
 
         return {"heatmap": heatmap_total.tolist(),
                 "not_found_dates": not_found_dates}
 
     def peak_hour_violations(self, camera_id):
-        log_dir = os.getenv('LogDirectory')
-        dir_path = os.path.join(log_dir, camera_id, "objects_log")
+        log_dir = os.getenv('SourceLogDirectory')
+        dir_path = os.path.join(log_dir, camera_id, "reports")
         if not os.path.exists(os.path.join(dir_path, 'report.csv')):
             return 0
 
@@ -232,19 +228,19 @@ class ReportsService:
         return int(np.argmax(violating_objects))
 
     def average_violations(self, camera_id):
-        log_dir = os.getenv('LogDirectory')
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        log_dir = os.getenv('SourceLogDirectory')
+        file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if not os.path.exists(file_path):
             return 0.0
         df = pd.read_csv(file_path).drop(['Number'], axis=1)
         return round(df['ViolatingObjects'].mean(), 1)
 
     def camera_with_most_violations(self):
-        log_dir = os.getenv('LogDirectory')
+        log_dir = os.getenv('SourceLogDirectory')
         cameras = [directory for directory in os.listdir(log_dir) if os.path.isdir(os.path.join(log_dir, directory))]
         cameras_violations = {}
         for camera_id in cameras:
-            file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+            file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path).drop(['Number'], axis=1)
                 cameras_violations[camera_id] = df['ViolatingObjects'].mean()
@@ -254,8 +250,8 @@ class ReportsService:
         return max(cameras_violations, key=cameras_violations.get)
 
     def face_mask_stats(self, camera_id):
-        log_dir = os.getenv('LogDirectory')
-        file_path = os.path.join(log_dir, camera_id, "objects_log", "report.csv")
+        log_dir = os.getenv('SourceLogDirectory')
+        file_path = os.path.join(log_dir, camera_id, "reports", "report.csv")
         if not os.path.exists(file_path):
             return 0, 0
         df = pd.read_csv(file_path).drop(['Number'], axis=1)

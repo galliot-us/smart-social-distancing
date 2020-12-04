@@ -5,7 +5,7 @@ import os
 import time
 from libs.classifiers.classifier import Classifier
 from libs.trackers.tracker import Tracker
-from libs.loggers.logger import Logger
+from libs.loggers.source_loggers.logger import Logger
 from libs.detectors.detector import Detector
 from libs.source_post_processors.source_post_processor import SourcePostProcessor
 
