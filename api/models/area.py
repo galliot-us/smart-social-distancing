@@ -5,7 +5,7 @@ from .base import EntityConfigDTO, NotificationConfig, SnakeModel
 
 
 class AreaNotificationConfig(NotificationConfig):
-    occupancyThreshold:  Optional[int] = Field(0, example=300)
+    occupancyThreshold: Optional[int] = Field(0, example=300)
 
 
 class AreaConfigDTO(EntityConfigDTO, AreaNotificationConfig):
