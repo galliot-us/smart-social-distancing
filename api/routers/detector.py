@@ -2,14 +2,14 @@ from fastapi import APIRouter
 from typing import Optional
 
 from api.models.detector import DetectorDTO
-from api.utils import (extract_config, get_config, handle_response, update_config,
+from api.utils import (extract_config, handle_response, update_config,
                        pascal_to_camel_case, camel_to_pascal_case)
 
 detector_router = APIRouter()
 
 
 def map_detector(config):
-    detector_section = config.get_section_dict("Detector")
+    detector_section = config["Detector"]
     detector_mapped = {}
     for key, value in detector_section.items():
         detector_mapped[pascal_to_camel_case(key)] = value
@@ -29,7 +29,7 @@ def get_detector_config():
     """
     Returns the detector configuration of the processor
     """
-    return map_detector(get_config())
+    return map_detector(extract_config())
 
 
 @detector_router.put("", response_model=DetectorDTO)

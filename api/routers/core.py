@@ -2,14 +2,14 @@ from fastapi import APIRouter
 from typing import Optional
 
 from api.models.core import CoreDTO
-from api.utils import (extract_config, get_config, handle_response, update_config,
+from api.utils import (extract_config, handle_response, update_config,
                        pascal_to_camel_case, camel_to_pascal_case)
 
 core_router = APIRouter()
 
 
 def map_core(config):
-    core_section = config.get_section_dict("CORE")
+    core_section = config["CORE"]
     core_mapped = {}
     for key, value in core_section.items():
         core_mapped[pascal_to_camel_case(key)] = value
@@ -29,7 +29,7 @@ def get_core_config():
     """
     Returns the core configuration of the processor
     """
-    return map_core(get_config())
+    return map_core(extract_config())
 
 
 @core_router.put("", response_model=CoreDTO)

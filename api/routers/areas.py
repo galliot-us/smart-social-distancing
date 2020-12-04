@@ -1,19 +1,12 @@
 from fastapi import APIRouter, status
-from pydantic import BaseModel
-from typing import List, Optional
-
 from starlette.exceptions import HTTPException
+from typing import Optional
 
-from api.models.config_keys import AreaConfigDTO
+from api.models.area import AreaConfigDTO, AreasListDTO
 from .cameras import map_camera
 from api.utils import (
     extract_config, handle_response, reestructure_areas, update_config
 )
-
-
-class AreasListDTO(BaseModel):
-    areas: List[AreaConfigDTO]
-
 
 areas_router = APIRouter()
 

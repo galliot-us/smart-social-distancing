@@ -2,14 +2,14 @@ from fastapi import APIRouter
 from typing import Optional
 
 from api.models.app import AppDTO
-from api.utils import (extract_config, get_config, handle_response, update_config,
+from api.utils import (extract_config, handle_response, update_config,
                        pascal_to_camel_case, camel_to_pascal_case)
 
 app_router = APIRouter()
 
 
 def map_app(config):
-    app_section = config.get_section_dict("App")
+    app_section = config["App"]
     config_mapped = {}
     for key, value in app_section.items():
         config_mapped[pascal_to_camel_case(key)] = value
@@ -29,7 +29,7 @@ def get_app_config():
     """
     Returns the app configuration of the processor
     """
-    return map_app(get_config())
+    return map_app(extract_config())
 
 
 @app_router.put("", response_model=AppDTO)

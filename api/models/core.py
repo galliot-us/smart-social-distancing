@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from .config_keys import SnakeModel
+from .base import SnakeModel
 
 
 class CoreDTO(SnakeModel):

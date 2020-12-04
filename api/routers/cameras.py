@@ -7,7 +7,7 @@ import os
 from fastapi import APIRouter, status
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException
-from typing import List, Optional
+from typing import Optional
 
 from libs.utils.camera_calibration import (get_camera_calibration_path, compute_and_save_inv_homography_matrix,
                                            ConfigHomographyMatrix)
@@ -17,7 +17,7 @@ from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas,
     update_config
 )
-from api.models.config_keys import SourceConfigDTO
+from api.models.camera import CameraDTO, CamerasListDTO
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +35,6 @@ class ImageModel(BaseModel):
                 "image": "data:image/jpg;base64,iVBORw0KG..."
             }
         }
-
-
-class CamerasListDTO(BaseModel):
-    cameras: List[SourceConfigDTO]
 
 
 def map_camera(camera_name, config, options=[]):
@@ -69,7 +65,7 @@ def get_cameras(options):
     return [map_camera(x, config, options) for x in config.keys()]
 
 
-def map_to_camera_file_format(camera: SourceConfigDTO):
+def map_to_camera_file_format(camera: CameraDTO):
     return dict(
         {
             "Name": camera.name,
@@ -132,7 +128,7 @@ async def list_cameras(options: Optional[str] = ""):
     }
 
 
-@cameras_router.get("/{camera_id}", response_model=SourceConfigDTO)
+@cameras_router.get("/{camera_id}", response_model=CameraDTO)
 async def get_camera(camera_id: str):
     """
     Returns the configuration related to the camera <camera_id>
@@ -143,8 +139,8 @@ async def get_camera(camera_id: str):
     return camera
 
 
-@cameras_router.post("", response_model=SourceConfigDTO, status_code=status.HTTP_201_CREATED)
-async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
+@cameras_router.post("", response_model=CameraDTO, status_code=status.HTTP_201_CREATED)
+async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] = True):
     """
     Adds a new camera to the processor.
     """
@@ -159,8 +155,8 @@ async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[
     return handle_response(camera_dict, success, status.HTTP_201_CREATED)
 
 
-@cameras_router.put("/{camera_id}", response_model=SourceConfigDTO)
-async def edit_camera(camera_id: str, edited_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
+@cameras_router.put("/{camera_id}", response_model=CameraDTO)
+async def edit_camera(camera_id: str, edited_camera: CameraDTO, reboot_processor: Optional[bool] = True):
     """
     Edits the configuration related to the camera <camera_id>
     """

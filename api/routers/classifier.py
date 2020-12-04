@@ -2,14 +2,14 @@ from fastapi import APIRouter
 from typing import Optional
 
 from api.models.classifier import ClassifierDTO
-from api.utils import (extract_config, get_config, handle_response, update_config,
+from api.utils import (extract_config, handle_response, update_config,
                        pascal_to_camel_case, camel_to_pascal_case)
 
 classifier_router = APIRouter()
 
 
 def map_classifier(config):
-    classifier_section = config.get_section_dict("Classifier")
+    classifier_section = config["Classifier"]
     classifier_mapped = {}
     for key, value in classifier_section.items():
         classifier_mapped[pascal_to_camel_case(key)] = value
@@ -33,7 +33,7 @@ def get_core_config():
     """
     Returns the classifier configuration of the processor
     """
-    return map_classifier(get_config())
+    return map_classifier(extract_config())
 
 
 @classifier_router.put("", response_model=ClassifierDTO)

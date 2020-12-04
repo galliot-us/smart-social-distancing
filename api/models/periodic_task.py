@@ -1,7 +1,7 @@
 from pydantic import Field
 from typing import List
 
-from .config_keys import SnakeModel
+from .base import SnakeModel
 
 
 class PeriodicTaskDTO(SnakeModel):

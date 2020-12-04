@@ -1,7 +1,7 @@
 from pydantic import Field
 from typing import List, Optional
 
-from .config_keys import SnakeModel
+from .base import SnakeModel
 
 
 class BaseSourcePostProcessorDTO(SnakeModel):
