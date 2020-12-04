@@ -6,30 +6,14 @@ from typing import Optional
 
 from api.models.area_logger import AreaLoggerDTO, AreaLoggerListDTO, FileSystemLoggerDTO
 from api.utils import (
-    extract_config, handle_response, update_config, pascal_to_camel_case, camel_to_pascal_case)
+    extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
 
 area_loggers_router = APIRouter()
 
 
-def map_area_logger(logger_name, config):
-    logger_section = config[logger_name]
-    logger_mapped = {}
-    for key, value in logger_section.items():
-        logger_mapped[pascal_to_camel_case(key)] = value
-    return logger_mapped
-
-
-def map_to_area_logger_file_format(logger: AreaLoggerDTO):
-    logger_dict = logger.dict(exclude_none=True)
-    logger_file_dict = {}
-    for key, value in logger_dict.items():
-        logger_file_dict[camel_to_pascal_case(key)] = str(value)
-    return logger_file_dict
-
-
 def get_area_loggers():
     config = extract_config(config_type="area_loggers")
-    return [map_area_logger(x, config) for x in config.keys()]
+    return [map_section_from_config(x, config) for x in config.keys()]
 
 
 def get_area_loggers_model(logger):
@@ -80,7 +64,7 @@ async def create_logger(new_logger: AreaLoggerDTO, reboot_processor: Optional[bo
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if new_logger.name in [ps["name"] for ps in loggers]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Logger already exists")
-    logger_file = map_to_area_logger_file_format(new_logger)
+    logger_file = map_to_config_file_format(new_logger, True)
     index = 0
     if loggers_index:
         index = max(loggers_index) + 1
@@ -111,7 +95,7 @@ async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
         logger_model(**edited_logger.dict())
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    logger_file = map_to_area_logger_file_format(edited_logger)
+    logger_file = map_to_config_file_format(edited_logger, True)
     config_dict[edited_logger_section] = logger_file
     success = update_config(config_dict, reboot_processor)
     return handle_response(logger_file, success)

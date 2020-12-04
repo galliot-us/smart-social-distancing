@@ -102,8 +102,29 @@ def clean_up_file(filename):
 
 
 def pascal_to_camel_case(pascal_case_string: str) -> str:
+    if len(pascal_case_string) > 1 and pascal_case_string[1].isupper():
+        # pascal_case_string starts with an acronym, returns without change
+        return pascal_case_string
     return pascal_case_string[0].lower() + pascal_case_string[1:]
 
 
 def camel_to_pascal_case(pascal_case_string: str) -> str:
     return pascal_case_string[0].upper() + pascal_case_string[1:]
+
+
+def map_section_from_config(section_name: str, config: dict):
+    if section_name not in config:
+        return {}
+    section = config[section_name]
+    config_mapped = {}
+    for key, value in section.items():
+        config_mapped[pascal_to_camel_case(key)] = value
+    return config_mapped
+
+
+def map_to_config_file_format(section_dto, exclude_unset=False):
+    section_dict = section_dto.dict(exclude_unset=exclude_unset)
+    section_file_dict = {}
+    for key, value in section_dict.items():
+        section_file_dict[camel_to_pascal_case(key)] = str(value)
+    return section_file_dict

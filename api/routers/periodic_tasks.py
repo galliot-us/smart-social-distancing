@@ -6,32 +6,16 @@ from typing import Optional
 
 from api.models.periodic_task import PeriodicTaskDTO, PeriodicTaskListDTO
 from api.utils import (
-    extract_config, handle_response, update_config, pascal_to_camel_case, camel_to_pascal_case)
+    extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
 import logging
 logger = logging.getLogger(__name__)
 
 periodic_tasks_router = APIRouter()
 
 
-def map_periodic_task(periodic_task_name, config):
-    periodic_task_section = config[periodic_task_name]
-    periodic_task_mapped = {}
-    for key, value in periodic_task_section.items():
-        periodic_task_mapped[pascal_to_camel_case(key)] = value
-    return periodic_task_mapped
-
-
-def map_to_periodic_task_file_format(periodic_task: PeriodicTaskDTO):
-    periodic_task_dict = periodic_task.dict(exclude_none=True)
-    periodic_task_file_dict = {}
-    for key, value in periodic_task_dict.items():
-        periodic_task_file_dict[camel_to_pascal_case(key)] = str(value)
-    return periodic_task_file_dict
-
-
 def get_periodic_tasks():
     config = extract_config(config_type="periodic_tasks")
-    return [map_periodic_task(x, config) for x in config.keys()]
+    return [map_section_from_config(x, config) for x in config.keys()]
 
 
 @periodic_tasks_router.get("", response_model=PeriodicTaskListDTO,
@@ -71,7 +55,7 @@ async def create_periodic_task(new_periodic_task: PeriodicTaskDTO, reboot_proces
     periodic_tasks = get_periodic_tasks()
     if new_periodic_task.name in [ps["name"] for ps in periodic_tasks]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Periodict task already exists")
-    periodic_task_file = map_to_periodic_task_file_format(new_periodic_task)
+    periodic_task_file = map_to_config_file_format(new_periodic_task, True)
     index = 0
     if periodic_tasks_index:
         index = max(periodic_tasks_index) + 1
@@ -98,7 +82,7 @@ async def edit_periodic_task(periodic_task_name: str, edited_periodic_task: Peri
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The periodic_task: {periodic_task_name} does not exist")
-    periodic_task_file = map_to_periodic_task_file_format(edited_periodic_task)
+    periodic_task_file = map_to_config_file_format(edited_periodic_task, True)
     config_dict[edited_periodic_task_section] = periodic_task_file
     success = update_config(config_dict, reboot_processor)
     return handle_response(periodic_task_file, success)

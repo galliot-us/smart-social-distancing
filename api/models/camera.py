@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 
-from pydantic import Field, validator
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional
 
 from .base import EntityConfigDTO, NotificationConfig, SnakeModel
@@ -34,3 +34,14 @@ class CameraDTO(EntityConfigDTO, NotificationConfig):
 
 class CamerasListDTO(SnakeModel):
     cameras: List[CameraDTO]
+
+
+class ImageModel(BaseModel):
+    image: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "image": "data:image/jpg;base64,iVBORw0KG..."
+            }
+        }

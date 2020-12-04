@@ -5,49 +5,38 @@ from typing import Optional
 
 from api.models.config import ConfigDTO, ConfigInfo, GlobalReportingEmailsInfo
 from api.utils import (
-    get_config, extract_config, handle_response, update_config
+    get_config, extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format
 )
 from constants import PROCESSOR_VERSION
 
-from .app import map_app, map_to_app_file_format
-from .api import map_api
-from .areas import map_area, map_to_area_file_format
-from .area_loggers import map_area_logger, map_to_area_logger_file_format
 from .cameras import map_camera, map_to_camera_file_format
-from .classifier import map_classifier, map_to_classifier_file_format
-from .core import map_core, map_to_core_file_format
-from .detector import map_detector, map_to_detector_file_format
-from .periodic_tasks import map_periodic_task, map_to_periodic_task_file_format
-from .source_loggers import map_source_logger, map_to_source_logger_file_format
-from .source_post_processors import map_source_post_processor, map_to_source_post_processor_file_format
-from .tracker import map_tracker, map_to_tracker_file_format
 
 logger = logging.getLogger(__name__)
 
 config_router = APIRouter()
 
 
-def map_to_config_file_format(config_dto: ConfigDTO):
+def map_to_file_format(config_dto: ConfigDTO):
     config_dict = dict()
-    config_dict["App"] = map_to_app_file_format(config_dto.app)
-    config_dict["CORE"] = map_to_core_file_format(config_dto.core)
+    config_dict["App"] = map_to_config_file_format(config_dto.app)
+    config_dict["CORE"] = map_to_config_file_format(config_dto.core)
     for count, area in enumerate(config_dto.areas):
-        config_dict["Area_" + str(count)] = map_to_area_file_format(area)
+        config_dict["Area_" + str(count)] = map_to_config_file_format(area)
     for count, camera in enumerate(config_dto.cameras):
         config_dict["Source_" + str(count)] = map_to_camera_file_format(camera)
-    config_dict["Detector"] = map_to_detector_file_format(config_dto.detector)
+    config_dict["Detector"] = map_to_config_file_format(config_dto.detector)
     if config_dto.classifier:
-        config_dict["Classifier"] = map_to_classifier_file_format(config_dto.classifier)
-    config_dict["Tracker"] = map_to_tracker_file_format(config_dto.tracker)
+        config_dict["Classifier"] = map_to_camera_file_format(config_dto.classifier)
+    config_dict["Tracker"] = map_to_config_file_format(config_dto.tracker)
     for count, source_post_processor in enumerate(config_dto.sourcePostProcessors):
-        config_dict["SourcePostProcessor_" + str(count)] = map_to_source_post_processor_file_format(
-            source_post_processor)
+        config_dict["SourcePostProcessor_" + str(count)] = map_to_config_file_format(
+            source_post_processor, True)
     for count, source_logger in enumerate(config_dto.sourceLoggers):
-        config_dict["SourceLogger_" + str(count)] = map_to_source_logger_file_format(source_logger)
+        config_dict["SourceLogger_" + str(count)] = map_to_config_file_format(source_logger, True)
     for count, area_logger in enumerate(config_dto.areaLoggers):
-        config_dict["AreaLogger_" + str(count)] = map_to_area_logger_file_format(area_logger)
+        config_dict["AreaLogger_" + str(count)] = map_to_config_file_format(area_logger, True)
     for count, periodic_task in enumerate(config_dto.periodicTasks):
-        config_dict["PeriodicTask_" + str(count)] = map_to_periodic_task_file_format(periodic_task)
+        config_dict["PeriodicTask_" + str(count)] = map_to_config_file_format(periodic_task, True)
     return config_dict
 
 
@@ -59,18 +48,18 @@ def map_config(config, options):
     area_loggers = [x for x in config.keys() if x.startswith("AreaLogger_")]
     periodic_tasks = [x for x in config.keys() if x.startswith("PeriodicTask_")]
     return {
-        "app": map_app(config),
-        "api": map_api(config),
-        "core": map_core(config),
+        "app": map_section_from_config("App", config),
+        "api": map_section_from_config("API", config),
+        "core": map_section_from_config("CORE", config),
         "cameras": [map_camera(x, config, options) for x in cameras_name],
-        "areas": [map_area(x, config) for x in areas_name],
-        "detector": map_detector(config),
-        "classifier": map_classifier(config),
-        "tracker": map_tracker(config),
-        "sourcePostProcessors": [map_source_post_processor(x, config) for x in source_post_processor],
-        "sourceLoggers": [map_source_logger(x, config) for x in source_loggers],
-        "areaLoggers": [map_area_logger(x, config) for x in area_loggers],
-        "periodicTasks": [map_periodic_task(x, config) for x in periodic_tasks],
+        "areas": [map_section_from_config(x, config) for x in areas_name],
+        "detector": map_section_from_config("Detector", config),
+        "classifier": map_section_from_config("Classifier", config),
+        "tracker": map_section_from_config("Tracker", config),
+        "sourcePostProcessors": [map_section_from_config(x, config) for x in source_post_processor],
+        "sourceLoggers": [map_section_from_config(x, config) for x in source_loggers],
+        "areaLoggers": [map_section_from_config(x, config) for x in area_loggers],
+        "periodicTasks": [map_section_from_config(x, config) for x in periodic_tasks],
     }
 
 
@@ -100,7 +89,7 @@ async def update_config_file(config: ConfigDTO, reboot_processor: Optional[bool]
     """
     Overwrites the configuration used by the processor.
     """
-    config_dict = map_to_config_file_format(config)
+    config_dict = map_to_file_format(config)
     success = update_config(config_dict, reboot_processor)
     return handle_response(config_dict, success)
 

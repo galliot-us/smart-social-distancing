@@ -10,13 +10,13 @@ class BaseSourcePostProcessorDTO(SnakeModel):
 
 
 class SourcePostProcessorDTO(BaseSourcePostProcessorDTO):
-    nmsThreshold: Optional[float] = Field(example=0.98)
+    NMSThreshold: Optional[float] = Field(example=0.98)
     defaultDistMethod: Optional[str] = Field(example="CenterPointsDistance")
     distThreshold: Optional[int] = Field(example=150)
 
 
 class ObjectFilteringDTO(BaseSourcePostProcessorDTO):
-    nmsThreshold: float
+    NMSThreshold: float
 
 
 class SocialDistanceDTO(BaseSourcePostProcessorDTO):

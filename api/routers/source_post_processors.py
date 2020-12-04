@@ -7,36 +7,14 @@ from typing import Optional
 from api.models.source_post_processor import (
     SourcePostProcessorDTO, SourcePostProcessorListDTO, ObjectFilteringDTO, SocialDistanceDTO, AnonymizerDTO)
 from api.utils import (
-    extract_config, handle_response, update_config, pascal_to_camel_case, camel_to_pascal_case)
+    extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
 
 source_post_processors_router = APIRouter()
 
 
-def map_source_post_processor(post_processor_name, config):
-    post_processor_section = config[post_processor_name]
-    post_processor_mapped = {}
-    for key, value in post_processor_section.items():
-        if key == "NMSThreshold":
-            post_processor_mapped["nmsThreshold"] = value
-        else:
-            post_processor_mapped[pascal_to_camel_case(key)] = value
-    return post_processor_mapped
-
-
-def map_to_source_post_processor_file_format(post_processor: SourcePostProcessorDTO):
-    post_processor_dict = post_processor.dict(exclude_none=True)
-    post_processor_file_dict = {}
-    for key, value in post_processor_dict.items():
-        if key == "nmsThreshold":
-            post_processor_file_dict["NMSThreshold"] = str(value)
-        else:
-            post_processor_file_dict[camel_to_pascal_case(key)] = str(value)
-    return post_processor_file_dict
-
-
 def get_source_post_processors():
     config = extract_config(config_type="source_post_processors")
-    return [map_source_post_processor(x, config) for x in config.keys()]
+    return [map_section_from_config(x, config) for x in config.keys()]
 
 
 def get_source_post_processors_model(post_processor):
@@ -91,7 +69,7 @@ async def create_post_processor(new_post_processor: SourcePostProcessorDTO, rebo
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if new_post_processor.name in [ps["name"] for ps in post_processors]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="PostProcessor already exists")
-    post_processor_file = map_to_source_post_processor_file_format(new_post_processor)
+    post_processor_file = map_to_config_file_format(new_post_processor, True)
     index = 0
     if post_processors_index:
         index = max(post_processors_index) + 1
@@ -122,7 +100,7 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
         post_processor_model(**edited_post_processor.dict())
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    post_processor_file = map_to_source_post_processor_file_format(edited_post_processor)
+    post_processor_file = map_to_config_file_format(edited_post_processor, True)
     config_dict[edited_post_processor_section] = post_processor_file
     success = update_config(config_dict, reboot_processor)
     return handle_response(post_processor_file, success)
