@@ -51,7 +51,7 @@ def get_area_loggerss(logger_name: str):
                           status_code=status.HTTP_201_CREATED, response_model_exclude_none=True)
 async def create_logger(new_logger: AreaLoggerDTO, reboot_processor: Optional[bool] = True):
     """
-    Adds a logger.
+    Adds an area logger.
     """
     config_dict = extract_config()
     loggers_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("AreaLogger_")]
@@ -77,7 +77,7 @@ async def create_logger(new_logger: AreaLoggerDTO, reboot_processor: Optional[bo
 async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
                       reboot_processor: Optional[bool] = True):
     """
-    Edits the configuration related to the logger <logger_name>
+    Edits the configuration related to the area logger <logger_name>
     """
     edited_logger.name = logger_name
     config_dict = extract_config()
@@ -104,7 +104,7 @@ async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
 @area_loggers_router.delete("/{logger_name}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_logger(logger_name: str, reboot_processor: Optional[bool] = True):
     """
-    Deletes the configuration related to the postprocessor <logger_name>
+    Deletes the configuration related to the area logger <logger_name>
     """
     config_dict = extract_config()
     logger_section = next((

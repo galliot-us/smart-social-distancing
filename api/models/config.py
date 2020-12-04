@@ -29,8 +29,8 @@ class ConfigDTO(SnakeModel):
     tracker: TrackerDTO
     sourcePostProcessors: List[SourcePostProcessorDTO]
     sourceLoggers: List[SourceLoggerDTO]
-    areaLoggers: Optional[List[AreaLoggerDTO]]
-    periodicTasks: Optional[List[PeriodicTaskDTO]]
+    areaLoggers: Optional[List[AreaLoggerDTO]] = []
+    periodicTasks: Optional[List[PeriodicTaskDTO]] = []
 
 
 class GlobalReportingEmailsInfo(BaseModel):
