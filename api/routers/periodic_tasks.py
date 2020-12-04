@@ -46,7 +46,7 @@ def get_periodic_taskss(periodic_task_name: str):
                             status_code=status.HTTP_201_CREATED, response_model_exclude_none=True)
 async def create_periodic_task(new_periodic_task: PeriodicTaskDTO, reboot_processor: Optional[bool] = True):
     """
-    Adds a periodic_task.
+    Adds a periodic task.
     """
     if new_periodic_task.name != "reports":
         raise ValidationError(f"Not supported periodic task named: {new_periodic_task.name}")
