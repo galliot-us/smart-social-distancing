@@ -4,8 +4,7 @@ from starlette import status
 from starlette.exceptions import HTTPException
 from typing import Optional
 
-from api.models.source_post_processor import (
-    SourcePostProcessorDTO, SourcePostProcessorListDTO, ObjectFilteringDTO, SocialDistanceDTO, AnonymizerDTO)
+from api.models.source_post_processor import SourcePostProcessorDTO, SourcePostProcessorListDTO, validate_post_processor
 from api.utils import (
     extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
 
@@ -15,17 +14,6 @@ source_post_processors_router = APIRouter()
 def get_source_post_processors():
     config = extract_config(config_type="source_post_processors")
     return [map_section_from_config(x, config) for x in config.keys()]
-
-
-def get_source_post_processors_model(post_processor):
-    if post_processor.name == "objects_filtering":
-        return ObjectFilteringDTO
-    elif post_processor.name == "social_distance":
-        return SocialDistanceDTO
-    elif post_processor.name == "anonymizer":
-        return AnonymizerDTO
-    else:
-        raise ValueError(f"Not supported post processor named: {post_processor.name}")
 
 
 @source_post_processors_router.get("", response_model=SourcePostProcessorListDTO,
@@ -41,7 +29,7 @@ def list_source_post_processors():
 
 @source_post_processors_router.get("/{post_processor_name}", response_model=SourcePostProcessorDTO,
                                    response_model_exclude_none=True)
-def get_source_post_processorss(post_processor_name: str):
+def get_post_processor(post_processor_name: str):
     """
     Returns the configuration related to the post processor <post_processor_name>.
     """
@@ -61,14 +49,12 @@ async def create_post_processor(new_post_processor: SourcePostProcessorDTO, rebo
     config_dict = extract_config()
     post_processors_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("SourcePostProcessor_")]
     post_processors = get_source_post_processors()
-    post_processor_model = get_source_post_processors_model(new_post_processor)
-    # Validate that the specific post processor's fields are correctly set
     try:
-        post_processor_model(**new_post_processor.dict())
+        validate_post_processor(new_post_processor)
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if new_post_processor.name in [ps["name"] for ps in post_processors]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="PostProcessor already exists")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Post Processor already exists")
     post_processor_file = map_to_config_file_format(new_post_processor, True)
     index = 0
     if post_processors_index:
@@ -94,10 +80,8 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The post processor: {post_processor_name} does not exist")
-    post_processor_model = get_source_post_processors_model(edited_post_processor)
-    # Validate that the specific post processor's fields are correctly set
     try:
-        post_processor_model(**edited_post_processor.dict())
+        validate_post_processor(edited_post_processor)
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     post_processor_file = map_to_config_file_format(edited_post_processor, True)

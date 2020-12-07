@@ -4,8 +4,7 @@ from starlette import status
 from starlette.exceptions import HTTPException
 from typing import Optional
 
-from api.models.source_logger import (
-    SourceLoggerDTO, SourceLoggerListDTO, VideoLoggerDTO, S3LoggerDTO, FileSystemLoggerDTO, WebHookLogger)
+from api.models.source_logger import SourceLoggerDTO, SourceLoggerListDTO, validate_logger
 from api.utils import (
     extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
 
@@ -15,19 +14,6 @@ source_loggers_router = APIRouter()
 def get_source_loggers():
     config = extract_config(config_type="source_loggers")
     return [map_section_from_config(x, config) for x in config.keys()]
-
-
-def get_source_loggers_model(logger):
-    if logger.name == "video_logger":
-        return VideoLoggerDTO
-    elif logger.name == "s3_logger":
-        return S3LoggerDTO
-    elif logger.name == "file_system_logger":
-        return FileSystemLoggerDTO
-    elif logger.name == "web_hook_logger":
-        return WebHookLogger
-    else:
-        raise ValueError(f"Not supported logger named: {logger.name}")
 
 
 @source_loggers_router.get("", response_model=SourceLoggerListDTO,
@@ -63,10 +49,8 @@ async def create_logger(new_logger: SourceLoggerDTO, reboot_processor: Optional[
     config_dict = extract_config()
     loggers_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("SourceLogger_")]
     loggers = get_source_loggers()
-    logger_model = get_source_loggers_model(new_logger)
-    # Validate that the specific logger's fields are correctly set
     try:
-        logger_model(**new_logger.dict())
+        validate_logger(new_logger)
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if new_logger.name in [ps["name"] for ps in loggers]:
@@ -96,10 +80,8 @@ async def edit_logger(logger_name: str, edited_logger: SourceLoggerDTO,
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The logger: {logger_name} does not exist")
-    logger_model = get_source_loggers_model(edited_logger)
-    # Validate that the specific logger's fields are correctly set
     try:
-        logger_model(**edited_logger.dict())
+        validate_logger(edited_logger)
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     logger_file = map_to_config_file_format(edited_logger, True)

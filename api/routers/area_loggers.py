@@ -4,7 +4,7 @@ from starlette import status
 from starlette.exceptions import HTTPException
 from typing import Optional
 
-from api.models.area_logger import AreaLoggerDTO, AreaLoggerListDTO, FileSystemLoggerDTO
+from api.models.area_logger import AreaLoggerDTO, AreaLoggerListDTO, validate_logger
 from api.utils import (
     extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
 
@@ -14,13 +14,6 @@ area_loggers_router = APIRouter()
 def get_area_loggers():
     config = extract_config(config_type="area_loggers")
     return [map_section_from_config(x, config) for x in config.keys()]
-
-
-def get_area_loggers_model(logger):
-    if logger.name == "file_system_logger":
-        return FileSystemLoggerDTO
-    else:
-        raise ValueError(f"Not supported logger named: {logger.name}")
 
 
 @area_loggers_router.get("", response_model=AreaLoggerListDTO,
@@ -56,10 +49,8 @@ async def create_logger(new_logger: AreaLoggerDTO, reboot_processor: Optional[bo
     config_dict = extract_config()
     loggers_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("AreaLogger_")]
     loggers = get_area_loggers()
-    logger_model = get_area_loggers_model(new_logger)
-    # Validate that the specific logger's fields are correctly set
     try:
-        logger_model(**new_logger.dict())
+        validate_logger(new_logger)
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if new_logger.name in [ps["name"] for ps in loggers]:
@@ -89,10 +80,8 @@ async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The logger: {logger_name} does not exist")
-    logger_model = get_area_loggers_model(edited_logger)
-    # Validate that the specific logger's fields are correctly set
     try:
-        logger_model(**edited_logger.dict())
+        validate_logger(edited_logger)
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     logger_file = map_to_config_file_format(edited_logger, True)

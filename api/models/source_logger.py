@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, validator
 from typing import List, Optional
 
 from .base import OptionalSectionConfig, SnakeModel
@@ -10,6 +10,12 @@ class SourceLoggerDTO(OptionalSectionConfig):
     timeInterval: Optional[float] = Field(example=0.5)
     logDirectory: Optional[str] = Field(example="/repo/data/processor/static/data/sources")
     endpoint: Optional[str] = Field(example="https://my-endpoint/")
+
+    @validator("name")
+    def validate_name(cls, value):
+        if value not in ["file_system_logger", "video_logger", "s3_logger", "web_hook_logger"]:
+            raise ValueError(f"Not supported logger named: {value}")
+        return value
 
 
 class VideoLoggerDTO(OptionalSectionConfig):
@@ -34,3 +40,16 @@ class WebHookLogger(OptionalSectionConfig):
 
 class SourceLoggerListDTO(SnakeModel):
     sourcesLoggers: List[SourceLoggerDTO]
+
+
+def validate_logger(logger: SourceLoggerDTO):
+    logger_model = None
+    if logger.name == "video_logger":
+        logger_model = VideoLoggerDTO
+    elif logger.name == "s3_logger":
+        logger_model = S3LoggerDTO
+    elif logger.name == "file_system_logger":
+        logger_model = FileSystemLoggerDTO
+    elif logger.name == "web_hook_logger":
+        logger_model = WebHookLogger
+    logger_model(**logger.dict())

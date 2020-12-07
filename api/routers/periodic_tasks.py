@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from pydantic import ValidationError
 from starlette import status
 from starlette.exceptions import HTTPException
 from typing import Optional
@@ -31,7 +30,7 @@ def list_periodic_tasks():
 
 @periodic_tasks_router.get("/{periodic_task_name}", response_model=PeriodicTaskDTO,
                            response_model_exclude_none=True)
-def get_periodic_taskss(periodic_task_name: str):
+def get_periodic_task(periodic_task_name: str):
     """
     Returns the configuration related to the periodic task <periodic_task_name>.
     """
@@ -48,8 +47,6 @@ async def create_periodic_task(new_periodic_task: PeriodicTaskDTO, reboot_proces
     """
     Adds a periodic task.
     """
-    if new_periodic_task.name != "reports":
-        raise ValidationError(f"Not supported periodic task named: {new_periodic_task.name}")
     config_dict = extract_config()
     periodic_tasks_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("PeriodicTask_")]
     periodic_tasks = get_periodic_tasks()
@@ -70,8 +67,6 @@ async def edit_periodic_task(periodic_task_name: str, edited_periodic_task: Peri
     """
     Edits the configuration related to the periodic task <periodic_task_name>.
     """
-    if periodic_task_name != "reports":
-        raise ValidationError(f"Not supported periodic task named: {periodic_task_name}")
     edited_periodic_task.name = periodic_task_name
     config_dict = extract_config()
     edited_periodic_task_section = next((
