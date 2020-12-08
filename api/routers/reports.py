@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from zipfile import ZipFile, ZIP_DEFLATED
 from libs.utils.reports import ReportsService
-from .utils import extract_config, clean_up_file
+from api.utils import extract_config, clean_up_file
 
 reports_router = APIRouter()
 reports = ReportsService()

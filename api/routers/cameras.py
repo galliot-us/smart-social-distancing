@@ -5,19 +5,18 @@ import numpy as np
 import os
 
 from fastapi import APIRouter, status
-from pydantic import BaseModel
 from starlette.exceptions import HTTPException
-from typing import List, Optional
+from typing import Optional
 
 from libs.utils.camera_calibration import (get_camera_calibration_path, compute_and_save_inv_homography_matrix,
                                            ConfigHomographyMatrix)
 
-from .models.config_keys import SourceConfigDTO
-from .settings import Settings
-from .utils import (
+from api.settings import Settings
+from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas,
-    update_config
+    update_config, map_section_from_config, map_to_config_file_format
 )
+from api.models.camera import CameraDTO, CamerasListDTO, ImageModel
 
 logger = logging.getLogger(__name__)
 
@@ -26,42 +25,16 @@ cameras_router = APIRouter()
 settings = Settings()
 
 
-class ImageModel(BaseModel):
-    image: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "image": "data:image/jpg;base64,iVBORw0KG..."
-            }
-        }
-
-
-class CamerasListDTO(BaseModel):
-    cameras: List[SourceConfigDTO]
-
-
 def map_camera(camera_name, config, options=[]):
+    camera_dict = map_section_from_config(camera_name, config)
     camera = config.get(camera_name)
     camera_id = camera.get("Id")
     image = None
     if "withImage" in options:
         dir_path = os.path.join(get_config().get_section_dict("App")["ScreenshotsDirectory"], camera_id)
         image = base64.b64encode(cv.imread(f"{dir_path}/default.jpg"))
-
-    return {
-        "id": camera_id,
-        "name": camera.get("Name"),
-        "videoPath": camera.get("VideoPath"),
-        "emails": camera.get("Emails"),
-        "enableSlackNotifications": camera.get("EnableSlackNotifications"),
-        "violationThreshold": camera.get("ViolationThreshold"),
-        "notifyEveryMinutes": camera.get("NotifyEveryMinutes"),
-        "dailyReport": camera.get("DailyReport"),
-        "dailyReportTime": camera.get("DailyReportTime"),
-        "image": image,
-        "distMethod": camera.get("DistMethod")
-    }
+    camera_dict["image"] = image
+    return camera_dict
 
 
 def get_cameras(options):
@@ -69,22 +42,10 @@ def get_cameras(options):
     return [map_camera(x, config, options) for x in config.keys()]
 
 
-def map_to_camera_file_format(camera: SourceConfigDTO):
-    return dict(
-        {
-            "Name": camera.name,
-            "VideoPath": camera.videoPath,
-            "Id": camera.id,
-            "Emails": camera.emails,
-            "EnableSlackNotifications": str(camera.enableSlackNotifications),
-            "Tags": camera.tags,
-            "NotifyEveryMinutes": str(camera.notifyEveryMinutes),
-            "ViolationThreshold": str(camera.violationThreshold),
-            "DistMethod": camera.distMethod,
-            "DailyReport": str(camera.dailyReport),
-            "DailyReportTime": camera.dailyReportTime
-        }
-    )
+def map_to_camera_file_format(camera: CameraDTO):
+    camera_file = map_to_config_file_format(camera)
+    camera_file.pop("Image", None)
+    return camera_file
 
 
 def delete_camera_from_areas(camera_id, config_dict):
@@ -132,7 +93,7 @@ async def list_cameras(options: Optional[str] = ""):
     }
 
 
-@cameras_router.get("/{camera_id}", response_model=SourceConfigDTO)
+@cameras_router.get("/{camera_id}", response_model=CameraDTO)
 async def get_camera(camera_id: str):
     """
     Returns the configuration related to the camera <camera_id>
@@ -143,8 +104,8 @@ async def get_camera(camera_id: str):
     return camera
 
 
-@cameras_router.post("", response_model=SourceConfigDTO, status_code=status.HTTP_201_CREATED)
-async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
+@cameras_router.post("", response_model=CameraDTO, status_code=status.HTTP_201_CREATED)
+async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] = True):
     """
     Adds a new camera to the processor.
     """
@@ -159,8 +120,8 @@ async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[
     return handle_response(camera_dict, success, status.HTTP_201_CREATED)
 
 
-@cameras_router.put("/{camera_id}", response_model=SourceConfigDTO)
-async def edit_camera(camera_id: str, edited_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
+@cameras_router.put("/{camera_id}", response_model=CameraDTO)
+async def edit_camera(camera_id: str, edited_camera: CameraDTO, reboot_processor: Optional[bool] = True):
     """
     Edits the configuration related to the camera <camera_id>
     """

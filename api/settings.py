@@ -1,6 +1,7 @@
 from pydantic import BaseSettings
 from libs.config_engine import ConfigEngine
 
+
 class Settings:
     instance = None
 

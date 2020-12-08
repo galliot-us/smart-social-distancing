@@ -1,12 +1,11 @@
 import logging
-import os
 
 from fastapi import APIRouter, status
 from pydantic import BaseModel
 from typing import Optional
 
 
-from .utils import handle_response, update_config
+from api.utils import handle_response, update_config
 from libs.notifications.slack_notifications import is_slack_configured
 
 logger = logging.getLogger(__name__)
@@ -87,4 +86,3 @@ def enable(body: SlackConfig, reboot_processor: Optional[bool] = True):
     Changes the slack workspace configured in the processor
     """
     enable_slack(body, reboot_processor)
-
