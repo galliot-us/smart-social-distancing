@@ -4,9 +4,10 @@ import schedule
 import time
 
 from libs.config_engine import ConfigEngine
-from libs.reports_tasks import (
-    create_daily_report, create_hourly_report, send_daily_report_notification, send_daily_global_report,
-    send_weekly_global_report)
+from libs.metrics.utils import compute_hourly_metrics, compute_daily_metrics
+from libs.reports.tasks import create_daily_report, create_hourly_report
+from libs.reports.notifications import (send_daily_report_notification, send_daily_global_report,
+                                        send_weekly_global_report)
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,10 @@ def main(config):
             logger.info("Reporting enabled!")
             schedule.every().day.at("00:01").do(create_daily_report, config=config)
             schedule.every().hour.at(":01").do(create_hourly_report, config=config)
+        elif task_name == "metrics":
+            logger.info("Metrics enabled!")
+            schedule.every().day.at("00:01").do(compute_daily_metrics, config=config)
+            schedule.every().hour.at(":01").do(compute_hourly_metrics, config=config)
         else:
             raise ValueError(f"Not supported periodic task named: {task_name}")
 

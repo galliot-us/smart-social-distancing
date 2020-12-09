@@ -1,8 +1,7 @@
 import numpy as np
-
 from typing import List, Tuple
 
-# TODO: In the future maybe make sense allow the users to configure this parameter
+
 PROCESSING_COUNT_THRESHOLD = 3
 
 
@@ -39,7 +38,7 @@ def process_distance_violation_for_object(distance_violations: List[bool]) -> Tu
     return object_detections, object_violations
 
 
-def process_face_labels_for_object(face_labels: List[int])-> Tuple[int, int]:
+def process_face_labels_for_object(face_labels: List[int]) -> Tuple[int, int]:
     """
     Receives a list with the "facesmask detections" (for a single person) and returns a
     tuple with the summary of faces and mask detected. Consecutive detections in the same state are

@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from zipfile import ZipFile, ZIP_DEFLATED
-from libs.utils.reports import ReportsService
+from libs.reports.api_service import ReportsService
 from api.utils import extract_config, clean_up_file
 
 reports_router = APIRouter()
