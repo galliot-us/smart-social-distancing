@@ -13,3 +13,9 @@ def compute_daily_metrics(config):
     SocialDistancingMetric.compute_daily_metrics(config)
     FaceMaskUsageMetric.compute_daily_metrics(config)
     OccupancyMetric.compute_daily_metrics(config)
+
+
+def compute_live_metrics(config):
+    SocialDistancingMetric.compute_live_metrics(config)
+    FaceMaskUsageMetric.compute_live_metrics(config)
+    OccupancyMetric.compute_live_metrics(config)

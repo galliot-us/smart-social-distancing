@@ -133,3 +133,41 @@ class BaseMetric:
                 for index, header in enumerate(cls.csv_headers):
                     row[header] = daily_data[index]
                 writer.writerow(row)
+
+    @classmethod
+    def generate_live_csv_data(cls, today_entity_csv):
+        """
+        Generates the live report using the `today_entity_csv` file received.
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def compute_live_metrics(cls, config):
+        base_directory = get_source_log_directory(config) if cls.entity == "source" else get_area_log_directory(config)
+        entities = config.get_video_sources() if cls.entity == "source" else config.get_areas()
+        for entity in entities:
+            entity_directory = os.path.join(base_directory, entity["id"])
+            reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
+            # Create missing directories
+            os.makedirs(reports_directory, exist_ok=True)
+            log_directory = None
+            if cls.entity == "source":
+                log_directory = os.path.join(entity_directory, "objects_log")
+            else:
+                # cls.entity == "area"
+                log_directory = os.path.join(entity_directory, "occupancy_log")
+            today_entity_csv = os.path.join(log_directory, str(date.today()) + ".csv")
+            live_report_csv = os.path.join(reports_directory, "live.csv")
+            headers = ["Time"] + cls.csv_headers
+            report_file_exists = os.path.isfile(live_report_csv)
+            if not os.path.isfile(today_entity_csv):
+                return
+            live_data = cls.generate_live_csv_data(today_entity_csv)
+            with open(live_report_csv, "a") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=headers)
+                if not report_file_exists:
+                    writer.writeheader()
+                row = {"Time": datetime.now()}
+                for index, header in enumerate(cls.csv_headers):
+                    row[header] = live_data[index]
+                writer.writerow(row)

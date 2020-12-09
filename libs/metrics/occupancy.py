@@ -1,6 +1,7 @@
 import csv
 import numpy as np
 
+from collections import deque
 from datetime import datetime
 from statistics import mean
 from typing import Dict
@@ -18,6 +19,8 @@ class OccupancyMetric(BaseMetric):
     def procces_csv_row(cls, csv_row: Dict, objects_logs: Dict):
         row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
         row_hour = row_time.hour
+        if not objects_logs.get(row_hour):
+            objects_logs[row_hour] = {}
         if not objects_logs[row_hour].get("Occupancy"):
             objects_logs[row_hour]["Occupancy"] = []
         objects_logs[row_hour]["Occupancy"].append(int(csv_row["Occupancy"]))
@@ -44,3 +47,21 @@ class OccupancyMetric(BaseMetric):
         if not average_ocupancy:
             return 0, 0
         return round(mean(average_ocupancy), 2), max(max_occupancy)
+
+    @classmethod
+    def generate_live_csv_data(cls, today_entity_csv):
+        """
+        Generates the live report using the `today_entity_csv` file received.
+        """
+        with open(today_entity_csv, "r") as log:
+            objects_logs = {}
+            lastest_entries = deque(csv.DictReader(log), 1000)
+            for entry in lastest_entries:
+                cls.procces_csv_row(entry, objects_logs)
+            # Put the rows in the same hour
+            objects_logs_merged = {
+                0: {"Occupancy": []}
+            }
+            for hour in objects_logs:
+                objects_logs_merged[0]["Occupancy"].extend(objects_logs[hour]["Occupancy"])
+        return cls.generate_hourly_metric_data(objects_logs_merged)

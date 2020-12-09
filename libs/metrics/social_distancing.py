@@ -3,6 +3,7 @@ import ast
 import numpy as np
 import os
 
+from collections import deque
 from datetime import datetime, date, timedelta
 from typing import Dict, List, Tuple
 
@@ -126,3 +127,15 @@ class SocialDistancingMetric(BaseMetric):
             violation_heatmap_file = os.path.join(heatmaps_directory, "violations_heatmap_" + yesterday)
             cls.create_heatmap_report(config, yesterday_csv, detection_heatmap_file, "Detections")
             cls.create_heatmap_report(config, yesterday_csv, violation_heatmap_file, "Violations")
+
+    @classmethod
+    def generate_live_csv_data(cls, today_entity_csv):
+        """
+        Generates the live report using the `today_entity_csv` file received.
+        """
+        with open(today_entity_csv, "r") as log:
+            objects_logs = {}
+            lastest_entries = deque(csv.DictReader(log), 1000)
+            for entry in lastest_entries:
+                cls.procces_csv_row(entry, objects_logs)
+        return np.sum(cls.generate_hourly_metric_data(objects_logs), axis=0)

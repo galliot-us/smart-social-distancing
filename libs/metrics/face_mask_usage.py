@@ -3,6 +3,7 @@ import ast
 import csv
 import numpy as np
 
+from collections import deque
 from datetime import datetime
 from typing import Dict, List, Tuple
 
@@ -81,3 +82,15 @@ class FaceMaskUsageMetric(BaseMetric):
                 total_faces += int(row["DetectedFaces"])
                 total_masks += int(row["UsingFacemask"])
         return total_faces, total_masks
+
+    @classmethod
+    def generate_live_csv_data(cls, today_entity_csv):
+        """
+        Generates the live report using the `today_entity_csv` file received.
+        """
+        with open(today_entity_csv, "r") as log:
+            objects_logs = {}
+            lastest_entries = deque(csv.DictReader(log), 1000)
+            for entry in lastest_entries:
+                cls.procces_csv_row(entry, objects_logs)
+        return np.sum(cls.generate_hourly_metric_data(objects_logs), axis=0)
