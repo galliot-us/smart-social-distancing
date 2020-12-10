@@ -3,11 +3,16 @@ import csv
 import operator
 import numpy as np
 import pandas as pd
+import logging
 
 from datetime import date, timedelta
 from libs.notifications.slack_notifications import SlackService, is_slack_configured
+from libs.metrics import SocialDistancingMetric
 from libs.utils.mailing import MailService, is_mailing_configured
 from libs.utils.loggers import get_source_log_directory
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_daily_report(config, entity_info, report_date):
@@ -16,14 +21,16 @@ def get_daily_report(config, entity_info, report_date):
     log_directory = get_source_log_directory(config)
 
     if entity_type == 'Camera':
-        objects_log_directory = os.path.join(log_directory, entity_info['id'], "objects_log")
-        daily_csv_file_paths = [os.path.join(objects_log_directory, 'report_' + report_date + '.csv')]
+        reports_directory = os.path.join(log_directory, entity_info['id'], "reports")
+        daily_csv_file_paths = [
+            os.path.join(reports_directory, SocialDistancingMetric.reports_folder ,'report_' + report_date + '.csv')
+        ]
     else:
         # entity == 'Area'
         camera_ids = entity_info['cameras']
         daily_csv_file_paths = [
-            os.path.join(log_directory, camera_id, "objects_log/report_" + report_date + ".csv") for camera_id in
-            camera_ids]
+            os.path.join(log_directory, camera_id, f"reports/{SocialDistancingMetric.reports_folder}/report_" + report_date + ".csv")
+            for camera_id in camera_ids]
 
     for file_path in daily_csv_file_paths:
         violations_per_hour = []
@@ -33,7 +40,7 @@ def get_daily_report(config, entity_info, report_date):
             with open(file_path, newline='') as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    violations_per_hour.append(int(row['ViolatingObjects']))
+                    violations_per_hour.append(int(row["DetectedObjects"]) - int(row["NoInfringement"]))
         if not all_violations_per_hour:
             all_violations_per_hour = violations_per_hour
         else:

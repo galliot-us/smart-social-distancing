@@ -15,7 +15,8 @@ from .base import BaseMetric
 class SocialDistancingMetric(BaseMetric):
 
     reports_folder = "social-distancing"
-    csv_headers = ["Number", "DetectedObjects", "ViolatingObjects"]
+    csv_headers = ["DetectedObjects", "NoInfringement", "LowInfringement", "HighInfringement",
+                   "CriticalInfringement"]
 
     @classmethod
     def procces_csv_row(cls, csv_row: Dict, objects_logs: Dict):
@@ -29,62 +30,93 @@ class SocialDistancingMetric(BaseMetric):
                 objects_logs[row_hour][d["tracking_id"]] = {"distance_violations": []}
             # Append social distancing violations
             objects_logs[row_hour][d["tracking_id"]]["distance_violations"].append(
-                index in ast.literal_eval(csv_row["ViolationsIndexes"]))
+                {
+                    "time": row_time,
+                    "infrigement": index in ast.literal_eval(csv_row["ViolationsIndexes"])
+                }
+            )
 
     @classmethod
     def generate_hourly_metric_data(cls, objects_logs):
-        summary = np.zeros((len(objects_logs), 3), dtype=np.long)
+        summary = np.zeros((len(objects_logs), 5), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
             for detection_object in hour_objects_detections.values():
-                object_detections, object_violations = cls.process_distance_violation_for_object(
+                summary[index] += cls.process_distance_violation_for_object(
                     detection_object["distance_violations"])
-                summary[index] += (1, object_detections, object_violations)
         return summary
 
     @classmethod
-    def process_distance_violation_for_object(cls, distance_violations: List[bool]) -> Tuple[int, int]:
+    def process_distance_violation_for_object(cls, distance_violations: List[dict]) -> Tuple[int, int]:
         """
         Receives a list with the "social distancing detections" (for a single person) and returns a
-        tuple with the summary of detections and violations. Consecutive detections in the same state are
-        grouped and returned as a single one. Detections lower than the constant PROCESSING_COUNT_THRESHOLD
-        are ignored.
+        tuple with the summary of detections and violations (grouped by severity). Consecutive detections in
+        the same state are grouped and returned as a single one. Detections lower than the constant
+        PROCESSING_COUNT_THRESHOLD are ignored.
 
-        For example, the input [True, True, True, True, True, True, False, True, True, True, True, True, False,
-        False, False, False, False, False, True, True, True, True, True] returns (3, 2).
+        The infrigement categories are :
+            - Low: Between 10 seconds 30 seconds
+            - High: Between 30 and 60 seconds
+            - Critical: More than 60 seconds
         """
-        # TODO: This is the first version of the metrics and is implemented to feed the current dashboard.
-        # When we define the new metrics we will need to change that logic
-        object_detections = 0
-        object_violations = 0
+        # TODO: The categories values defined need to be updated taking into account the OMS recommendations.
+        # The current values only have demo purposes
         current_status = None
         processing_status = None
         processing_count = 0
+        processing_time = None
 
-        for dist_violation in distance_violations:
-            if processing_status != dist_violation:
-                processing_status = dist_violation
-                processing_count = 0
-            processing_count += 1
-            if current_status != processing_status and processing_count >= cls.processing_count_threshold:
-                # Object was enouth time in the same state, change it
-                current_status = processing_status
-                object_detections += 1
-                if current_status:
-                    # The object was violating the social distance, report it
-                    object_violations += 1
-        return object_detections, object_violations
+        CRITICAL_THRESHOLD = 60
+        HIGH_THRESHOLD = 30
+        LOW_TRESHOLD = 10
+
+        detections = []
+        if distance_violations:
+            for dist_violation in distance_violations:
+                status = dist_violation["infrigement"]
+                if processing_status != status:
+                    processing_status = status
+                    processing_time = dist_violation["time"]
+                    processing_count = 0
+                processing_count += 1
+                if current_status != processing_status and processing_count >= cls.processing_count_threshold:
+                    # Object was enouth time in the same state, change it
+                    if current_status is not None:
+                        # Append the previous status in the detections list
+                        seconds_in_status = (dist_violation["time"] - processing_time).seconds
+                        detections.append({"status": status, "seconds": seconds_in_status})
+                    current_status = processing_status
+                    processing_time = dist_violation["time"]
+            # Append the latest status
+            seconds_in_status = (distance_violations[-1]["time"] - processing_time).seconds
+            detections.append({"status": status, "seconds": seconds_in_status})
+        detected_objects, no_infringements, low_infringements, high_infringements, critical_infringements = 0, 0, 0, 0, 0
+        for detection in detections:
+            detected_objects += 1
+            if not detection["status"] or detection["seconds"] < LOW_TRESHOLD:
+                no_infringements += 1
+            elif LOW_TRESHOLD <= detection["seconds"] < HIGH_THRESHOLD:
+                low_infringements += 1
+            elif HIGH_THRESHOLD <= detection["seconds"] < CRITICAL_THRESHOLD:
+                high_infringements += 1
+            else:
+                # CRITICAL_THRESHOLD <= detection["time"]
+                critical_infringements += 1
+
+        return detected_objects, no_infringements, low_infringements, high_infringements, critical_infringements
 
     @classmethod
     def generate_daily_csv_data(cls, yesterday_hourly_file):
-        total_number, total_detections, total_violations = 0, 0, 0
+        detected_objects, no_infringements, low_infringements, high_infringements, critical_infringements = 0, 0, 0, 0, 0
         with open(yesterday_hourly_file, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                total_number += int(row["Number"])
-                total_detections += int(row["DetectedObjects"])
-                total_violations += int(row["ViolatingObjects"])
-        return total_number, total_detections, total_violations
+                detected_objects += int(row["DetectedObjects"])
+                no_infringements += int(row["NoInfringement"])
+                low_infringements += int(row["LowInfringement"])
+                high_infringements += int(row["HighInfringement"])
+                critical_infringements += int(row["CriticalInfringement"])
+        return detected_objects, no_infringements, low_infringements, high_infringements, critical_infringements
 
     @classmethod
     def create_heatmap_report(cls, config, yesterday_csv, heatmap_file, column):

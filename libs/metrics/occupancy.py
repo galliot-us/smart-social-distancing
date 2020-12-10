@@ -64,4 +64,4 @@ class OccupancyMetric(BaseMetric):
             }
             for hour in objects_logs:
                 objects_logs_merged[0]["Occupancy"].extend(objects_logs[hour]["Occupancy"])
-        return cls.generate_hourly_metric_data(objects_logs_merged)
+        return cls.generate_hourly_metric_data(objects_logs_merged)[0]

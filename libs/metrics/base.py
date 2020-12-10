@@ -1,11 +1,28 @@
 import os
 import csv
+import numpy as np
+import pandas as pd
 import logging
 
+from collections import deque
 from datetime import date, datetime, timedelta, time
+from typing import Dict, List
+
 from libs.utils.loggers import get_source_log_directory, get_area_log_directory
 
 logger = logging.getLogger(__name__)
+
+
+def parse_date_range(dates):
+    """Generator. From a continuous sorted list of datetime64 yields tuples (start_date, end_date) for each week encompassed"""
+    while not dates.empty:
+        start = 0
+        end = (7 - dates[start].weekday()) - 1
+        if end > len(dates):
+            end = len(dates) - 1
+
+        yield (dates[start], dates[end])
+        dates = dates[end+1:]
 
 
 class BaseMetric:
@@ -14,6 +31,16 @@ class BaseMetric:
     csv_headers = []
     # entity value can be "source" or "area"
     entity = "source"
+
+    @classmethod
+    def get_entity_base_directory(cls, config=None):
+        if config:
+            return get_source_log_directory(config) if cls.entity == "source" else get_area_log_directory(config)
+        return os.getenv("SourceLogDirectory") if cls.entity == "source" else os.getenv("AreaLogDirectory")
+
+    @classmethod
+    def get_entities(cls, config):
+        return config.get_video_sources() if cls.entity == "source" else config.get_areas()
 
     @classmethod
     def procces_csv_row(cls, csv_row, object_logs):
@@ -52,10 +79,9 @@ class BaseMetric:
     def compute_hourly_metrics(cls, config):
         if not cls.reports_folder:
             raise Exception(f"The metric {cls} doesn't have configured the folder parameter")
-        base_directory = get_source_log_directory(config) if cls.entity == "source" else get_area_log_directory(config)
-        entities = config.get_video_sources() if cls.entity == "source" else config.get_areas()
+        base_directory = cls.get_entity_base_directory(config)
+        entities = cls.get_entities(config)
         current_hour = datetime.now().hour
-
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity["id"])
             log_directory = None
@@ -107,8 +133,8 @@ class BaseMetric:
 
     @classmethod
     def compute_daily_metrics(cls, config):
-        base_directory = get_source_log_directory(config) if cls.entity == "source" else get_area_log_directory(config)
-        entities = config.get_video_sources() if cls.entity == "source" else config.get_areas()
+        base_directory = cls.get_entity_base_directory(config)
+        entities = cls.get_entities(config)
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity["id"])
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
@@ -143,8 +169,8 @@ class BaseMetric:
 
     @classmethod
     def compute_live_metrics(cls, config):
-        base_directory = get_source_log_directory(config) if cls.entity == "source" else get_area_log_directory(config)
-        entities = config.get_video_sources() if cls.entity == "source" else config.get_areas()
+        base_directory = cls.get_entity_base_directory(config)
+        entities = cls.get_entities(config)
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity["id"])
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
@@ -167,7 +193,108 @@ class BaseMetric:
                 writer = csv.DictWriter(csvfile, fieldnames=headers)
                 if not report_file_exists:
                     writer.writeheader()
-                row = {"Time": datetime.now()}
+                row = {"Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                 for index, header in enumerate(cls.csv_headers):
                     row[header] = live_data[index]
                 writer.writerow(row)
+
+    @classmethod
+    def get_hourly_report(cls, entities: List[str], report_date: date) -> Dict:
+        base_directory = cls.get_entity_base_directory()
+        hours = list(range(0, 24))
+        results = {}
+        for header in cls.csv_headers:
+            results[header] = np.zeros(24)
+        for entity in entities:
+            entity_directory = os.path.join(base_directory, entity)
+            reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
+            file_path = os.path.join(reports_directory, f"report_{report_date}.csv")
+            if os.path.exists(file_path):
+                df = pd.read_csv(file_path)
+                for header in cls.csv_headers:
+                    results[header] += np.pad(
+                        df[header].to_numpy(), (0, 24 - df[header].to_numpy().size), mode="constant"
+                    )
+        for metric in results:
+            results[metric] = results[metric].tolist()
+        results["Hours"] = hours
+        return results
+
+    @classmethod
+    def get_daily_report(cls, entities: List[str], from_date: date, to_date: date) -> Dict:
+        base_directory = cls.get_entity_base_directory()
+        date_range = pd.date_range(start=from_date, end=to_date)
+        base_results = {}
+        for key in date_range:
+            base_results[key.strftime('%Y-%m-%d')] = {}
+            for header in cls.csv_headers:
+                base_results[key.strftime('%Y-%m-%d')][header] = 0
+
+        for entity in entities:
+            entity_directory = os.path.join(base_directory, entity)
+            reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
+            file_path = os.path.join(reports_directory, "report.csv")
+            df = pd.read_csv(file_path)
+            df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
+            mask = (df['Date'] >= pd.to_datetime(from_date)) & (df['Date'] <= pd.to_datetime(to_date))
+            entity_report = df.loc[mask]
+            entity_report['Date'] = entity_report['Date'].apply(lambda x: x.strftime('%Y-%m-%d'))
+            entity_report = entity_report.set_index('Date').T
+            entity_report_dict = entity_report.to_dict()
+            for key in entity_report_dict:
+                for header in cls.csv_headers:
+                    base_results[key][header] += entity_report_dict[key][header]
+
+        report = {"Dates": []}
+        for header in cls.csv_headers:
+            report[header] = []
+        for report_date in sorted(base_results):
+            report["Dates"].append(report_date)
+            for header in cls.csv_headers:
+                report[header].append(base_results[report_date][header])
+        return report
+
+    @classmethod
+    def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,
+                          from_date: date = None, to_date: date = None) -> Dict:
+        number_of_days = number_of_weeks*7
+        if number_of_days > 0:
+            # Separate weeks in range taking a number of weeks ago, considering the week ended yesterday
+            date_range = pd.date_range(end=date.today() - timedelta(days=1), periods=number_of_days)
+            start_dates = date_range[0::7]
+            end_dates = date_range[6::7]
+            week_span = list(zip(start_dates, end_dates))
+        elif isinstance(from_date, date) and isinstance(to_date, date):
+            # Separate weeks in range considering the week starts on Monday
+            date_range = pd.date_range(start=from_date, end=to_date)
+            week_span = list(parse_date_range(date_range))
+        else:
+            week_span = []
+        report = {"Weeks": []}
+        for header in cls.csv_headers:
+            report[header] = []
+        for start_date, end_date in week_span:
+            week_data = cls.get_daily_report(entities, start_date, end_date)
+            report["Weeks"].append(f"{start_date.strftime('%Y-%m-%d')} {end_date.strftime('%Y-%m-%d')}")
+            for header in cls.csv_headers:
+                report[header].append(sum(week_data[header]))
+        return report
+
+    @classmethod
+    def get_live_report(cls, entities):
+        base_directory = cls.get_entity_base_directory()
+        report = {}
+        for header in cls.csv_headers:
+            report[header] = 0
+        times = []
+        for entity in entities:
+            entity_directory = os.path.join(base_directory, entity)
+            reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
+            file_path = os.path.join(reports_directory, "live.csv")
+            with open(file_path, "r") as live_file:
+                lastest_entry = deque(csv.DictReader(live_file), 1)[0]
+                times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
+                for header in cls.csv_headers:
+                    report[header] += int(lastest_entry[header])
+        report["Time"] = str(min(times))
+        return report

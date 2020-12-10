@@ -13,7 +13,7 @@ from .base import BaseMetric
 class FaceMaskUsageMetric(BaseMetric):
 
     reports_folder = "face-mask-usage"
-    csv_headers = ["DetectedFaces", "UsingFacemask"]
+    csv_headers = ["NoFace", "FaceWithMask", "FaceWithoutMask"]
 
     @classmethod
     def procces_csv_row(cls, csv_row: Dict, objects_logs: Dict):
@@ -30,12 +30,14 @@ class FaceMaskUsageMetric(BaseMetric):
 
     @classmethod
     def generate_hourly_metric_data(cls, objects_logs):
-        summary = np.zeros((len(objects_logs), 2), dtype=np.long)
+        summary = np.zeros((len(objects_logs), 3), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
             for detection_object in hour_objects_detections.values():
-                face_detections, mask_detections = cls.process_face_labels_for_object(detection_object["face_labels"])
-                summary[index] += (face_detections, mask_detections)
+                no_face_detections, mask_detections, no_mask_detections = cls.process_face_labels_for_object(
+                    detection_object["face_labels"]
+                )
+                summary[index] += (no_face_detections, mask_detections, no_mask_detections)
         return summary
 
     @classmethod
@@ -49,14 +51,12 @@ class FaceMaskUsageMetric(BaseMetric):
         For example, the input [0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1 1, 1,
         -1, -1, -1, -1, -1, -1, 0, 0, 0, 0] returns (3, 2).
         """
-        # TODO: This is the first version of the metrics and is implemented to feed the current dashboard.
-        # When we define the new metrics we will need to change that logic
-        face_detections = 0
+        no_face_detections = 0
         mask_detections = 0
+        no_mask_detections = 0
         current_status = None
         processing_status = None
         processing_count = 0
-
         for face_label in face_labels:
             if processing_status != face_label:
                 processing_status = face_label
@@ -65,23 +65,28 @@ class FaceMaskUsageMetric(BaseMetric):
             if current_status != processing_status and processing_count >= cls.processing_count_threshold:
                 # FaceLabel was enouth time in the same state, change it
                 current_status = processing_status
-                if current_status != -1:
-                    # A face was detected
-                    face_detections += 1
-                if current_status == 0:
-                    # A mask was detected
+                if current_status == -1:
+                    #  Face was not detected
+                    no_face_detections += 1
+                elif current_status == 0:
+                    # A face using mask was detected
                     mask_detections += 1
-        return face_detections, mask_detections
+                else:
+                    # current_status == 1
+                    # A face without mask was detected
+                    no_mask_detections += 1
+        return no_face_detections, mask_detections, no_mask_detections
 
     @classmethod
     def generate_daily_csv_data(cls, yesterday_hourly_file):
-        total_faces, total_masks = 0, 0
+        total_no_face_detections, total_mask_detections, total_no_mask_detections = 0, 0, 0
         with open(yesterday_hourly_file, newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                total_faces += int(row["DetectedFaces"])
-                total_masks += int(row["UsingFacemask"])
-        return total_faces, total_masks
+                total_no_face_detections += int(row["NoFace"])
+                total_mask_detections += int(row["FaceWithMask"])
+                total_no_mask_detections += int(row["FaceWithoutMask"])
+        return total_no_face_detections, total_mask_detections, total_no_mask_detections
 
     @classmethod
     def generate_live_csv_data(cls, today_entity_csv):

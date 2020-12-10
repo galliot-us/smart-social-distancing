@@ -22,6 +22,7 @@ from .routers.cameras import cameras_router
 from .routers.classifier import classifier_router
 from .routers.config import config_router
 from .routers.detector import detector_router
+from .routers.metrics import area_metrics_router, camera_metrics_router
 from .routers.periodic_tasks import periodic_tasks_router
 from .routers.reports import reports_router
 from .routers.slack import slack_router
@@ -74,6 +75,8 @@ class ProcessorAPI:
         app.include_router(source_loggers_router, prefix="/source_loggers", tags=["Source Loggers"])
         app.include_router(area_loggers_router, prefix="/area_loggers", tags=["Area Loggers"])
         app.include_router(periodic_tasks_router, prefix="/periodic_tasks", tags=["Periodic Tasks"])
+        app.include_router(area_metrics_router, prefix="/metrics/areas", tags=["Metrics"])
+        app.include_router(camera_metrics_router, prefix="/metrics/cameras", tags=["Metrics"])
         app.include_router(reports_router, prefix="/reports", tags=["Reports"])
         app.include_router(slack_router, prefix="/slack", tags=["Slack"])
 
