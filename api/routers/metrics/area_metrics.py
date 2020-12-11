@@ -42,8 +42,7 @@ def validate_area_existence(area_id: str):
 @metrics_router.get("/occupancy/live", response_model=OccupancyLive)
 def get_area_occupancy_live(areas: str = ""):
     """
-    Returns a report with live information about the occupancy detected in
-    the areas <areas>.
+    Returns a report with live information about the occupancy in the areas <areas>.
     """
     if not areas:
         areas = get_all_areas()
@@ -55,7 +54,7 @@ def get_area_occupancy_live(areas: str = ""):
 @metrics_router.get("/occupancy/hourly", response_model=OccupancyHourly)
 def get_area_occupancy_hourly_report(areas: str = "", date: date = Query(date.today().isoformat())):
     """
-    Returns a hourly report (for the date specified) with information about the occupancy detected in
+    Returns a hourly report (for the date specified) with information about the occupancy in
     the areas <areas>.
     """
     if not areas:
@@ -70,7 +69,7 @@ def get_area_occupancy_daily_report(areas: str = "",
                                     from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
                                     to_date: date = Query(date.today().isoformat())):
     """
-    Returns a daily report (for the date range specified) with information about the occupancy detected in
+    Returns a daily report (for the date range specified) with information about the occupancy in
     the areas <areas>.
     """
     validate_dates(from_date, to_date)
@@ -88,7 +87,7 @@ def get_area_occupancy_weekly_report(
         from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
         to_date: date = Query(date.today().isoformat())):
     """
-    Returns a weekly report (for the date range specified) with information about the occupancy detected in
+    Returns a weekly report (for the date range specified) with information about the occupancy in
     the areas <areas>.
 
     **If `weeks` is provided and is a positive number:**

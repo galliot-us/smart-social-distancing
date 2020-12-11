@@ -342,7 +342,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
  
 - `[AreaLogger_N]`:
 
-  Similar to the section *SourceLogger_N* (for areas instead of cameras), we support multiple loggers (right now only 1, but we have plans to include new ones in the future) that you enable/disable uncommenting/commenting them or with the *Enabled* flag.
+  Similar to the section *SourceLogger_N* (for areas instead of cameras), we support multiple loggers (right now only 1, but we plan to include new ones in the future) that you enable/disable uncommenting/commenting them or with the *Enabled* flag.
   - `file_system_logger`: Stores the occupancy data in a folder inside the processor.
     - `LogDirectory`: Defines the location where the generated files will be stored.
 
