@@ -31,6 +31,8 @@ class BaseMetric:
     csv_headers = []
     # entity value can be "source" or "area"
     entity = "source"
+    # Use the `live_csv_headers` when the csv strucutre differs from the hourly/daily
+    live_csv_headers = []
 
     @classmethod
     def get_entity_base_directory(cls, config=None):
@@ -161,7 +163,7 @@ class BaseMetric:
                 writer.writerow(row)
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv):
+    def generate_live_csv_data(cls, today_entity_csv, entity):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
@@ -184,17 +186,19 @@ class BaseMetric:
                 log_directory = os.path.join(entity_directory, "occupancy_log")
             today_entity_csv = os.path.join(log_directory, str(date.today()) + ".csv")
             live_report_csv = os.path.join(reports_directory, "live.csv")
-            headers = ["Time"] + cls.csv_headers
+            csv_headers = cls.live_csv_headers if cls.live_csv_headers else cls.csv_headers
+            headers = ["Time"] + csv_headers
             report_file_exists = os.path.isfile(live_report_csv)
             if not os.path.isfile(today_entity_csv):
                 return
-            live_data = cls.generate_live_csv_data(today_entity_csv)
+            entity["base_directory"] = entity_directory
+            live_data = cls.generate_live_csv_data(today_entity_csv, entity)
             with open(live_report_csv, "a") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=headers)
                 if not report_file_exists:
                     writer.writeheader()
                 row = {"Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-                for index, header in enumerate(cls.csv_headers):
+                for index, header in enumerate(csv_headers):
                     row[header] = live_data[index]
                 writer.writerow(row)
 
@@ -284,17 +288,21 @@ class BaseMetric:
     def get_live_report(cls, entities):
         base_directory = cls.get_entity_base_directory()
         report = {}
-        for header in cls.csv_headers:
+        live_headers = cls.live_csv_headers if cls.live_csv_headers else cls.csv_headers
+        for header in live_headers:
             report[header] = 0
         times = []
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity)
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             file_path = os.path.join(reports_directory, "live.csv")
+            if not os.path.exists(file_path):
+                report["Time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                return report
             with open(file_path, "r") as live_file:
                 lastest_entry = deque(csv.DictReader(live_file), 1)[0]
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
-                for header in cls.csv_headers:
+                for header in live_headers:
                     report[header] += int(lastest_entry[header])
         report["Time"] = str(min(times))
         return report

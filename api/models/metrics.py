@@ -158,6 +158,8 @@ class Occupancy(SnakeModel):
 class OccupancyLive(LiveReport):
     AverageOccupancy: int
     MaxOccupancy: int
+    OccupancyThreshold: int
+    Violations: int
 
 
 class OccupancyHourly(HourlyReports, Occupancy):

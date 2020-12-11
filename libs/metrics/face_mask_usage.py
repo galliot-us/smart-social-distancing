@@ -89,7 +89,7 @@ class FaceMaskUsageMetric(BaseMetric):
         return total_no_face_detections, total_mask_detections, total_no_mask_detections
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv):
+    def generate_live_csv_data(cls, today_entity_csv, entity):
         """
         Generates the live report using the `today_entity_csv` file received.
         """

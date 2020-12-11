@@ -1,5 +1,6 @@
 import csv
 import numpy as np
+import os
 
 from collections import deque
 from datetime import datetime
@@ -14,6 +15,7 @@ class OccupancyMetric(BaseMetric):
     reports_folder = "occupancy"
     csv_headers = ["AverageOccupancy", "MaxOccupancy"]
     entity = "area"
+    live_csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold", "Violations"]
 
     @classmethod
     def procces_csv_row(cls, csv_row: Dict, objects_logs: Dict):
@@ -49,7 +51,7 @@ class OccupancyMetric(BaseMetric):
         return round(mean(average_ocupancy), 2), max(max_occupancy)
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv):
+    def generate_live_csv_data(cls, today_entity_csv, entity):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
@@ -64,4 +66,19 @@ class OccupancyMetric(BaseMetric):
             }
             for hour in objects_logs:
                 objects_logs_merged[0]["Occupancy"].extend(objects_logs[hour]["Occupancy"])
-        return cls.generate_hourly_metric_data(objects_logs_merged)[0]
+        occupancy_live = cls.generate_hourly_metric_data(objects_logs_merged)[0].tolist()
+        occupancy_live.append(int(entity["occupancy_threshold"]))
+        daily_violations = 0
+        entity_directory = entity["base_directory"]
+        reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
+        file_path = os.path.join(reports_directory, "live.csv")
+        if os.path.exists(file_path):
+            with open(file_path, "r") as live_file:
+                lastest_entry = deque(csv.DictReader(live_file), 1)[0]
+                if datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S").date() == datetime.today().date():
+                    daily_violations = int(lastest_entry["Violations"])
+        if occupancy_live[1] > occupancy_live[2]:
+            # Max Occupancy detections > Occupancy threshold
+            daily_violations += 1
+        occupancy_live.append(daily_violations)
+        return occupancy_live

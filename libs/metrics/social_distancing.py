@@ -161,7 +161,7 @@ class SocialDistancingMetric(BaseMetric):
             cls.create_heatmap_report(config, yesterday_csv, violation_heatmap_file, "Violations")
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv):
+    def generate_live_csv_data(cls, today_entity_csv, entity):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
