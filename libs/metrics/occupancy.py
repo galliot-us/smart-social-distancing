@@ -5,7 +5,7 @@ import os
 from collections import deque
 from datetime import datetime
 from statistics import mean
-from typing import Dict
+from typing import Dict, Iterator
 
 from .base import BaseMetric
 
@@ -82,3 +82,17 @@ class OccupancyMetric(BaseMetric):
             daily_violations += 1
         occupancy_live.append(daily_violations)
         return occupancy_live
+
+    @classmethod
+    def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:
+        latest_occupancy_results = {}
+        for n in range(10):
+            latest_occupancy_results[n] = None
+        for live_path in live_report_paths:
+            with open(live_path, "r") as live_file:
+                lastest_10_entries = deque(csv.DictReader(live_file), 10)
+                for index, item in enumerate(lastest_10_entries):
+                    if not latest_occupancy_results[index]:
+                        latest_occupancy_results[index] = 0
+                    latest_occupancy_results[index] += int(item["MaxOccupancy"])
+        return [item for item in latest_occupancy_results.values() if item is not None]

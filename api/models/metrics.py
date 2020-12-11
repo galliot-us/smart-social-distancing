@@ -34,6 +34,7 @@ class WeeklyReport(SnakeModel):
 
 class LiveReport(SnakeModel):
     Time: str
+    Trend: float
 
 
 class SocialDistancing(SnakeModel):

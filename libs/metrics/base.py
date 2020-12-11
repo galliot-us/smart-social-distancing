@@ -6,7 +6,7 @@ import logging
 
 from collections import deque
 from datetime import date, datetime, timedelta, time
-from typing import Dict, List
+from typing import Dict, List, Iterator
 
 from libs.utils.loggers import get_source_log_directory, get_area_log_directory
 
@@ -285,6 +285,17 @@ class BaseMetric:
         return report
 
     @classmethod
+    def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:
+        raise NotImplementedError
+
+    @classmethod
+    def calculate_trend_value(cls, trend_values: Iterator[int]) -> float:
+        x = np.arange(0, len(trend_values))
+        y = np.array(trend_values)
+        z = np.polyfit(x, y, 1)
+        return round(z[0], 2)
+
+    @classmethod
     def get_live_report(cls, entities):
         base_directory = cls.get_entity_base_directory()
         report = {}
@@ -292,17 +303,19 @@ class BaseMetric:
         for header in live_headers:
             report[header] = 0
         times = []
+        live_report_paths = []
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity)
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             file_path = os.path.join(reports_directory, "live.csv")
             if not os.path.exists(file_path):
-                report["Time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                return report
+                continue
+            live_report_paths.append(file_path)
             with open(file_path, "r") as live_file:
                 lastest_entry = deque(csv.DictReader(live_file), 1)[0]
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
                 for header in live_headers:
                     report[header] += int(lastest_entry[header])
         report["Time"] = str(min(times))
+        report["Trend"] = cls.calculate_trend_value(cls.get_trend_live_values(live_report_paths))
         return report

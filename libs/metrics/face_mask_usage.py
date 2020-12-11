@@ -5,7 +5,7 @@ import numpy as np
 
 from collections import deque
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Iterator, Tuple
 
 from .base import BaseMetric
 
@@ -99,3 +99,17 @@ class FaceMaskUsageMetric(BaseMetric):
             for entry in lastest_entries:
                 cls.procces_csv_row(entry, objects_logs)
         return np.sum(cls.generate_hourly_metric_data(objects_logs), axis=0)
+
+    @classmethod
+    def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:
+        latest_facemask_results = {}
+        for n in range(10):
+            latest_facemask_results[n] = None
+        for live_path in live_report_paths:
+            with open(live_path, "r") as live_file:
+                lastest_10_entries = deque(csv.DictReader(live_file), 10)
+                for index, item in enumerate(lastest_10_entries):
+                    if not latest_facemask_results[index]:
+                        latest_facemask_results[index] = 0
+                    latest_facemask_results[index] += int(item["FaceWithMask"])
+        return [item for item in latest_facemask_results.values() if item is not None]
