@@ -81,8 +81,6 @@ RUN rm -rf /opt/intel/openvino/opencv /opt/intel/openvino/python/cv2.* /opt/inte
 
 ADD docker/x86-openvino/openvino_setupvars.py /opt/openvino_setupvars.py
 ENV DEV_ALLOW_ALL_ORIGINS=true
-ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
-ENV AWS_CONFIG_FILE=/repo/.aws/config
 ENV CONFIG_FILE=config-x86-openvino.ini
 
 COPY . /repo

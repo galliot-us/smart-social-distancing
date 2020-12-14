@@ -78,8 +78,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN apt-get update && apt-get install -y python3-dev && pip3 install torch==1.5 torchvision==0.6.0 openpifpaf
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
-ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
-ENV AWS_CONFIG_FILE=/repo/.aws/config
 ENV TF_FORCE_GPU_ALLOW_GROWTH=true
 ENV CONFIG_FILE=config-x86-gpu.ini
 

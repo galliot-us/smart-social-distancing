@@ -5,12 +5,17 @@ import boto3
 from botocore.exceptions import ClientError
 import logging
 import cv2 as cv
+import os
 
 
 class S3Uploader:
 
     def __init__(self):
-        session = boto3.session.Session()
+        session = boto3.session.Session(
+            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+            region_name=os.environ.get("AWS_BUCKET_REGION")
+        )
         self.s3_resource = session.resource('s3')
         self.logger = logging.getLogger(__name__)
 

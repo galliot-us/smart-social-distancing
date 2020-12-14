@@ -91,8 +91,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
-ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
-ENV AWS_CONFIG_FILE=/repo/.aws/config
 ENV CONFIG_FILE=config-jetson.ini
 
 COPY . /repo/
