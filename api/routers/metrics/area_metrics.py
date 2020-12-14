@@ -13,9 +13,11 @@ from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingM
 metrics_router = APIRouter()
 
 
-def get_all_areas() -> str:
+def get_areas(areas: str) -> Iterator[str]:
+    if areas:
+        return areas.split(",")
     config = extract_config(config_type="areas")
-    return ",".join([x["Id"] for x in config.values()])
+    return [x["Id"] for x in config.values()]
 
 
 def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
@@ -44,11 +46,10 @@ def get_area_occupancy_live(areas: str = ""):
     """
     Returns a report with live information about the occupancy in the areas <areas>.
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    return OccupancyMetric.get_live_report(areas.split(","))
+    return OccupancyMetric.get_live_report(areas)
 
 
 @metrics_router.get("/occupancy/hourly", response_model=OccupancyHourly)
@@ -57,11 +58,10 @@ def get_area_occupancy_hourly_report(areas: str = "", date: date = Query(date.to
     Returns a hourly report (for the date specified) with information about the occupancy in
     the areas <areas>.
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    return OccupancyMetric.get_hourly_report(areas.split(","), date)
+    return OccupancyMetric.get_hourly_report(areas, date)
 
 
 @metrics_router.get("/occupancy/daily", response_model=OccupancyDaily)
@@ -73,11 +73,10 @@ def get_area_occupancy_daily_report(areas: str = "",
     the areas <areas>.
     """
     validate_dates(from_date, to_date)
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    return OccupancyMetric.get_daily_report(areas.split(","), from_date, to_date)
+    return OccupancyMetric.get_daily_report(areas, from_date, to_date)
 
 
 @metrics_router.get("/occupancy/weekly", response_model=OccupancyWeekly)
@@ -99,17 +98,16 @@ def get_area_occupancy_weekly_report(
     - Report spans from `from_Date` to `to_date`.
     - Taking Sunday as the end of week
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
     if weeks > 0:
         # Report from weeks*7 days ago (grouped by week, ending on yesterday)
-        return OccupancyMetric.get_weekly_report(areas.split(","), number_of_weeks=weeks)
+        return OccupancyMetric.get_weekly_report(areas, number_of_weeks=weeks)
     else:
         # Report from the defined date_range, weeks ending on Sunday.
         validate_dates(from_date, to_date)
-        return OccupancyMetric.get_weekly_report(areas.split(","), from_date=from_date, to_date=to_date)
+        return OccupancyMetric.get_weekly_report(areas, from_date=from_date, to_date=to_date)
 
 
 # Social Distancing Metrics
@@ -119,11 +117,10 @@ def get_camera_face_mask_detections_live(areas: str = ""):
     Returns a report with live information about the social distancing infractions
     detected in the areas <areas>.
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     return SocialDistancingMetric.get_live_report(cameras)
 
 
@@ -133,11 +130,10 @@ def get_area_distancing_hourly_report(areas: str = "", date: date = Query(date.t
     Returns a hourly report (for the date specified) with information about the social distancing infractions
     detected in the areas <areas>.
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     return SocialDistancingMetric.get_hourly_report(cameras, date)
 
 
@@ -150,11 +146,10 @@ def get_area_distancing_daily_report(areas: str = "",
     detected in the areas <areas>.
     """
     validate_dates(from_date, to_date)
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     return SocialDistancingMetric.get_daily_report(cameras, from_date, to_date)
 
 
@@ -177,11 +172,10 @@ def get_area_distancing_weekly_report(
     - Report spans from `from_Date` to `to_date`.
     - Taking Sunday as the end of week
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     if weeks > 0:
         # Report from weeks*7 days ago (grouped by week, ending on yesterday)
         return SocialDistancingMetric.get_weekly_report(cameras, number_of_weeks=weeks)
@@ -197,11 +191,10 @@ def get_area_face_mask_detections_live(areas: str = ""):
     """
     Returns a report with live information about the facemasks detected in the areas <areas>.
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     return FaceMaskUsageMetric.get_live_report(cameras)
 
 
@@ -211,11 +204,10 @@ def get_area_face_mask_detections_hourly_report(areas: str = "", date: date = Qu
     Returns a hourly report (for the date specified) with information about the facemasks detected in
     the cameras <cameras>.
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     return FaceMaskUsageMetric.get_hourly_report(cameras, date)
 
 
@@ -228,11 +220,10 @@ def get_area_face_mask_detections_daily_report(areas: str = "",
     the cameras <cameras>.
     """
     validate_dates(from_date, to_date)
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     return FaceMaskUsageMetric.get_daily_report(cameras, from_date, to_date)
 
 
@@ -255,11 +246,10 @@ def get_area_face_mask_detections_weekly_report(
     - Report spans from `from_Date` to `to_date`.
     - Taking Sunday as the end of week
     """
-    if not areas:
-        areas = get_all_areas()
-    for area in areas.split(","):
+    areas = get_areas(areas)
+    for area in areas:
         validate_area_existence(area)
-    cameras = get_cameras_for_areas(areas.split(","))
+    cameras = get_cameras_for_areas(areas)
     if weeks > 0:
         # Report from weeks*7 days ago (grouped by week, ending on yesterday)
         return FaceMaskUsageMetric.get_weekly_report(cameras, number_of_weeks=weeks)
