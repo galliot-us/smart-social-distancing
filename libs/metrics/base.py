@@ -64,7 +64,7 @@ class BaseMetric:
                                  time_until: datetime):
         if not os.path.isfile(entity_file):
             entity_type = "Camera" if cls.entity else "Area"
-            logger.warn(f"No data for day! [{entity_type}: {entity_id}]")
+            logger.warn(f"The [{entity_type}: {entity_id}] contains no recorded data for that day")
             return
         objects_logs = {}
         for hour in range(time_from.hour, time_until.hour):
