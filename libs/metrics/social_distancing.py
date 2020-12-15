@@ -64,7 +64,8 @@ class SocialDistancingMetric(BaseMetric):
         current_status = None
         processing_status = None
         processing_count = 0
-        processing_time = None
+        current_status_start_time = None
+        processing_start_time = None
 
         CRITICAL_THRESHOLD = 60
         HIGH_THRESHOLD = 30
@@ -76,20 +77,21 @@ class SocialDistancingMetric(BaseMetric):
                 status = dist_violation["infrigement"]
                 if processing_status != status:
                     processing_status = status
-                    processing_time = dist_violation["time"]
+                    processing_start_time = dist_violation["time"]
                     processing_count = 0
                 processing_count += 1
                 if current_status != processing_status and processing_count >= cls.processing_count_threshold:
                     # Object was enouth time in the same state, change it
                     if current_status is not None:
                         # Append the previous status in the detections list
-                        seconds_in_status = (dist_violation["time"] - processing_time).seconds
+                        seconds_in_status = (processing_start_time - current_status_start_time).seconds
                         detections.append({"status": status, "seconds": seconds_in_status})
                     current_status = processing_status
-                    processing_time = dist_violation["time"]
-            # Append the latest status
-            seconds_in_status = (distance_violations[-1]["time"] - processing_time).seconds
-            detections.append({"status": status, "seconds": seconds_in_status})
+                    current_status_start_time = processing_start_time
+            if current_status:
+                # Append the latest status
+                seconds_in_status = (distance_violations[-1]["time"] - current_status_start_time).seconds
+                detections.append({"status": status, "seconds": seconds_in_status})
         detected_objects, no_infringements, low_infringements, high_infringements, critical_infringements = 0, 0, 0, 0, 0
         for detection in detections:
             detected_objects += 1
