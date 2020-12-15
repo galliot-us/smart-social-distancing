@@ -3,6 +3,7 @@ import logging
 import schedule
 import time
 
+from libs.backups.s3_backup import raw_data_backup
 from libs.config_engine import ConfigEngine
 from libs.metrics.utils import compute_hourly_metrics, compute_daily_metrics, compute_live_metrics
 from libs.reports.notifications import (send_daily_report_notification, send_daily_global_report,
@@ -29,6 +30,14 @@ def main(config):
             live_interval = int(config.get_section_dict(p_task).get("LiveInterval", 10))
             schedule.every(live_interval).minutes.do(
                 compute_live_metrics, config=config, live_interval=live_interval)
+        elif task_name == "s3_backup":
+            bucket_name = config.get_section_dict(p_task).get("BackupS3Bucket")
+            if not bucket_name:
+                logger.info("S3 Backup task doens't have a bucket configured.")
+                continue
+            logger.info("Backup enabled!")
+            backup_interval = int(config.get_section_dict(p_task).get("BackupInterval", 30))
+            schedule.every(backup_interval).minutes.do(raw_data_backup, config=config, bucket_name=bucket_name)
         else:
             raise ValueError(f"Not supported periodic task named: {task_name}")
 
