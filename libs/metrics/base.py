@@ -8,7 +8,7 @@ from collections import deque
 from datetime import date, datetime, timedelta, time
 from typing import Dict, List, Iterator
 
-from libs.utils.loggers import get_source_log_directory, get_area_log_directory
+from libs.utils.loggers import get_source_log_directory, get_area_log_directory, get_source_logging_interval
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +117,8 @@ class BaseMetric:
                     writer.writeheader()
             csv_data = cls.generate_hourly_csv_data(entity["id"], entity_csv, time_from, time_until)
             if csv_data is None:
+                entity_type = "Camera" if cls.entity else "Area"
+                logger.warn(f"Hourly report not generated! [{entity_type}: {entity['id']}]")
                 continue
             with open(daily_csv, "a", newline='') as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=cls.csv_headers)
@@ -163,14 +165,14 @@ class BaseMetric:
                 writer.writerow(row)
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv, entity):
+    def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
         raise NotImplementedError
 
     @classmethod
-    def compute_live_metrics(cls, config):
+    def compute_live_metrics(cls, config, live_interval):
         base_directory = cls.get_entity_base_directory(config)
         entities = cls.get_entities(config)
         for entity in entities:
@@ -192,7 +194,8 @@ class BaseMetric:
             if not os.path.isfile(today_entity_csv):
                 return
             entity["base_directory"] = entity_directory
-            live_data = cls.generate_live_csv_data(today_entity_csv, entity)
+            entries_in_interval = int(live_interval * 60 / get_source_logging_interval(config))
+            live_data = cls.generate_live_csv_data(today_entity_csv, entity, entries_in_interval)
             with open(live_report_csv, "a") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=headers)
                 if not report_file_exists:

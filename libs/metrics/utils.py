@@ -19,10 +19,10 @@ def compute_daily_metrics(config):
     OccupancyMetric.compute_daily_metrics(config)
 
 
-def compute_live_metrics(config):
-    SocialDistancingMetric.compute_live_metrics(config)
-    FaceMaskUsageMetric.compute_live_metrics(config)
-    OccupancyMetric.compute_live_metrics(config)
+def compute_live_metrics(config, live_interval):
+    SocialDistancingMetric.compute_live_metrics(config, live_interval)
+    FaceMaskUsageMetric.compute_live_metrics(config, live_interval)
+    OccupancyMetric.compute_live_metrics(config, live_interval)
 
 
 def generate_heatmap(camera_id, from_date, to_date, report_type):

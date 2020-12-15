@@ -51,13 +51,13 @@ class OccupancyMetric(BaseMetric):
         return round(mean(average_ocupancy), 2), max(max_occupancy)
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv, entity):
+    def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
         with open(today_entity_csv, "r") as log:
             objects_logs = {}
-            lastest_entries = deque(csv.DictReader(log), 1000)
+            lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in lastest_entries:
                 cls.procces_csv_row(entry, objects_logs)
             # Put the rows in the same hour

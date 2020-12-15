@@ -27,7 +27,8 @@ def main(config):
             schedule.every().day.at("00:01").do(compute_daily_metrics, config=config)
             schedule.every().hour.at(":01").do(compute_hourly_metrics, config=config)
             live_interval = int(config.get_section_dict(p_task).get("LiveInterval", 10))
-            schedule.every(live_interval).minutes.do(compute_live_metrics, config=config)
+            schedule.every(live_interval).minutes.do(
+                compute_live_metrics, config=config, live_interval=live_interval)
         else:
             raise ValueError(f"Not supported periodic task named: {task_name}")
 
