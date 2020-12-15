@@ -29,15 +29,14 @@ def map_camera(camera_name, config, options=[]):
     camera_dict = map_section_from_config(camera_name, config)
     camera = config.get(camera_name)
     camera_id = camera.get("Id")
-    image = None
+    image_string = None
     if "withImage" in options:
-        dir_path = os.path.join(get_config().get_section_dict("App")["ScreenshotsDirectory"], camera_id)
-        image = base64.b64encode(cv.imread(f"{dir_path}/default.jpg"))
-    camera_dict["image"] = image
+        image_string = get_camera_default_image_string(camera_id)
+    camera_dict["image"] = image_string
     return camera_dict
 
 
-def get_cameras(options):
+def get_cameras(options=[]):
     config = extract_config(config_type="cameras")
     return [map_camera(x, config, options) for x in config.keys()]
 
@@ -46,6 +45,34 @@ def map_to_camera_file_format(camera: CameraDTO):
     camera_file = map_to_config_file_format(camera)
     camera_file.pop("Image", None)
     return camera_file
+
+
+def get_current_image(camera_id):
+    camera = next((camera for camera in get_cameras() if camera["id"] == camera_id), None)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
+    camera_cap = cv.VideoCapture(camera["videoPath"])
+    if not camera_cap.isOpened():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"The camera: {camera_id} is not available.")
+    _, cv_image = camera_cap.read()
+    resolution = tuple([int(i) for i in os.environ.get("Resolution").split(",")])
+    cv_image = cv.resize(cv_image, resolution)
+    camera_cap.release()
+    return cv_image
+
+
+def get_camera_default_image_string(camera_id):
+    dir_path = verify_path(settings.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
+    image_path = os.path.join(dir_path, "default.jpg")
+    if os.path.isfile(image_path) and os.path.getsize(image_path) != 0:
+        cv_image = cv.imread(f"{dir_path}/default.jpg")
+    else:
+        # There is not default image, save the current frame as default
+        cv_image = get_current_image(camera_id)
+        cv.imwrite(image_path, cv_image)
+    return base64.b64encode(cv_image)
 
 
 def delete_camera_from_areas(camera_id, config_dict):
@@ -111,7 +138,7 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
     """
     config_dict = extract_config()
     cameras_name = [x for x in config_dict.keys() if x.startswith("Source_")]
-    cameras = [map_camera(x, config_dict, []) for x in cameras_name]
+    cameras = [map_camera(x, config_dict) for x in cameras_name]
     if new_camera.id in [camera["id"] for camera in cameras]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Camera already exists")
     camera_dict = map_to_camera_file_format(new_camera)
@@ -128,7 +155,7 @@ async def edit_camera(camera_id: str, edited_camera: CameraDTO, reboot_processor
     edited_camera.id = camera_id
     config_dict = extract_config()
     camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
-    cameras = [map_camera(x, config_dict, []) for x in camera_names]
+    cameras = [map_camera(x, config_dict) for x in camera_names]
     cameras_ids = [camera["id"] for camera in cameras]
     try:
         index = cameras_ids.index(camera_id)
@@ -169,11 +196,8 @@ async def get_camera_image(camera_id: str):
     """
     Gets the image related to the camera <camera_id>
     """
-    dir_path = verify_path(settings.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
-    with open(f"{dir_path}/default.jpg", "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
     return {
-        "image": encoded_string
+        "image": get_camera_default_image_string(camera_id)
     }
 
 
@@ -216,18 +240,9 @@ async def get_camera_calibration_image(camera_id: str):
     """
     Gets the image required to calibrate the camera <camera_id>
     """
-    camera = next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_id), None)
-    camera_cap = cv.VideoCapture(camera["videoPath"])
-    if not camera_cap.isOpened():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"The camera: {camera_id} is not available.")
-    _, cv_image = camera_cap.read()
-    resolution = tuple([int(i) for i in os.environ.get("Resolution").split(",")])
-    cv_image = cv.resize(cv_image, resolution)
+    cv_image = get_current_image(camera_id)
     _, buffer = cv.imencode(".jpg", cv_image)
     encoded_string = base64.b64encode(buffer)
-    camera_cap.release()
     return {
         "image": encoded_string
     }
