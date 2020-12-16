@@ -31,7 +31,7 @@ class Detector:
             from libs.detectors.x86.detector import Detector as X86Detector
             self.detector = X86Detector(self.config)
         else:
-            raise ValueError(f"Not supported device named: {self.device}")
+            raise ValueError(f"Detector: Not supported device named: {self.device}")
         if self.device != "Dummy":
             logger.info(f"Device is: {self.device}")
             logger.info(f"Detector is: {self.detector.name}")
