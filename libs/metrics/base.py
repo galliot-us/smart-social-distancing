@@ -96,12 +96,11 @@ class BaseMetric:
             # Create missing directories
             os.makedirs(log_directory, exist_ok=True)
             os.makedirs(reports_directory, exist_ok=True)
+            time_until = datetime.combine(date.today(), time(current_hour, 0))
             if current_hour == 0:
                 # Pending to process the latest hour from yesterday
-                time_until = datetime.combine(date.today(), time(0, 0))
                 report_date = date.today() - timedelta(days=1)
             else:
-                time_until = datetime.combine(date.today(), time(current_hour, 0))
                 report_date = date.today()
             entity_csv = os.path.join(log_directory, str(report_date) + ".csv")
             daily_csv = os.path.join(reports_directory, "report_" + str(report_date) + ".csv")
