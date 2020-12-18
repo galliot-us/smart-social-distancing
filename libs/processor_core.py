@@ -115,7 +115,7 @@ class ProcessorCore:
             logger.warning("Invalid core command " + str(cmd_code))
             self._result_queue.put("invalid_cmd_code")
 
-    def _start_processing(self):
+    def start_processing_sources(self):
         sources = self.config.get_video_sources()
         processes = int(self.config.get_section_dict("App")["MaxProcesses"])
         if len(sources) < processes:
@@ -133,23 +133,18 @@ class ProcessorCore:
             p = mp.Process(target=run_video_processing, args=(self.config, recv_conn, p_src))
             p.start()
             engines.append((send_conn, p))
+        return engines
 
-        # Set up occupancy alerts
-        areas_to_notify = [
-            area for area in self.config.get_areas() if area['occupancy_threshold'] > 0 and area['cameras'] and (
-                area['should_send_email_notifications'] or area['should_send_slack_notifications']
-            ) 
-        ]
-        if areas_to_notify and float(self.config.get_section_dict('App')['OccupancyAlertsMinInterval']) >= 0:
-            logger.info(f'Spinning up area alert threads for {len(areas_to_notify)} areas')
-            recv_conn, send_conn = mp.Pipe(False)
-            p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, areas_to_notify))
-            p.start()
-            engines.append((send_conn, p))
-        else:
-            logger.info('Area occupancy alerts are disabled for all areas')
+    def start_processing_areas(self):
+        recv_conn, send_conn = mp.Pipe(False)
+        p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, self.config.get_areas()))
+        p.start()
+        return (send_conn, p)
 
-        self._engines = engines
+    def _start_processing(self):
+        self._engines = self.start_processing_sources()
+        area_engine = self.start_processing_areas()
+        self._engines.append(area_engine)
 
     def _stop_processing(self):
         for (conn, proc) in self._engines:

@@ -1,11 +1,10 @@
 #!/usr/bin/python3
-import os
 import logging
 import configparser
 import threading
-from distutils.util import strtobool
 from libs.notifications.slack_notifications import is_slack_configured
 from libs.utils.mailing import is_mailing_configured
+
 
 class ConfigEngine:
     """
@@ -49,7 +48,7 @@ class ConfigEngine:
                     self.section_options_dict[section][option] = val
                     if val == -1:
                         print("skip: %s" % option)
-                except:
+                except Exception:
                     print("exception on %s!" % option)
                     self.section_options_dict[section][option] = None
 
@@ -124,12 +123,13 @@ class ConfigEngine:
     def update_config(self, config, save_file=True):
         current_sections = []
         for section, options in config.items():
-            if section.startswith("Source") or section.startswith("Area"):
+            if section.startswith(("Source", "Area", "PeriodicTask")):
                 current_sections.append(section)
             for option, value in options.items():
                 self.set_option_in_section(section, option, value)
         for section in self.config.sections():
-            if len(current_sections) and (section.startswith("Source") or section.startswith("Area")) and section not in current_sections:
+            if (len(current_sections) and section.startswith(("Source", "Area", "PeriodicTask"))
+                    and section not in current_sections):
                 self.config.remove_section(section)
         self.set_option_in_section("App", "HasBeenConfigured", "True")
         if save_file:
@@ -168,7 +168,7 @@ class ConfigEngine:
                         src["should_send_slack_notifications"] = False
                     sources.append(src)
             return sources
-        except:
+        except Exception:
             # Sources are invalid in config file. What should we do?
             raise RuntimeError("Invalid sources in config file")
 
@@ -191,7 +191,7 @@ class ConfigEngine:
                         area["should_send_slack_notifications"] = False
                     areas.append(area)
             return areas
-        except:
+        except Exception:
             # Sources are invalid in config file. What should we do?
             raise RuntimeError("Invalid areas in config file")
 

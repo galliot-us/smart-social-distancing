@@ -5,19 +5,18 @@ import numpy as np
 import os
 
 from fastapi import APIRouter, status
-from pydantic import BaseModel
 from starlette.exceptions import HTTPException
-from typing import List, Optional
+from typing import Optional
 
 from libs.utils.camera_calibration import (get_camera_calibration_path, compute_and_save_inv_homography_matrix,
                                            ConfigHomographyMatrix)
 
-from .models.config_keys import SourceConfigDTO
-from .settings import Settings
-from .utils import (
+from api.settings import Settings
+from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas,
-    update_config
+    update_config, map_section_from_config, map_to_config_file_format
 )
+from api.models.camera import CameraDTO, CamerasListDTO, ImageModel
 
 logger = logging.getLogger(__name__)
 
@@ -26,65 +25,54 @@ cameras_router = APIRouter()
 settings = Settings()
 
 
-class ImageModel(BaseModel):
-    image: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "image": "data:image/jpg;base64,iVBORw0KG..."
-            }
-        }
-
-
-class CamerasListDTO(BaseModel):
-    cameras: List[SourceConfigDTO]
-
-
 def map_camera(camera_name, config, options=[]):
+    camera_dict = map_section_from_config(camera_name, config)
     camera = config.get(camera_name)
     camera_id = camera.get("Id")
-    image = None
+    image_string = None
     if "withImage" in options:
-        dir_path = os.path.join(get_config().get_section_dict("App")["ScreenshotsDirectory"], camera_id)
-        image = base64.b64encode(cv.imread(f"{dir_path}/default.jpg"))
-
-    return {
-        "id": camera_id,
-        "name": camera.get("Name"),
-        "videoPath": camera.get("VideoPath"),
-        "emails": camera.get("Emails"),
-        "enableSlackNotifications": camera.get("EnableSlackNotifications"),
-        "violationThreshold": camera.get("ViolationThreshold"),
-        "notifyEveryMinutes": camera.get("NotifyEveryMinutes"),
-        "dailyReport": camera.get("DailyReport"),
-        "dailyReportTime": camera.get("DailyReportTime"),
-        "image": image,
-        "distMethod": camera.get("DistMethod")
-    }
+        image_string = get_camera_default_image_string(camera_id)
+    camera_dict["image"] = image_string
+    return camera_dict
 
 
-def get_cameras(options):
+def get_cameras(options=[]):
     config = extract_config(config_type="cameras")
     return [map_camera(x, config, options) for x in config.keys()]
 
 
-def map_to_camera_file_format(camera: SourceConfigDTO):
-    return dict(
-        {
-            "Name": camera.name,
-            "VideoPath": camera.videoPath,
-            "Id": camera.id,
-            "Emails": camera.emails,
-            "EnableSlackNotifications": str(camera.enableSlackNotifications),
-            "Tags": camera.tags,
-            "NotifyEveryMinutes": str(camera.notifyEveryMinutes),
-            "ViolationThreshold": str(camera.violationThreshold),
-            "DistMethod": camera.distMethod,
-            "DailyReport": str(camera.dailyReport),
-            "DailyReportTime": camera.dailyReportTime
-        }
-    )
+def map_to_camera_file_format(camera: CameraDTO):
+    camera_file = map_to_config_file_format(camera)
+    camera_file.pop("Image", None)
+    return camera_file
+
+
+def get_current_image(camera_id):
+    camera = next((camera for camera in get_cameras() if camera["id"] == camera_id), None)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
+    camera_cap = cv.VideoCapture(camera["videoPath"])
+    if not camera_cap.isOpened():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"The camera: {camera_id} is not available.")
+    _, cv_image = camera_cap.read()
+    resolution = tuple([int(i) for i in os.environ.get("Resolution").split(",")])
+    cv_image = cv.resize(cv_image, resolution)
+    camera_cap.release()
+    return cv_image
+
+
+def get_camera_default_image_string(camera_id):
+    dir_path = verify_path(settings.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
+    image_path = os.path.join(dir_path, "default.jpg")
+    if os.path.isfile(image_path) and os.path.getsize(image_path) != 0:
+        cv_image = cv.imread(f"{dir_path}/default.jpg")
+    else:
+        # There is not default image, save the current frame as default
+        cv_image = get_current_image(camera_id)
+        cv.imwrite(image_path, cv_image)
+    return base64.b64encode(cv_image)
 
 
 def delete_camera_from_areas(camera_id, config_dict):
@@ -106,7 +94,7 @@ def delete_camera_from_areas(camera_id, config_dict):
 
 def reestructure_cameras(config_dict):
     """Ensure that all [Source_0, Source_1, ...] are consecutive"""
-    source_names = [x for x in config_dict.keys() if x.startswith("Source")]
+    source_names = [x for x in config_dict.keys() if x.startswith("Source_")]
     source_names.sort()
     for index, source_name in enumerate(source_names):
         if f"Source_{index}" != source_name:
@@ -132,7 +120,7 @@ async def list_cameras(options: Optional[str] = ""):
     }
 
 
-@cameras_router.get("/{camera_id}", response_model=SourceConfigDTO)
+@cameras_router.get("/{camera_id}", response_model=CameraDTO)
 async def get_camera(camera_id: str):
     """
     Returns the configuration related to the camera <camera_id>
@@ -143,14 +131,14 @@ async def get_camera(camera_id: str):
     return camera
 
 
-@cameras_router.post("", response_model=SourceConfigDTO, status_code=status.HTTP_201_CREATED)
-async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
+@cameras_router.post("", response_model=CameraDTO, status_code=status.HTTP_201_CREATED)
+async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] = True):
     """
     Adds a new camera to the processor.
     """
     config_dict = extract_config()
-    cameras_name = [x for x in config_dict.keys() if x.startswith("Source")]
-    cameras = [map_camera(x, config_dict, []) for x in cameras_name]
+    cameras_name = [x for x in config_dict.keys() if x.startswith("Source_")]
+    cameras = [map_camera(x, config_dict) for x in cameras_name]
     if new_camera.id in [camera["id"] for camera in cameras]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Camera already exists")
     camera_dict = map_to_camera_file_format(new_camera)
@@ -159,15 +147,15 @@ async def create_camera(new_camera: SourceConfigDTO, reboot_processor: Optional[
     return handle_response(camera_dict, success, status.HTTP_201_CREATED)
 
 
-@cameras_router.put("/{camera_id}", response_model=SourceConfigDTO)
-async def edit_camera(camera_id: str, edited_camera: SourceConfigDTO, reboot_processor: Optional[bool] = True):
+@cameras_router.put("/{camera_id}", response_model=CameraDTO)
+async def edit_camera(camera_id: str, edited_camera: CameraDTO, reboot_processor: Optional[bool] = True):
     """
     Edits the configuration related to the camera <camera_id>
     """
     edited_camera.id = camera_id
     config_dict = extract_config()
-    camera_names = [x for x in config_dict.keys() if x.startswith("Source")]
-    cameras = [map_camera(x, config_dict, []) for x in camera_names]
+    camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
+    cameras = [map_camera(x, config_dict) for x in camera_names]
     cameras_ids = [camera["id"] for camera in cameras]
     try:
         index = cameras_ids.index(camera_id)
@@ -187,7 +175,7 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     Deletes the configuration related to the camera <camera_id>
     """
     config_dict = extract_config()
-    camera_names = [x for x in config_dict.keys() if x.startswith("Source")]
+    camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict) for x in camera_names]
     cameras_ids = [camera["id"] for camera in cameras]
     try:
@@ -208,11 +196,8 @@ async def get_camera_image(camera_id: str):
     """
     Gets the image related to the camera <camera_id>
     """
-    dir_path = verify_path(settings.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
-    with open(f"{dir_path}/default.jpg", "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read())
     return {
-        "image": encoded_string
+        "image": get_camera_default_image_string(camera_id)
     }
 
 
@@ -255,16 +240,9 @@ async def get_camera_calibration_image(camera_id: str):
     """
     Gets the image required to calibrate the camera <camera_id>
     """
-    camera = next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_id), None)
-    camera_cap = cv.VideoCapture(camera["videoPath"])
-    if not camera_cap.isOpened():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"The camera: {camera_id} is not available.")
-    _, cv_image = camera_cap.read()
+    cv_image = get_current_image(camera_id)
     _, buffer = cv.imencode(".jpg", cv_image)
     encoded_string = base64.b64encode(buffer)
-    camera_cap.release()
     return {
         "image": encoded_string
     }

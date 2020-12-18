@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 from libs.config_engine import ConfigEngine
-from api.models.config_keys import Config
+from api.models.base import Config
 from api.processor_api import ProcessorAPI
 import pytest
 import humps

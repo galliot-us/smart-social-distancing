@@ -20,9 +20,17 @@ def get_config():
 def extract_config(config_type="all"):
     sections = get_config().get_sections()
     if config_type == "cameras":
-        sections = [x for x in sections if x.startswith("Source")]
+        sections = [x for x in sections if x.startswith("Source_")]
     elif config_type == "areas":
-        sections = [x for x in sections if x.startswith("Area")]
+        sections = [x for x in sections if x.startswith("Area_")]
+    elif config_type == "source_post_processors":
+        sections = [x for x in sections if x.startswith("SourcePostProcessor_")]
+    elif config_type == "source_loggers":
+        sections = [x for x in sections if x.startswith("SourceLogger_")]
+    elif config_type == "area_loggers":
+        sections = [x for x in sections if x.startswith("AreaLogger_")]
+    elif config_type == "periodic_tasks":
+        sections = [x for x in sections if x.startswith("PeriodicTask_")]
     config = {}
 
     for section in sections:
@@ -91,3 +99,32 @@ def clean_up_file(filename):
         logger.info("The file does not exist")
 
     logger.info(f'Clean up of {filename} complete')
+
+
+def pascal_to_camel_case(pascal_case_string: str) -> str:
+    if len(pascal_case_string) > 1 and pascal_case_string[1].isupper():
+        # pascal_case_string starts with an acronym, returns without change
+        return pascal_case_string
+    return pascal_case_string[0].lower() + pascal_case_string[1:]
+
+
+def camel_to_pascal_case(pascal_case_string: str) -> str:
+    return pascal_case_string[0].upper() + pascal_case_string[1:]
+
+
+def map_section_from_config(section_name: str, config: dict):
+    if section_name not in config:
+        return {}
+    section = config[section_name]
+    config_mapped = {}
+    for key, value in section.items():
+        config_mapped[pascal_to_camel_case(key)] = value
+    return config_mapped
+
+
+def map_to_config_file_format(section_dto, exclude_unset=False):
+    section_dict = section_dto.dict(exclude_unset=exclude_unset)
+    section_file_dict = {}
+    for key, value in section_dict.items():
+        section_file_dict[camel_to_pascal_case(key)] = str(value)
+    return section_file_dict

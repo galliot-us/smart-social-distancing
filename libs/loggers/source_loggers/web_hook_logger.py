@@ -3,16 +3,16 @@ import requests
 
 from requests.exceptions import ConnectionError
 
-from .logger_template import LoggerTemplate
+from .raw_data_logger import RawDataLogger
 
 logger = logging.getLogger(__name__)
 
 
-class WebHookLogger(LoggerTemplate):
+class WebHookLogger(RawDataLogger):
 
-    def __init__(self, config, camera_id):
-        self.camera_id = camera_id
-        self.web_hook_endpoint = config.get_section_dict("Logger")["WebHooksEndpoint"]
+    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
+        super().__init__(config, source, logger, live_feed_enabled)
+        self.web_hook_endpoint = config.get_section_dict(logger)["Endpoint"]
 
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,
                     detected_objects_cout, environment_score, time_stamp, version):
@@ -29,3 +29,7 @@ class WebHookLogger(LoggerTemplate):
             requests.put(self.web_hook_endpoint, data=request_data)
         except ConnectionError:
             logger.error(f"Connection with endpoint {self.web_hook_endpoint} can't be established")
+
+    def update(self, cv_image, objects, post_processing_data, fps):
+        if self.web_hook_endpoint:
+            super().update(cv_image, objects, post_processing_data, fps)
