@@ -2,15 +2,19 @@ from __future__ import division
 import time
 import torch
 from torch.autograd import Variable
-import cv2
-from libs.detectors.x86.backbone.util import *
-from libs.detectors.x86.backbone.darknet import Darknet
+from libs.detectors.x86.yolov3_backbone.util import *
+from libs.detectors.x86.yolov3_backbone.darknet import Darknet
 import os
 import wget
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
 
 class Detector:
+    '''
+    Perform object detection with yolov3 model. detect pedestrian's bounding boxes from given image.
+    :param config: Is a ConfigEngine instance which provides necessary parameters.
+    '''
+
     def __init__(self, config):
         self.config = config
         self.model_name = self.config.get_section_dict('Detector')['Name']
@@ -34,12 +38,12 @@ class Detector:
                 wget.download(url, self.model_path)
 
         self.nms_thesh = 0.5
-        self.confidence = self.config.get_section_dict('Detector')['MinScore']
+        self.confidence = float(self.config.get_section_dict('Detector')['MinScore'])
 
         self._num_classes = 80  # the model is trained on COCO dataset which includes 80 classes
         self._CUDA = torch.cuda.is_available()
         self._bbox_attrs = 5 + self._num_classes
-        self._model = Darknet('backbone/yolov3.cfg')
+        self._model = Darknet('libs/detectors/x86/yolov3_backbone/cfg/yolov3.cfg')
         self._model.load_weights(self.model_path)
         self._model.net_info["height"] = self.w  # resolution % 32 == 0
         self._inp_dim = int(self._model.net_info["height"])
@@ -48,23 +52,7 @@ class Detector:
         if self._CUDA:
             self._model.cuda()
 
-        self._model(self.get_test_input(self._inp_dim, self._CUDA), self._CUDA)
-
         self._model.eval()
-
-    @staticmethod
-    def get_test_input(input_dim, CUDA):
-        img = cv2.imread("dog-cycle-car.png")
-        img = cv2.resize(img, (input_dim, input_dim))
-        img_ = img[:, :, ::-1].transpose((2, 0, 1))
-        img_ = img_[np.newaxis, :, :, :] / 255.0
-        img_ = torch.from_numpy(img_).float()
-        img_ = Variable(img_)
-
-        if CUDA:
-            img_ = img_.cuda()
-
-        return img_
 
     @staticmethod
     def prep_image(img, inp_dim):
@@ -108,10 +96,10 @@ class Detector:
 
         result = []
         for i, pred in enumerate(output):
-            c1 = output[1:3].cpu().int().numpy()  # unormalized [xmin, ymin]
-            c2 = output[3:5].cpu().int().numpy()  # unormalized [xmax, ymax]
-            cls = int(output[-1].cpu())
-            score = float(output[5].cpu)
+            c1 = pred[1:3].cpu().int().numpy()  # unormalized [xmin, ymin]
+            c2 = pred[3:5].cpu().int().numpy()  # unormalized [xmax, ymax]
+            cls = int(pred[-1].cpu())
+            score = float(pred[5].cpu)
             if cls == 0:  # person class index is '0' at coco dataset
                 bbox_dict = {"id": "1-" + str(i),
                              "bbox": [c1[1] / self.h, c1[0] / self.w, c2[1] / self.h, c2[0] / self.w], "score": score,

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import cv2
 
 
 def letterbox_image(img, inp_dim):

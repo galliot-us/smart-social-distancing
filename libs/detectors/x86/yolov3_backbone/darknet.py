@@ -7,8 +7,8 @@ from torch.autograd import Variable
 import numpy as np
 import cv2
 
-from libs.detectors.x86.backbone.util import convert2cpu as cpu
-from libs.detectors.x86.backbone.util import predict_transform
+from libs.detectors.x86.yolov3_backbone.util import convert2cpu as cpu
+from libs.detectors.x86.yolov3_backbone.util import predict_transform
 
 
 class test_net(nn.Module):

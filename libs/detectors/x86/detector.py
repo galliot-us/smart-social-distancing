@@ -27,7 +27,7 @@ class Detector:
             self.net = openpifpaf_tensorrt.Detector(self.config)
         elif self.name == "yolov3":
             from libs.detectors.x86 import yolov3
-            self.net = yolov3.Darknet(self.config)
+            self.net = yolov3.Detector(self.config)
 
         else:
             raise ValueError('Not supported network named: ', self.name)
