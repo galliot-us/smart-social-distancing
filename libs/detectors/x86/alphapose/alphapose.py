@@ -15,6 +15,7 @@ class Detector:
     def __init__(self, config):
         self.config = config
         self.name = config.get_section_dict('Detector')['Name']
+        self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
         self.cfg = config_parser.parse("configs/config.yaml")
         self.device = torch.device("cuda" if config.get_section_dict('Detector')['Gpu'] else "cpu")
         self._input_size = self.cfg.DATA_PRESET.IMAGE_SIZE
@@ -40,14 +41,14 @@ class Detector:
     def inference(self, image):
         detections = self.detection_model.inference(image)
         # TODO
-        detections = prepare_detection_results(detections)
+        detections = prepare_detection_results(detections, self.w, self.h)
         with torch.no_grad():
             inps, cropped_boxes, boxes, scores, ids = self.transform_detections(image, detections)
             inps = inps.to(self.device)
             hm = self.pose_model(inps)
             poses = self.post_process(hm, cropped_boxes, boxes, scores, ids)
         # TODO
-        results = prepare_poses_results(poses)
+        results = prepare_poses_results(poses, self.w, self.h, scores)
         return results
 
     def transform_detections(self, image, dets):
