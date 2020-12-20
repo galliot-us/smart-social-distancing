@@ -37,7 +37,7 @@ class Detector:
                 print('model does not exist under: ', self.model_path, 'downloading from ', url)
                 wget.download(url, self.model_path)
 
-        self.nms_thesh = 0.5
+        self.nms_threshold = 0.5
         self.confidence = float(self.config.get_section_dict('Detector')['MinScore'])
 
         self._num_classes = 80  # the model is trained on COCO dataset which includes 80 classes
@@ -81,7 +81,7 @@ class Detector:
         t_begin = time.perf_counter()
         with torch.no_grad():
             output = self._model(Variable(img), self._CUDA)
-        output = write_results(output, self.confidence, self._num_classes, nms=True, nms_conf=self.nms_thesh)
+        output = write_results(output, self.confidence, self._num_classes, nms=True, nms_conf=self.nms_threshold)
         inference_time = time.perf_counter() - t_begin
         self.fps = convert_infr_time_to_fps(inference_time)
 
