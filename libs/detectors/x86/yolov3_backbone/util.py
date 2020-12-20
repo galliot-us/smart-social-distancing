@@ -1,3 +1,7 @@
+'''
+Forked from: https://github.com/ayooshkathuria/pytorch-yolo-v3.git
+'''
+
 import numpy as np
 import torch
 import cv2

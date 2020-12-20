@@ -1,3 +1,7 @@
+'''
+Forked from: https://github.com/ayooshkathuria/pytorch-yolo-v3.git
+'''
+
 from __future__ import division
 
 import torch
