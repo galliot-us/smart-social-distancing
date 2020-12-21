@@ -99,7 +99,7 @@ class Detector:
             c1 = pred[1:3].cpu().int().numpy()  # unormalized [xmin, ymin]
             c2 = pred[3:5].cpu().int().numpy()  # unormalized [xmax, ymax]
             cls = int(pred[-1].cpu())
-            score = float(pred[5].cpu)
+            score = float(pred[5].cpu())
             if cls == 0:  # person class index is '0' at coco dataset
                 bbox_dict = {"id": "1-" + str(i),
                              "bbox": [c1[1] / self.h, c1[0] / self.w, c2[1] / self.h, c2[0] / self.w], "score": score,
