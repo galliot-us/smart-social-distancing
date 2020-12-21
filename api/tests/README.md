@@ -1,6 +1,6 @@
 ###How tests were built
 
-In order to continue improving tests, I made this file to understand easily how they worked.
+To further improve the tests, I made this file to easily understand how they worked.
 
 The main thing to know is to understand what role fixtures play, especially Config_rollback. 
 

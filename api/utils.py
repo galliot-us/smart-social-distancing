@@ -116,7 +116,7 @@ def camel_to_pascal_case(pascal_case_string: str) -> str:
 
 def map_section_from_config(section_name: str, config: dict):
     if section_name not in config:
-        return {}
+        return None
     section = config[section_name]
     config_mapped = {}
     for key, value in section.items():

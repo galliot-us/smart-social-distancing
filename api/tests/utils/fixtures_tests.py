@@ -1,5 +1,6 @@
 import pytest
 import shutil
+import os
 
 from fastapi.testclient import TestClient
 
@@ -11,8 +12,11 @@ from api.tests.utils.common_functions import create_app_config
 
 @pytest.fixture
 def config_rollback():
-    config_sample_path = '/repo/api/tests/data/config-x86-openvino_TEMPLATE.ini'
-    config = ConfigEngine(config_sample_path)
+    original_path = '/repo/api/tests/data/config-x86-openvino.ini'
+    config_sample_path_to_modify = '/repo/api/tests/data/config-x86-openvino_TEMPORARY.ini'
+    shutil.copyfile(original_path, config_sample_path_to_modify)
+
+    config = ConfigEngine(config_sample_path_to_modify)
     Settings(config=config)
 
     # Here, to import ProcessorAPI successfully, "Settings" must be previously initialized with a config, that is why
@@ -22,12 +26,9 @@ def config_rollback():
     app_instance = ProcessorAPI()
     api = app_instance.app
     client = TestClient(api)
-    yield client, config_sample_path
+    yield client, config_sample_path_to_modify
 
-    original = '/repo/api/tests/data/config-x86-openvino.ini'
-    target = '/repo/api/tests/data/config-x86-openvino_TEMPLATE.ini'
-
-    shutil.copyfile(original, target)
+    os.remove(config_sample_path_to_modify)
 
 
 @pytest.fixture

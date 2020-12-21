@@ -12,8 +12,8 @@ def expected_response_function(config_sample_path):
     expected_response = get_app_from_ini_config_file_json(config_sample_path)
     expected_response = json_multi_type_to_json_string(expected_response)
 
-    # Because if request was successfully, the PUT request will change the flag "has_been_configured"
     # It is weird that this change does not appear in response.json()
+    # Because if request was successfully, the PUT request will change the flag "has_been_configured"
     expected_response["has_been_configured"] = "False"
 
     return expected_response
