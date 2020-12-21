@@ -1,9 +1,10 @@
 from fastapi import APIRouter
+from pydantic import ValidationError
 from starlette import status
 from starlette.exceptions import HTTPException
 from typing import Optional
 
-from api.models.periodic_task import PeriodicTaskDTO, PeriodicTaskListDTO
+from api.models.periodic_task import PeriodicTaskDTO, PeriodicTaskListDTO, validate_periodic_task
 from api.utils import (
     extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
 import logging
@@ -50,6 +51,10 @@ async def create_periodic_task(new_periodic_task: PeriodicTaskDTO, reboot_proces
     config_dict = extract_config()
     periodic_tasks_index = [int(x[-1]) for x in config_dict.keys() if x.startswith("PeriodicTask_")]
     periodic_tasks = get_periodic_tasks()
+    try:
+        validate_periodic_task(new_periodic_task)
+    except ValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if new_periodic_task.name in [ps["name"] for ps in periodic_tasks]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Periodict task already exists")
     periodic_task_file = map_to_config_file_format(new_periodic_task, True)
@@ -77,6 +82,10 @@ async def edit_periodic_task(periodic_task_name: str, edited_periodic_task: Peri
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"The periodic_task: {periodic_task_name} does not exist")
+    try:
+        validate_periodic_task(edited_periodic_task)
+    except ValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     periodic_task_file = map_to_config_file_format(edited_periodic_task, True)
     config_dict[edited_periodic_task_section] = periodic_task_file
     success = update_config(config_dict, reboot_processor)
