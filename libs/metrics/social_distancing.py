@@ -37,7 +37,7 @@ class SocialDistancingMetric(BaseMetric):
             )
 
     @classmethod
-    def generate_hourly_metric_data(cls, objects_logs):
+    def generate_hourly_metric_data(cls, objects_logs, entity):
         summary = np.zeros((len(objects_logs), 5), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
@@ -157,10 +157,11 @@ class SocialDistancingMetric(BaseMetric):
             os.makedirs(heatmaps_directory, exist_ok=True)
             yesterday = str(date.today() - timedelta(days=1))
             yesterday_csv = os.path.join(objects_log_directory, yesterday + ".csv")
-            detection_heatmap_file = os.path.join(heatmaps_directory, "detections_heatmap_" + yesterday)
-            violation_heatmap_file = os.path.join(heatmaps_directory, "violations_heatmap_" + yesterday)
-            cls.create_heatmap_report(config, yesterday_csv, detection_heatmap_file, "Detections")
-            cls.create_heatmap_report(config, yesterday_csv, violation_heatmap_file, "Violations")
+            if os.path.isfile(yesterday_csv):
+                detection_heatmap_file = os.path.join(heatmaps_directory, "detections_heatmap_" + yesterday)
+                violation_heatmap_file = os.path.join(heatmaps_directory, "violations_heatmap_" + yesterday)
+                cls.create_heatmap_report(config, yesterday_csv, detection_heatmap_file, "Detections")
+                cls.create_heatmap_report(config, yesterday_csv, violation_heatmap_file, "Violations")
 
     @classmethod
     def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):

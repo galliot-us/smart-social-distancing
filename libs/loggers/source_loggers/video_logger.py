@@ -4,7 +4,6 @@ import os
 import shutil
 
 from libs.utils import visualization_utils
-from tools.environment_score import mx_environment_scoring_consider_crowd
 
 
 class VideoLogger:
@@ -128,23 +127,13 @@ class VideoLogger:
         birds_eye_window = visualization_utils.birds_eye_view(
             birds_eye_window, output_dict["detection_boxes"], output_dict["violating_objects"])
 
-        # Put fps to the frame
+        # Put occupancy to the frame
         # region
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-        txt_fps = 'Frames rate = ' + str(fps) + '(fps)'  # Frames rate = 95 (fps)
+        txt_fps = 'Occupancy = ' + str(len(objects))
         # (0, 0) is the top-left (x,y); normalized number between 0-1
         origin = (0.05, 0.93)
         visualization_utils.text_putter(cv_image, txt_fps, origin)
-        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-        # endregion
-
-        # Put environment score to the frame
-        # region
-        # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
-        env_score = mx_environment_scoring_consider_crowd(len(objects), len(violating_objects))
-        txt_env_score = 'Env Score = ' + str(env_score)  # Env Score = 0.7
-        origin = (0.05, 0.98)
-        visualization_utils.text_putter(cv_image, txt_env_score, origin)
         # -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_- -_-
         # endregion
 

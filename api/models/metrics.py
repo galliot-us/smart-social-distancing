@@ -152,6 +152,7 @@ class FaceMaskWeekly(WeeklyReport, FaceMask):
 
 
 class Occupancy(SnakeModel):
+    OccupancyThreshold: List[int]
     AverageOccupancy: List[float]
     MaxOccupancy: List[float]
 
