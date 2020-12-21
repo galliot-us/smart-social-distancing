@@ -57,11 +57,8 @@ class TestsUpdateAppConfig:
         ({"max_processes": False}, "integer"),
         ({"dashboardurl": 40}, "string"),
         ({"dashboardurl": False}, "string"),
-<<<<<<< HEAD
-=======
         ({"screenshots_directory": 40}, "string"),
         ({"screenshots_directory": False}, "string"),
->>>>>>> First endpoints tests (Routers: App and Config)
         ({"slack_channel": 40}, "string"),
         ({"slack_channel": False}, "string"),
         ({"occupancy_alerts_min_interval": False}, "integer"),
