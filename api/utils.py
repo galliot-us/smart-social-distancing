@@ -80,7 +80,7 @@ def handle_response(response, success, status_code=status.HTTP_200_OK):
 
 def reestructure_areas(config_dict):
     """Ensure that all [Area_0, Area_1, ...] are consecutive"""
-    area_names = [x for x in config_dict.keys() if x.startswith("Area")]
+    area_names = [x for x in config_dict.keys() if x.startswith("Area_")]
     area_names.sort()
     for index, area_name in enumerate(area_names):
         if f"Area_{index}" != area_name:
