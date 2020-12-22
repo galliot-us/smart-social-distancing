@@ -76,7 +76,7 @@ def get_camera_default_image_string(camera_id):
 
 
 def delete_camera_from_areas(camera_id, config_dict):
-    areas = {key: config_dict[key] for key in config_dict.keys() if key.startswith("Area")}
+    areas = {key: config_dict[key] for key in config_dict.keys() if key.startswith("Area_")}
     for key, area in areas.items():
         cameras = area["Cameras"].split(",")
         if camera_id in cameras:
