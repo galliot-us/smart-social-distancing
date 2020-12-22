@@ -318,6 +318,11 @@ class BaseMetric:
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
                 for header in live_headers:
                     report[header] += int(lastest_entry[header])
-        report["Time"] = str(min(times))
-        report["Trend"] = cls.calculate_trend_value(cls.get_trend_live_values(live_report_paths))
+        report["Time"] = ""
+        report["Trend"] = 0
+        if times:
+            report["Time"] = str(min(times))
+        trend_live_values = cls.get_trend_live_values(live_report_paths)
+        if trend_live_values:
+            report["Trend"] = cls.calculate_trend_value(trend_live_values)
         return report
