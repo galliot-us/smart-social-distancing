@@ -97,7 +97,7 @@ Please note that the bash script may require permissions to execute `chmod +777 
 
 We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`).
 
-**Configuring AWS credentials**
+##### Configuring AWS credentials
 
 Some of the implemented features allow you to upload files into an S3 bucket. To do that you need to provide the envs `AWS_BUCKET_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. An easy way to do that is to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
 
@@ -130,7 +130,7 @@ As you are using a self-signed certificate you will need to import the created C
 docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-jetson-nano
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
 ```
 
 ##### Run on Jetson TX2
@@ -144,7 +144,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -
 docker build -f jetson-tx2.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-tx2" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-jetson-tx2
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-tx2
 ```
 
 ##### Run on Coral Dev Board
@@ -153,7 +153,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -
 docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-coral-dev-board
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
 ```
 
 ##### Run on AMD64 node with a connected Coral USB Accelerator
@@ -162,7 +162,7 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.
 docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-amd64
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
 ```
 
 ##### Run on x86
@@ -178,7 +178,7 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.
 docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-x86_64
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
 ```
 
 ##### Run on x86 with GPU
@@ -196,7 +196,7 @@ docker build -f x86-gpu.Dockerfile -t "neuralet/smart-social-distancing:latest-x
 
 # 2) Run Docker container:
 Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-x86_64_gpu
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
 ```
 
 ##### Run on x86 with GPU using TensorRT optimization
@@ -210,7 +210,7 @@ docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "neuralet/smart-social
 
 # 2) Run Docker container:
 # Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
 ```
 
 
@@ -223,7 +223,7 @@ docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh
 docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` --env-file .env neuralet/smart-social-distancing:latest-x86_64_openvino
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
 ### Configurations
@@ -355,7 +355,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   The processor also supports the execution of periodic tasks to generate reports, accumulate metrics, backup your files, etc. For now, we support the *metrics* and *s3_backup* tasks. You can enable/disable these functionalities uncommenting/commenting the section or with the *Enabled* flag.
   - `metrics`: Generates different reports (hourly, daily and live) with information about the social distancing infractions, facemask usage and occupancy in your cameras and areas. You need to have it enabled to see data in the [UI](https://beta.lanthorn.ai) dashboard or use the `/metrics` endpoints.
       - `LiveInterval`: Expressed in minutes. Defines the time interval desired to generate live information.
-  - `s3_backup`: Back up into an S3 bucket all the generated data (raw data and reports). To enable the functionality you need to configure the aws credentials following the steps explained in the section *Configuring AWS credentials*
+  - `s3_backup`: Back up into an S3 bucket all the generated data (raw data and reports). To enable the functionality you need to configure the aws credentials following the steps explained in the section [Configuring AWS credentials](####configuring-aws-credentials)
       - `BackupInterval`: Expressed in minutes. Defines the time interval desired to back up the raw data.
       - `BackupS3Bucket`: Configures the S3 Bucket used to store the backups.
 
