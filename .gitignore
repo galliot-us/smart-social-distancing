@@ -19,3 +19,4 @@ venv/
 slack_token.txt
 .env
 supervisord.log
+.vscode/
