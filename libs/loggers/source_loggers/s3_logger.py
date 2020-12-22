@@ -4,7 +4,7 @@ from libs.uploaders.s3_uploader import S3Uploader
 
 class S3Logger:
 
-    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
+    def __init__(self, config, source: str, logger: str):
         self.config = config
         self.screenshot_period = float(self.config.get_section_dict(logger)["ScreenshotPeriod"]) * 60
         self.bucket_screenshots = config.get_section_dict(logger)["ScreenshotS3Bucket"]

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class RawDataLogger:
 
-    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
+    def __init__(self, config, source: str, logger: str):
         self.config = config
         self.camera_id = self.config.get_section_dict(source)["Id"]
         self.time_interval = float(self.config.get_section_dict(logger)["TimeInterval"])  # Seconds

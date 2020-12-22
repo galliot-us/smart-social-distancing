@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 class WebHookLogger(RawDataLogger):
 
-    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
-        super().__init__(config, source, logger, live_feed_enabled)
+    def __init__(self, config, source: str, logger: str):
+        super().__init__(config, source, logger)
         self.web_hook_endpoint = config.get_section_dict(logger)["Endpoint"]
 
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,

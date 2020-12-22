@@ -8,14 +8,14 @@ from libs.utils import visualization_utils
 
 class VideoLogger:
 
-    def __init__(self, config, source: str, logger: str, live_feed_enabled: bool):
+    def __init__(self, config, source: str, logger: str):
         self.config = config
         self.camera_id = self.config.get_section_dict(source)["Id"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
         self.birds_eye_resolution = (200, 300)
         self.out = None
         self.out_birdseye = None
-        self.live_feed_enabled = live_feed_enabled
+        self.live_feed_enabled = self.config.get_boolean(source, "LiveFeedEnabled")
         self.track_hist = dict()
 
     def start_logging(self, fps):
@@ -89,7 +89,6 @@ class VideoLogger:
             return
         self.update_history(post_processing_data["tracks"])
         distancings = post_processing_data.get("distances", [])
-        violating_objects = post_processing_data.get("violating_objects", [])
         dist_threshold = post_processing_data.get("dist_threshold", 0)
 
         birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
