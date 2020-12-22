@@ -292,6 +292,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `DailyReport`: When the parameter is set in *True*, the information of the previous day is sent in a summary report.
   - `DailyReportTime`: If the daily report is enabled, you can choose the time to receive the report. By default, the report is sent at 06:00.
   - `DistMethod`: Configures the chosen distance method used by the processor to detect the violations. There are three different values: CalibratedDistance, CenterPointsDistance and FourCornerPointsDistance. If you want to use *CalibratedDistance* you will need to calibrate the camera from the [UI](https://beta.lanthorn.ai).
+  - `LiveFeedEnabled`: A boolean parameter that enables/disables the video live feed for the source.
 
 - `[Detector]`:
   - `Device`: Specifies the device. The available values are *Jetson*, *EdgeTPU*, *Dummy*, *x86*, *x86-gpu*
