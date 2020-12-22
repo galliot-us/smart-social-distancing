@@ -233,7 +233,7 @@ async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatri
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 
 
-@cameras_router.get("/{camera_id}/calibration_image", status_code=status.HTTP_204_NO_CONTENT)
+@cameras_router.get("/{camera_id}/calibration_image", response_model=ImageModel)
 async def get_camera_calibration_image(camera_id: str):
     """
     Gets the image required to calibrate the camera <camera_id>
