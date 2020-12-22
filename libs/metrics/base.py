@@ -53,18 +53,18 @@ class BaseMetric:
         raise NotImplementedError
 
     @classmethod
-    def generate_hourly_metric_data(cls, object_logs):
+    def generate_hourly_metric_data(cls, object_logs, entity):
         """
         Generates the hourly reports for the hours received in `object_logs`.
         """
         raise NotImplementedError
 
     @classmethod
-    def generate_hourly_csv_data(cls, entity_id: str, entity_file: str, time_from: datetime,
+    def generate_hourly_csv_data(cls, entity: Dict, entity_file: str, time_from: datetime,
                                  time_until: datetime):
         if not os.path.isfile(entity_file):
             entity_type = "Camera" if cls.entity else "Area"
-            logger.warn(f"The [{entity_type}: {entity_id}] contains no recorded data for that day")
+            logger.warn(f"The [{entity_type}: {entity['id']}] contains no recorded data for that day")
             return
         objects_logs = {}
         for hour in range(time_from.hour, time_until.hour):
@@ -75,7 +75,7 @@ class BaseMetric:
                 row_time = datetime.strptime(row["Timestamp"], "%Y-%m-%d %H:%M:%S")
                 if time_from <= row_time < time_until:
                     cls.procces_csv_row(row, objects_logs)
-            return cls.generate_hourly_metric_data(objects_logs)
+            return cls.generate_hourly_metric_data(objects_logs, entity)
 
     @classmethod
     def compute_hourly_metrics(cls, config):
@@ -114,7 +114,7 @@ class BaseMetric:
                 with open(daily_csv, "a", newline='') as csvfile:
                     writer = csv.DictWriter(csvfile, fieldnames=cls.csv_headers)
                     writer.writeheader()
-            csv_data = cls.generate_hourly_csv_data(entity["id"], entity_csv, time_from, time_until)
+            csv_data = cls.generate_hourly_csv_data(entity, entity_csv, time_from, time_until)
             if csv_data is None:
                 entity_type = "Camera" if cls.entity else "Area"
                 logger.warn(f"Hourly report not generated! [{entity_type}: {entity['id']}]")
@@ -318,6 +318,11 @@ class BaseMetric:
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
                 for header in live_headers:
                     report[header] += int(lastest_entry[header])
-        report["Time"] = str(min(times))
-        report["Trend"] = cls.calculate_trend_value(cls.get_trend_live_values(live_report_paths))
+        report["Time"] = ""
+        report["Trend"] = 0
+        if times:
+            report["Time"] = str(min(times))
+        trend_live_values = cls.get_trend_live_values(live_report_paths)
+        if trend_live_values:
+            report["Trend"] = cls.calculate_trend_value(trend_live_values)
         return report

@@ -13,7 +13,7 @@ from libs.utils.camera_calibration import (get_camera_calibration_path, compute_
 
 from api.settings import Settings
 from api.utils import (
-    extract_config, get_config, handle_response, reestructure_areas,
+    extract_config, handle_response, reestructure_areas,
     update_config, map_section_from_config, map_to_config_file_format
 )
 from api.models.camera import CameraDTO, CamerasListDTO, ImageModel
