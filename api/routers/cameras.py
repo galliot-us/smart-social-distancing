@@ -6,17 +6,17 @@ import os
 
 from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
-from typing import Optional
+from typing import Dict, Optional
 
 from libs.utils.camera_calibration import (get_camera_calibration_path, compute_and_save_inv_homography_matrix,
                                            ConfigHomographyMatrix)
 
 from api.settings import Settings
 from api.utils import (
-    extract_config, handle_response, reestructure_areas,
+    extract_config, get_config, handle_response, reestructure_areas,
     update_config, map_section_from_config, map_to_config_file_format
 )
-from api.models.camera import CameraDTO, CamerasListDTO, ImageModel
+from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +110,20 @@ def verify_path(base, camera_id):
     return dir_path
 
 
+def get_camera_index(config_dict: Dict, camera_id: str) -> int:
+    """
+    Returns the section source index for the camera <camera_id>
+    """
+    camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
+    cameras = [map_camera(x, config_dict) for x in camera_names]
+    cameras_ids = [camera["id"] for camera in cameras]
+    try:
+        index = cameras_ids.index(camera_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
+    return index
+
+
 @cameras_router.get("", response_model=CamerasListDTO)
 async def list_cameras(options: Optional[str] = ""):
     """
@@ -154,17 +168,9 @@ async def edit_camera(camera_id: str, edited_camera: CameraDTO, reboot_processor
     """
     edited_camera.id = camera_id
     config_dict = extract_config()
-    camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
-    cameras = [map_camera(x, config_dict) for x in camera_names]
-    cameras_ids = [camera["id"] for camera in cameras]
-    try:
-        index = cameras_ids.index(camera_id)
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
-
+    index = get_camera_index(config_dict, camera_id)
     camera_dict = map_to_camera_file_format(edited_camera)
     config_dict[f"Source_{index}"] = map_to_camera_file_format(edited_camera)
-
     success = update_config(config_dict, reboot_processor)
     return handle_response(camera_dict, success)
 
@@ -175,16 +181,8 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     Deletes the configuration related to the camera <camera_id>
     """
     config_dict = extract_config()
-    camera_names = [x for x in config_dict.keys() if x.startswith("Source_")]
-    cameras = [map_camera(x, config_dict) for x in camera_names]
-    cameras_ids = [camera["id"] for camera in cameras]
-    try:
-        index = cameras_ids.index(camera_id)
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
-
+    index = get_camera_index(config_dict, camera_id)
     config_dict = delete_camera_from_areas(camera_id, config_dict)
-
     config_dict.pop(f"Source_{index}")
     config_dict = reestructure_cameras((config_dict))
     success = update_config(config_dict, reboot_processor)
@@ -235,7 +233,7 @@ async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatri
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 
 
-@cameras_router.get("/{camera_id}/calibration_image", response_model=ImageModel)
+@cameras_router.get("/{camera_id}/calibration_image", status_code=status.HTTP_204_NO_CONTENT)
 async def get_camera_calibration_image(camera_id: str):
     """
     Gets the image required to calibrate the camera <camera_id>
@@ -246,3 +244,33 @@ async def get_camera_calibration_image(camera_id: str):
     return {
         "image": encoded_string
     }
+
+
+@cameras_router.get("/{camera_id}/video_live_feed_enabled", response_model=VideoLiveFeedModel)
+async def get_video_live_feed_enabled(camera_id: str):
+    """
+    Returns *True* if the video live feed is enabled for the camera <camera_id>
+    """
+    config_dict = extract_config()
+    index = get_camera_index(config_dict, camera_id)
+    config = get_config()
+    return {
+        "enabled": config.get_boolean(f"Source_{index}", "LiveFeedEnabled")
+    }
+
+
+@cameras_router.put("/{camera_id}/enable_video_live_feed", status_code=status.HTTP_204_NO_CONTENT)
+async def enable_video_live_feed(camera_id: str, diable_other_cameras: Optional[bool] = True):
+    """
+    Enables the video live feed is enabled for the camera <camera_id>.
+    By default, the video live feed for the other cameras will be disabled. You can change that behavior sending the
+    *diable_other_cameras* parameter in *False*.
+    """
+    config_dict = extract_config()
+    index = get_camera_index(config_dict, camera_id)
+    if diable_other_cameras:
+        for camera_section in [x for x in config_dict.keys() if x.startswith("Source_")]:
+            config_dict[camera_section]["LiveFeedEnabled"] = "False"
+    config_dict[f"Source_{index}"]["LiveFeedEnabled"] = "True"
+    success = update_config(config_dict, True)
+    return handle_response(None, success, status.HTTP_204_NO_CONTENT)

@@ -12,6 +12,7 @@ class CameraDTO(EntityConfigDTO, NotificationConfig):
     tags: Optional[str] = Field("", example='kitchen,living_room')
     image: Optional[str] = Field("", example='Base64 image')
     distMethod: Optional[str] = Field("", example='CenterPointsDistance')
+    liveFeedEnabled: bool = Field(True, example=True)
 
     @validator('videoPath')
     def video_must_be_valid(cls, video_uri):
@@ -45,3 +46,7 @@ class ImageModel(BaseModel):
                 "image": "data:image/jpg;base64,iVBORw0KG..."
             }
         }
+
+
+class VideoLiveFeedModel(BaseModel):
+    enabled: bool
