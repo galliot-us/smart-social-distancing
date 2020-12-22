@@ -44,7 +44,7 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     Adds a new area to the processor.
     """
     config_dict = extract_config()
-    areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
+    areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
     areas = [map_section_from_config(x, config_dict) for x in areas_name]
     if new_area.id in [area["id"] for area in areas]:
         raise HTTPException(status_code=400, detail="Area already exists")
@@ -97,7 +97,7 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     Deletes the configuration related to the area <area_id>
     """
     config_dict = extract_config()
-    areas_name = [x for x in config_dict.keys() if x.startswith("Area")]
+    areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
     areas = [map_section_from_config(x, config_dict) for x in areas_name]
     areas_ids = [area["id"] for area in areas]
     try:
