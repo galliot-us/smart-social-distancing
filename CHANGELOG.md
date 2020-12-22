@@ -10,7 +10,7 @@ Released on 2020-12-22.
 * Tracker parameters to GPU config ([#89](https://github.com/neuralet/smart-social-distancing/pull/89))
 * Parameter `reboot_processor` on all endpoints that update config ([#87](https://github.com/neuralet/smart-social-distancing/pull/87))
 * Enable slack notifications per entity ([#86](https://github.com/neuralet/smart-social-distancing/pull/86))
-* Openpifpaf TensorRT support, with fixes on tracking ([#91](https://github.com/neuralet/smart-social-distancing/pull/91))
+* Openpifpaf TensorRT support ([#91](https://github.com/neuralet/smart-social-distancing/pull/91))
 * Global reporting ([#92](https://github.com/neuralet/smart-social-distancing/pull/92))
 * Add export_all endpoint ([#94](https://github.com/neuralet/smart-social-distancing/pull/94))
 * Occupancy metrics ([#97](https://github.com/neuralet/smart-social-distancing/pull/97), ([#104](https://github.com/neuralet/smart-social-distancing/pull/104))
@@ -26,7 +26,7 @@ Released on 2020-12-22.
 #### Fixed:
 
 * Improved tracking ([#91](https://github.com/neuralet/smart-social-distancing/pull/91))
-* fixed mined issues at classifier inference ([#96](https://github.com/neuralet/smart-social-distancing/pull/96))
+* Fixed minor issues at classifier inference ([#96](https://github.com/neuralet/smart-social-distancing/pull/96))
 * Camera image endpoints capture default image ([#100](https://github.com/neuralet/smart-social-distancing/pull/100))
 
 
