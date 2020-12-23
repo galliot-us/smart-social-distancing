@@ -10,6 +10,7 @@ class SourceLoggerDTO(OptionalSectionConfig):
     timeInterval: Optional[float] = Field(example=0.5)
     logDirectory: Optional[str] = Field(example="/repo/data/processor/static/data/sources")
     endpoint: Optional[str] = Field(example="https://my-endpoint/")
+    screenshotsDirectory: Optional[str] = Field(example="/repo/data/processor/static/screenshots")
 
     @validator("name")
     def validate_name(cls, value):
@@ -32,6 +33,7 @@ class FileSystemLoggerDTO(OptionalSectionConfig):
     logDirectory: str = Field("/repo/data/processor/static/data/sources",
                               example="/repo/data/processor/static/data/sources")
     screenshotPeriod: int = Field(0, example=0)
+    screenshotsDirectory: str = Field("", example="/repo/data/processor/static/screenshots")
 
 
 class WebHookLogger(OptionalSectionConfig):
