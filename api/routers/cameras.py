@@ -260,15 +260,15 @@ async def get_video_live_feed_enabled(camera_id: str):
 
 
 @cameras_router.put("/{camera_id}/enable_video_live_feed", status_code=status.HTTP_204_NO_CONTENT)
-async def enable_video_live_feed(camera_id: str, diable_other_cameras: Optional[bool] = True):
+async def enable_video_live_feed(camera_id: str, disable_other_cameras: Optional[bool] = True):
     """
     Enables the video live feed for the camera <camera_id>.
     By default, the video live feed for the other cameras will be disabled. You can change that behavior sending the
-    *diable_other_cameras* parameter in *False*.
+    *disable_other_cameras* parameter in *False*.
     """
     config_dict = extract_config()
     index = get_camera_index(config_dict, camera_id)
-    if diable_other_cameras:
+    if disable_other_cameras:
         for camera_section in [x for x in config_dict.keys() if x.startswith("Source_")]:
             config_dict[camera_section]["LiveFeedEnabled"] = "False"
     config_dict[f"Source_{index}"]["LiveFeedEnabled"] = "True"
