@@ -355,7 +355,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   The processor also supports the execution of periodic tasks to generate reports, accumulate metrics, backup your files, etc. For now, we support the *metrics* and *s3_backup* tasks. You can enable/disable these functionalities uncommenting/commenting the section or with the *Enabled* flag.
   - `metrics`: Generates different reports (hourly, daily and live) with information about the social distancing infractions, facemask usage and occupancy in your cameras and areas. You need to have it enabled to see data in the [UI](https://beta.lanthorn.ai) dashboard or use the `/metrics` endpoints.
       - `LiveInterval`: Expressed in minutes. Defines the time interval desired to generate live information.
-  - `s3_backup`: Back up into an S3 bucket all the generated data (raw data and reports). To enable the functionality you need to configure the aws credentials following the steps explained in the section [Configuring AWS credentials](####configuring-aws-credentials).
+  - `s3_backup`: Back up into an S3 bucket all the generated data (raw data and reports). To enable the functionality you need to configure the aws credentials following the steps explained in the section [Configuring AWS credentials](#configuring-aws-credentials).
       - `BackupInterval`: Expressed in minutes. Defines the time interval desired to back up the raw data.
       - `BackupS3Bucket`: Configures the S3 Bucket used to store the backups.
 
