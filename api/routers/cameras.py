@@ -1,7 +1,6 @@
 import base64
 import cv2 as cv
 import logging
-import numpy as np
 import os
 
 from fastapi import APIRouter, status
@@ -64,15 +63,14 @@ def get_current_image(camera_id):
 
 
 def get_camera_default_image_string(camera_id):
-    dir_path = verify_path(settings.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
+    dir_path = verify_path(os.environ .get("ScreenshotsDirectory"), camera_id)
     image_path = os.path.join(dir_path, "default.jpg")
-    if os.path.isfile(image_path) and os.path.getsize(image_path) != 0:
-        cv_image = cv.imread(f"{dir_path}/default.jpg")
-    else:
+    if not os.path.isfile(image_path) or os.path.getsize(image_path) == 0:
         # There is not default image, save the current frame as default
         cv_image = get_current_image(camera_id)
         cv.imwrite(image_path, cv_image)
-    return base64.b64encode(cv_image)
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read())
 
 
 def delete_camera_from_areas(camera_id, config_dict):
@@ -199,21 +197,6 @@ async def get_camera_image(camera_id: str):
     return {
         "image": get_camera_default_image_string(camera_id)
     }
-
-
-@cameras_router.put("/{camera_id}/image", status_code=status.HTTP_204_NO_CONTENT)
-async def replace_camera_image(camera_id: str, body: ImageModel):
-    """
-    Replaces the image related to the camera <camera_id>
-    """
-    dir_path = verify_path(settings.config.get_section_dict("App")["ScreenshotsDirectory"], camera_id)
-    try:
-        decoded_image = base64.b64decode(body.image.split(",")[1])
-        nparr = np.fromstring(decoded_image, np.uint8)
-        cv_image = cv.imdecode(nparr, cv.IMREAD_COLOR)
-        cv.imwrite(f"{dir_path}/default.jpg", cv_image)
-    except Exception:
-        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image format")
 
 
 @cameras_router.post("/{camera_id}/homography_matrix", status_code=status.HTTP_204_NO_CONTENT)
