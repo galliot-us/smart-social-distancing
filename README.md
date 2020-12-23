@@ -97,6 +97,10 @@ Please note that the bash script may require permissions to execute `chmod +777 
 
 We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`).
 
+##### Configuring AWS credentials
+
+Some of the implemented features allow you to upload files into an S3 bucket. To do that you need to provide the envs `AWS_BUCKET_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. An easy way to do that is to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
+
 ##### Enabling SSL
 
 We recommend exposing the processors' APIs using HTTPS. To do that, you need to create a folder named `certs` with a valid certificate for the processor (with its corresponding private key) and configure it in the `config-*.ini` file (`SSLCertificateFile` and `SSLKeyFile` configurations).
@@ -348,9 +352,12 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[PeriodicTask_N]`:
 
-  The processor also supports the execution of periodic tasks to generate reports, accumulate metrics, etc. For now, we support only the *metrics* task. You can enable/disable that functionality uncommenting/commenting the section or with the *Enabled* flag.
+  The processor also supports the execution of periodic tasks to generate reports, accumulate metrics, backup your files, etc. For now, we support the *metrics* and *s3_backup* tasks. You can enable/disable these functionalities uncommenting/commenting the section or with the *Enabled* flag.
   - `metrics`: Generates different reports (hourly, daily and live) with information about the social distancing infractions, facemask usage and occupancy in your cameras and areas. You need to have it enabled to see data in the [UI](https://beta.lanthorn.ai) dashboard or use the `/metrics` endpoints.
       - `LiveInterval`: Expressed in minutes. Defines the time interval desired to generate live information.
+  - `s3_backup`: Back up into an S3 bucket all the generated data (raw data and reports). To enable the functionality you need to configure the aws credentials following the steps explained in the section [Configuring AWS credentials](#configuring-aws-credentials).
+      - `BackupInterval`: Expressed in minutes. Defines the time interval desired to back up the raw data.
+      - `BackupS3Bucket`: Configures the S3 Bucket used to store the backups.
 
 ### API usage
 After you run the processor on your node, you can use the exposed API to control the Processor's Core, where all the process is getting done.

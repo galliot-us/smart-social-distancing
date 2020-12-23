@@ -103,8 +103,6 @@ RUN git clone https://github.com/onnx/onnx-tensorrt.git \
 && make install
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
-ENV AWS_SHARED_CREDENTIALS_FILE=/repo/.aws/credentials
-ENV AWS_CONFIG_FILE=/repo/.aws/config
 ENV CONFIG_FILE=config-x86-gpu-tensorrt.ini
 
 COPY . /repo
