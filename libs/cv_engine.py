@@ -2,7 +2,6 @@ import cv2 as cv
 import logging
 import numpy as np
 import os
-import time
 from libs.classifiers.classifier import Classifier
 from libs.trackers.tracker import Tracker
 from libs.loggers.source_loggers.logger import Logger
@@ -14,9 +13,8 @@ logger = logging.getLogger(__name__)
 
 class CvEngine:
 
-    def __init__(self, config, source, live_feed_enabled=True):
+    def __init__(self, config, source):
         self.config = config
-        self.live_feed_enabled = live_feed_enabled
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
 
         # Init detector, tracker and classifier
@@ -37,17 +35,9 @@ class CvEngine:
         # Init loggers
         self.loggers = []
         loggers_names = [x for x in self.config.get_sections() if x.startswith("SourceLogger_")]
-        self.log_time_interval = None
         for l_name in loggers_names:
             if self.config.get_boolean(l_name, "Enabled"):
-                self.loggers.append(Logger(self.config, source, l_name, self.live_feed_enabled))
-                if self.config.get_section_dict(l_name).get("TimeInterval"):
-                    if not self.log_time_interval:
-                        self.log_time_interval = float(self.config.get_section_dict(l_name).get("TimeInterval"))
-                    else:
-                        self.log_time_interval = min(
-                            self.log_time_interval, float(self.config.get_section_dict(l_name).get("TimeInterval")))
-
+                self.loggers.append(Logger(self.config, source, l_name))
         self.running_video = False
 
     def __process(self, cv_image):
@@ -102,14 +92,10 @@ class CvEngine:
             source_logger.start_logging(fps)
 
         frame_num = 0
-        last_processed_time = time.time()
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
             if np.shape(cv_image) != ():
-                if not self.live_feed_enabled and (time.time() - last_processed_time < self.log_time_interval):
-                    continue
                 cv_image, objects, post_processing_data = self.__process(cv_image)
-                last_processed_time = time.time()
                 frame_num += 1
                 if frame_num % 100 == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')

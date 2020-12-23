@@ -15,7 +15,7 @@ def run_video_processing(config, pipe, sources):
     logger.info(f"[{pid}] taking on {len(sources)} cameras")
     threads = []
     for src in sources:
-        engine = EngineThread(config, src, len(sources) == 1)
+        engine = EngineThread(config, src)
         engine.start()
         threads.append(engine)
 
@@ -37,16 +37,15 @@ def run_video_processing(config, pipe, sources):
 
 
 class EngineThread(Thread):
-    def __init__(self, config, source, live_feed_enabled=True):
+    def __init__(self, config, source):
         Thread.__init__(self)
         self.engine = None
         self.config = config
         self.source = source
-        self.live_feed_enabled = live_feed_enabled
 
     def run(self):
         try:
-            self.engine = CvEngine(self.config, self.source["section"], self.live_feed_enabled)
+            self.engine = CvEngine(self.config, self.source["section"])
             restarts = 0
             max_restarts = int(self.config.get_section_dict("App")["MaxThreadRestarts"])
             while True:
