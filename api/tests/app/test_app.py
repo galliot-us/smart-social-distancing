@@ -1,15 +1,15 @@
 import pytest
 
 from api.models.app import AppDTO
-from api.tests.utils.common_functions import get_app_from_ini_config_file_json, json_multi_type_to_json_string, \
-    create_app_config, camel_case_to_snake_case_dict
+from api.tests.utils.common_functions import json_multi_type_to_json_string, \
+    create_app_config, camel_case_to_snake_case_dict, get_app_from_config_file
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
 from api.tests.utils.fixtures_tests import config_rollback, app_config
 
 
 def expected_response_function(config_sample_path):
-    expected_response = get_app_from_ini_config_file_json(config_sample_path)
+    expected_response = get_app_from_config_file(config_sample_path, flag=False)
     expected_response = json_multi_type_to_json_string(expected_response)
 
     # It is weird that this change does not appear in response.json()
@@ -24,8 +24,6 @@ def expected_response_default():
     expected_response = AppDTO().__dict__
     expected_response = camel_case_to_snake_case_dict(expected_response)
     expected_response = json_multi_type_to_json_string(expected_response)
-    expected_response["dashboard_url"] = expected_response["dashboard_u_r_l"]
-    del expected_response["dashboard_u_r_l"]
     return expected_response
 
 
@@ -38,9 +36,7 @@ class TestClassGetAppConfig:
 
         response = client.get('/app')
 
-        expected_response = get_app_from_ini_config_file_json(config_sample_path)
-        expected_response["dashboardurl"] = expected_response["dashboard_url"]
-        del expected_response["dashboard_url"]
+        expected_response = get_app_from_config_file(config_sample_path)
 
         assert response.status_code == 200
         assert response.json() == expected_response
@@ -125,9 +121,11 @@ class TestClassUpdateAppConfig:
                     assert response.status_code == 200
                     expected_response = expected_response_function(config_sample_path)
                     assert response.json() == expected_response
+        elif correct_type == "bool":
+            assert response.status_code == 400
+            assert response.json()['detail'][0]['type'] == 'type_error.' + "bool"
         else:
             assert response.status_code == 400
-            assert response.json()['detail'][0]['type'] == 'type_error.' + correct_type
 
     # pytest -v api/tests/app/test_app.py::TestClassUpdateAppConfig::test_try_change_app_config_non_existence_key
     def test_try_change_app_config_non_existence_key(self, config_rollback):
@@ -141,11 +139,11 @@ class TestClassUpdateAppConfig:
         response = client.put('/app', json=body)
 
         expected_response = expected_response_function(config_sample_path)
-        expected_response_2 = expected_response_default()
+        default_response = expected_response_default()
 
         assert response.status_code == 200
         assert response.json() == expected_response
-        assert response.json() == expected_response_2
+        assert response.json() == default_response
 
     # pytest -v api/tests/app/test_app.py::TestClassUpdateAppConfig::test_try_change_app_config_empty_json
     def test_try_change_app_config_empty_json(self, config_rollback):
@@ -155,8 +153,8 @@ class TestClassUpdateAppConfig:
         response = client.put('/app', json=body)
 
         expected_response = expected_response_function(config_sample_path)
-        expected_response_2 = expected_response_default()
+        default_response = expected_response_default()
 
         assert response.status_code == 200
         assert response.json() == expected_response
-        assert response.json() == expected_response_2
+        assert response.json() == default_response

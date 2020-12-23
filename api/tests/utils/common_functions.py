@@ -4,7 +4,7 @@ from libs.config_engine import ConfigEngine
 
 
 # Functions to get values from config file (.ini) -- begin
-def get_config_file_json_strings(config_sample_path):
+def get_config_file_json_strings(config_sample_path, decamelize=False):
     config_sample = ConfigEngine(config_sample_path)
     sections = config_sample.get_sections()
     config_sample_json = {}
@@ -12,7 +12,8 @@ def get_config_file_json_strings(config_sample_path):
     for section in sections:
         config_sample_json[section] = config_sample.get_section_dict(section)
 
-    config_sample_json = humps.decamelize(config_sample_json)
+    if decamelize:
+        config_sample_json = humps.decamelize(config_sample_json)
 
     return config_sample_json
 
@@ -31,17 +32,62 @@ def json_string_to_json_multi_type_config_file(config_sample_json):
 
 
 def get_config_file_json(config_sample_path):
-    config_sample_json = get_config_file_json_strings(config_sample_path)
+    config_sample_json = get_config_file_json_strings(config_sample_path, decamelize=True)
     config_sample_json = json_string_to_json_multi_type_config_file(config_sample_json)
     return config_sample_json
 # Functions to get values from config file (.ini) -- end
 
 
-def get_app_from_ini_config_file_json(config_sample_path):
-    """Once you have config file in json format, we get the app field."""
-    config_sample_json = get_config_file_json(config_sample_path)
-    app_json = config_sample_json['app']
-    return app_json
+# Get App from config file -- begin
+def pascal_to_camel_case(pascal_case_string: str) -> str:
+    if len(pascal_case_string) > 1 and pascal_case_string[1].isupper():
+        # pascal_case_string starts with an acronym, returns without change
+        return pascal_case_string
+    return pascal_case_string[0].lower() + pascal_case_string[1:]
+
+
+def map_section_from_config(section_name: str, config: dict):
+    if section_name not in config:
+        return None
+    section = config[section_name]
+    config_mapped = {}
+    for key, value in section.items():
+        config_mapped[humps.decamelize(pascal_to_camel_case(key))] = value
+    return config_mapped
+
+
+def section_string_to_section_multi_type(dictionary):
+    response = {}
+    for key, value in dictionary.items():
+        try:
+            response[key] = int(dictionary[key])
+        except ValueError:
+            if dictionary[key] == "True":
+                response[key] = True
+            elif dictionary[key] == "False":
+                response[key] = False
+            else:
+                response[key] = dictionary[key]
+    return response
+
+
+def get_app_from_config_file(config_sample_path, flag=True):
+    """A problem was detected here. The response body of the endpoint GET /app returns a json with the key
+    "dashboardurl", while the endpoint PUT /config returns a json with the key "dashboard_url". If it ever
+    resolves, the "if" and the flag argument will no longer be needed. """
+    if flag:
+        config_sample_json = get_config_file_json_strings(config_sample_path)
+        config_mapped_string = map_section_from_config("App", config_sample_json)
+        config_mapped = section_string_to_section_multi_type(config_mapped_string)
+    else:
+        config_sample_json = get_config_file_json_strings(config_sample_path)
+        config_mapped_string = map_section_from_config("App", config_sample_json)
+        config_mapped = section_string_to_section_multi_type(config_mapped_string)
+        config_mapped["dashboard_url"] = config_mapped["dashboardurl"]
+        del config_mapped["dashboardurl"]
+
+    return config_mapped
+# Get App from config file -- end
 
 
 def json_multi_type_to_json_string(json_dict):
@@ -88,5 +134,9 @@ def camel_case_to_snake_case_dict(dictionary):
     for key, value in dictionary.items():
         camel_key = re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower()
         di[camel_key] = value
+
+    if "dashboardURL" in dictionary.keys():
+        di["dashboard_url"] = dictionary["dashboardURL"]
+        del di["dashboard_u_r_l"]
 
     return di
