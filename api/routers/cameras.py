@@ -262,7 +262,7 @@ async def get_video_live_feed_enabled(camera_id: str):
 @cameras_router.put("/{camera_id}/enable_video_live_feed", status_code=status.HTTP_204_NO_CONTENT)
 async def enable_video_live_feed(camera_id: str, diable_other_cameras: Optional[bool] = True):
     """
-    Enables the video live feed is enabled for the camera <camera_id>.
+    Enables the video live feed for the camera <camera_id>.
     By default, the video live feed for the other cameras will be disabled. You can change that behavior sending the
     *diable_other_cameras* parameter in *False*.
     """
