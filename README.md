@@ -135,7 +135,7 @@ To configure OAuth2 in the processor you need to follow these steps:
       docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64 python3 create_api_user.py --user=<USER> --password=<PASSWORD>
       ```
      2. Using the `/auth/create_api_user` endpoint:
-      Sent a POST request to the endpoint `http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/auth/create_api_user` with the following body:
+      Send a POST request to the endpoint `http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/auth/create_api_user` with the following body:
       ```
       {
           "user": <USER>,
@@ -151,7 +151,7 @@ To configure OAuth2 in the processor you need to follow these steps:
           "password": <PASSWORD>
       }
       ```
-      The obtained token will valid for 1 week (then you need to request a new one) and needs to be sent as an `Authorization` header in all the requests. If you don't send the token (when the `UseAuthToken` attribute is set in `True`), you will receive a `401 Unauthorized` response.
+      The obtained token will be valid for 1 week (then you need to request a new one) and needs to be sent as an `Authorization` header in all the requests. If you don't send the token (when the `UseAuthToken` attribute is set in `True`), you will receive a `401 Unauthorized` response.
 
 ##### Run on Jetson Nano
 * You need to have JetPack 4.3 installed on your Jetson Nano.
