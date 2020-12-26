@@ -1,8 +1,4 @@
 FROM nvcr.io/nvidia/tensorflow:20.03-tf2-py3
-#RUN apt-get update && apt-get install -y python3-dev  && conda update -y wrapt && pip3 install tensorflow==2.2 openpifpaf wget
-
-#RUN ln -s /usr/local/cuda-10.2/targets/x86_64-linux/lib/libcudart.so.10.2 /usr/lib/x86_64-linux-gnu/libcudart.so.10.1
-#RUN pip uninstall python3-opencv python-opencv
 # The `python3-opencv` package isn't built with gstreamer on Ubuntu. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
 # http://amritamaz.net/blog/opencv-config
@@ -86,17 +82,10 @@ ENV CONFIG_FILE=config-x86-gpu.ini
 RUN python3 -m site --user-site > /root/tmp_variable && DCN_PATH=$(cat /root/tmp_variable)
 COPY . /repo
 RUN pip3 install torch==1.2 torchvision==0.4.0
-#COPY ./libs/detectors/x86/alphapose/ /alphapose_packages
-#COPY ./libs/detectors/x86/alphapose/setup.py /alphapose_packages/setup.py
 WORKDIR /repo/libs/detectors/x86/alphapose
-#ENV PYTHONPATH=/alphapose_packages
-#
-#RUN mkdir -p $(cat /root/tmp_variable)/alphapose_package && \
-#cd $(cat /root/tmp_variable)/alphapose_package && \
 RUN apt-get update && apt-get install -y libyaml-dev && pip3 install cython gdown && python3 setup.py build develop --user
 RUN mkdir -p $(cat /root/tmp_variable)/alphapose_package && \
-cp /repo/libs/detectors/x86/alphapose/models/layers/dcn/*.so $(cat /root/tmp_variable)/alphapose_package
-#mv /repo/libs/detectors/x86/alphapose/setup.py $(cat /root/tmp_variable)/alphapose_package
+    cp /repo/libs/detectors/x86/alphapose/models/layers/dcn/*.so $(cat /root/tmp_variable)/alphapose_package
 
 WORKDIR /repo
 HEALTHCHECK --interval=30s --retries=2 --start-period=15s CMD bash healthcheck.bash

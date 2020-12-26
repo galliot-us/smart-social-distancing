@@ -22,6 +22,12 @@ logger.setLevel(logging.INFO)
 
 
 class Detector:
+    """
+       Perform object detection with the AlphaPose model.
+       original repository of the model: https://github.com/MVIG-SJTU/AlphaPose
+
+       :param config: Is a ConfigEngine instance which provides necessary parameters.
+       """
     def __init__(self, config):
         self.config = config
         self.name = config.get_section_dict('Detector')['Name']
@@ -52,22 +58,31 @@ class Detector:
         self.pose_model.eval()
 
     def inference(self, image):
+        """
+            inference function sets input tensor to input image and gets the output.
+            The model provides corresponding detection output which is used for creating result
+            Args:
+                resized_rgb_image: uint8 numpy array with shape (img_height, img_width, channels)
+
+            Returns:
+                result: a dictionary contains of [{"id": 0, "bbox": [y1, x1, y2, x2], "score":s%, "face": [y1, x1, y2, x2]}, {...}, {...}, ...]
+        """
         t_begin = time.perf_counter()
         detections = self.detection_model.inference(image)
         if len(detections) == 0:
             return []
         detections = prepare_detection_results(detections, self.w, self.h)
         with torch.no_grad():
-            inps, cropped_boxes, boxes, scores, ids = self.transform_detections(image, detections)
+            inps, cropped_boxes, boxes, scores, ids = self._transform_detections(image, detections)
             inps = inps.to(self.device)
             hm = self.pose_model(inps)
-            poses = self.post_process(hm, cropped_boxes, boxes, scores, ids)
+            poses = self._post_process(hm, cropped_boxes, boxes, scores, ids)
         inference_time = time.perf_counter() - t_begin
         self.fps = convert_infr_time_to_fps(inference_time)
         results = prepare_poses_results(poses, self.w, self.h, scores)
         return results
 
-    def transform_detections(self, image, dets):
+    def _transform_detections(self, image, dets):
         if isinstance(dets, int):
             return 0, 0
         dets = dets[dets[:, 0] == 0]
@@ -77,11 +92,11 @@ class Detector:
         inps = torch.zeros(boxes.size(0), 3, *self._input_size)
         cropped_boxes = torch.zeros(boxes.size(0), 4)
         for i, box in enumerate(boxes):
-            inps[i], cropped_box = self.transform_single_detection(image, box)
+            inps[i], cropped_box = self._transform_single_detection(image, box)
             cropped_boxes[i] = torch.FloatTensor(cropped_box)
         return inps, cropped_boxes, boxes, scores, ids
 
-    def transform_single_detection(self, image, bbox):
+    def _transform_single_detection(self, image, bbox):
         xmin, ymin, xmax, ymax = bbox
         center, scale = box_to_center_scale(
             xmin, ymin, xmax - xmin, ymax - ymin, self._aspect_ratio)
@@ -102,13 +117,13 @@ class Detector:
 
         return img, bbox
 
-    def post_process(self, hm, cropped_boxes, boxes, scores, ids):
+    def _post_process(self, hm, cropped_boxes, boxes, scores, ids):
         assert hm.dim() == 4
         pose_coords = []
         pose_scores = []
         for i in range(hm.shape[0]):
             bbox = cropped_boxes[i].tolist()
-            pose_coord, pose_score = self.heatmap_to_coord(hm[i][self.eval_joints], bbox, hm_shape=self.hm_size,
+            pose_coord, pose_score = self._heatmap_to_coord(hm[i][self.eval_joints], bbox, hm_shape=self.hm_size,
                                                            norm_type=None)
             pose_coords.append(torch.from_numpy(pose_coord).unsqueeze(0))
             pose_scores.append(torch.from_numpy(pose_score).unsqueeze(0))
@@ -132,7 +147,7 @@ class Detector:
             )
         return _result
 
-    def heatmap_to_coord(self, hms, bbox, hms_flip=None, **kwargs):
+    def _heatmap_to_coord(self, hms, bbox, hms_flip=None, **kwargs):
         if hms_flip is not None:
             hms = (hms + hms_flip) / 2
         if not isinstance(hms, np.ndarray):
