@@ -9,11 +9,12 @@ def prepare_detection_results(object_list, w, h):
     output[:, 6] = 0.99
     for i, obj in enumerate(object_list):
         bbox = torch.tensor([obj["bbox"][1], obj["bbox"][0], obj["bbox"][3], obj["bbox"][2]])
-        bbox_scaled = bbox * scale_factors
+        bbox_scaled = (bbox.float() * scale_factors.float())
         output[i, 1:5] = bbox_scaled
         output[i, [1, 3]] = torch.clamp(output[i, [1, 3]], 0.0, w)
-        output[i, [4, 2]] = torch.clamp(output[i, [2, 4]], 0.0, h)
-        output[i, 5] = obj["score"]
+        output[i, [2, 4]] = torch.clamp(output[i, [2, 4]], 0.0, h)
+        # TODO
+        output[i, 5] = float(obj["score"].numpy())
 
     return output
 
@@ -28,6 +29,7 @@ def prepare_poses_results(poses, w, h, scores):
         object_dict["id"] = "1-" + str(i)
         object_dict["bbox"] = bboxes_scaled.tolist()
         object_dict["score"] = scores[i].item()
+        object_dict["face"] = None
         kp_scores = item["kp_score"].numpy()
         keypoints = item["keypoints"]
         if np.all(kp_scores[[0, 1, 2, 5, 6]] > 0.15):
@@ -43,5 +45,6 @@ def prepare_poses_results(poses, w, h, scores):
                 x_max_face = int(min(w, x_min_face + 1.1 * h_crop))
                 y_max_face = int(min(h, y_min_face + 1.1 * h_crop))
                 object_dict["face"] = [y_min_face / h, x_min_face / w, y_max_face / h, x_max_face / w]
+
         results.append(object_dict)
     return results

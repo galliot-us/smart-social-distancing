@@ -1,6 +1,5 @@
 from models.fastpose import FastPose
-from detectors.yolo_wrapper import YoloWrapper
-from easydict import EasyDict as edict
+
 
 def build_sppe_model(cfg, preset_cfg):
     args = cfg.copy()

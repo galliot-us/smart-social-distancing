@@ -1,3 +1,5 @@
+import sys
+sys.path.append("libs/detectors/x86/alphapose")
 from utils import config_parser
 from builders import builder
 from utils.bbox import box_to_center_scale, center_scale_to_box
@@ -9,6 +11,8 @@ import torch
 import cv2
 import numpy as np
 import pathlib
+import time
+from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
 
 class Detector:
@@ -16,14 +20,15 @@ class Detector:
         self.config = config
         self.name = config.get_section_dict('Detector')['Name']
         self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
-        self.cfg = config_parser.parse("configs/config.yaml")
-        self.device = torch.device("cuda" if config.get_section_dict('Detector')['Gpu'] else "cpu")
+        self.cfg = config_parser.parse("libs/detectors/x86/alphapose/configs/config.yaml")
+        self.device = torch.device("cuda" if config.get_section_dict('Detector')['Device'].endswith("gpu") else "cpu")
         self._input_size = self.cfg.DATA_PRESET.IMAGE_SIZE
         self.load_model()
         self.detection_model = builder.build_detection_model(self.name, config)
         self._aspect_ratio = float(self._input_size[1]) / self._input_size[0]
         self.hm_size = self.cfg.DATA_PRESET.HEATMAP_SIZE
         self.eval_joints = list(range(self.cfg.DATA_PRESET.NUM_JOINTS))
+        self.fps = None
 
     def load_model(self):
         # TODO: add download checkpoint script
@@ -39,7 +44,10 @@ class Detector:
         self.pose_model.eval()
 
     def inference(self, image):
+        t_begin = time.perf_counter()
         detections = self.detection_model.inference(image)
+        if len(detections) == 0:
+            return []
         # TODO
         detections = prepare_detection_results(detections, self.w, self.h)
         with torch.no_grad():
@@ -47,8 +55,10 @@ class Detector:
             inps = inps.to(self.device)
             hm = self.pose_model(inps)
             poses = self.post_process(hm, cropped_boxes, boxes, scores, ids)
+        inference_time = time.perf_counter() - t_begin
+        self.fps = convert_infr_time_to_fps(inference_time)
         # TODO
-        results = prepare_poses_results(poses, self.w, self.h, scores)
+        results = prepare_poses_results(poses, self.w, self.h, scores) 
         return results
 
     def transform_detections(self, image, dets):
@@ -111,7 +121,7 @@ class Detector:
                     'kp_score': preds_scores[k],
                     'proposal_score': torch.mean(preds_scores[k]) + scores[k] + 1.25 * max(preds_scores[k]),
                     'idx': ids[k],
-                    'bbox': [boxes[k][0], boxes[k][1], boxes[k][2] - boxes[k][0], boxes[k][3] - boxes[k][1]]
+                    'bbox': [boxes[k][0], boxes[k][1], boxes[k][2], boxes[k][3]]
                 }
             )
         return _result
