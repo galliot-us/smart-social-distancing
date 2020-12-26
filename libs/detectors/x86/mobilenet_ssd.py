@@ -7,6 +7,7 @@ import tensorflow as tf
 
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
+
 def load_model(model_name):
     model_dir = pathlib.Path('/repo/data/x86') / model_name
     if not model_dir.exists():
@@ -72,6 +73,7 @@ class Detector:
         result = []
         for i in range(boxes.shape[1]):  # number of boxes
             if labels[0, i] == class_id and scores[0, i] > score_threshold:
-                result.append({"id": str(class_id) + '-' + str(i), "bbox": boxes[0, i, :].numpy(), "score": scores[0, i]})
+                result.append({"id": str(class_id) + '-' + str(i), "bbox": boxes[0, i, :].numpy().tolist(),
+                               "score": float(scores[0, i].numpy())})
 
         return result

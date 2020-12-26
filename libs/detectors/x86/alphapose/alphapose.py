@@ -35,7 +35,6 @@ class Detector:
         self.fps = None
 
     def load_model(self):
-        # TODO: add download checkpoint script
         model_file = pathlib.Path('/repo/data/x86/fast_res50_256x192.pth')
         if not model_file.exists():
             import gdown
@@ -55,7 +54,6 @@ class Detector:
         detections = self.detection_model.inference(image)
         if len(detections) == 0:
             return []
-        # TODO
         detections = prepare_detection_results(detections, self.w, self.h)
         with torch.no_grad():
             inps, cropped_boxes, boxes, scores, ids = self.transform_detections(image, detections)
@@ -64,7 +62,6 @@ class Detector:
             poses = self.post_process(hm, cropped_boxes, boxes, scores, ids)
         inference_time = time.perf_counter() - t_begin
         self.fps = convert_infr_time_to_fps(inference_time)
-        # TODO
         results = prepare_poses_results(poses, self.w, self.h, scores)
         return results
 
