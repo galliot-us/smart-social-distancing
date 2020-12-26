@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append("libs/detectors/x86/alphapose")
 from utils import config_parser
 from builders import builder
@@ -14,6 +15,9 @@ import pathlib
 import time
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class Detector:
     def __init__(self, config):
@@ -34,8 +38,11 @@ class Detector:
         # TODO: add download checkpoint script
         model_file = pathlib.Path('/repo/data/x86/fast_res50_256x192.pth')
         if not model_file.exists():
-            # TODO: add model link
-            pass
+            import gdown
+            logger.info("did not find model's checkpoint file, start downloading ...")
+            url = 'https://drive.google.com/uc?id=1kQhnMRURFiy7NsdS8EFL-8vtqEXOgECn'
+            output = '/repo/data/x86/fast_res50_256x192.pth'
+            gdown.download(url, output, quiet=False)
 
         self.pose_model = builder.build_sppe_model(self.cfg.MODEL, preset_cfg=self.cfg.DATA_PRESET)
         print(f'Loading pose model from {model_file}...')
@@ -58,7 +65,7 @@ class Detector:
         inference_time = time.perf_counter() - t_begin
         self.fps = convert_infr_time_to_fps(inference_time)
         # TODO
-        results = prepare_poses_results(poses, self.w, self.h, scores) 
+        results = prepare_poses_results(poses, self.w, self.h, scores)
         return results
 
     def transform_detections(self, image, dets):

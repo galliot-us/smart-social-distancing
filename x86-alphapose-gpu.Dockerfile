@@ -93,7 +93,7 @@ WORKDIR /repo/libs/detectors/x86/alphapose
 #
 #RUN mkdir -p $(cat /root/tmp_variable)/alphapose_package && \
 #cd $(cat /root/tmp_variable)/alphapose_package && \
-RUN apt-get update && apt-get install -y libyaml-dev && pip3 install cython && python3 setup.py build develop --user
+RUN apt-get update && apt-get install -y libyaml-dev && pip3 install cython gdown && python3 setup.py build develop --user
 RUN mkdir -p $(cat /root/tmp_variable)/alphapose_package && \
 cp /repo/libs/detectors/x86/alphapose/models/layers/dcn/*.so $(cat /root/tmp_variable)/alphapose_package
 #mv /repo/libs/detectors/x86/alphapose/setup.py $(cat /root/tmp_variable)/alphapose_package
