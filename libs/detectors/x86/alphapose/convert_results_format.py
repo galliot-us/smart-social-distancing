@@ -13,7 +13,6 @@ def prepare_detection_results(object_list, w, h):
         output[i, 1:5] = bbox_scaled
         output[i, [1, 3]] = torch.clamp(output[i, [1, 3]], 0.0, w)
         output[i, [2, 4]] = torch.clamp(output[i, [2, 4]], 0.0, h)
-        # TODO
         output[i, 5] = obj["score"]
 
     return output

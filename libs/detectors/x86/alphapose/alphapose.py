@@ -6,7 +6,7 @@ from builders import builder
 from utils.bbox import box_to_center_scale, center_scale_to_box
 from utils.pose_nms import pose_nms
 from utils.transformations import get_affine_transform, transform_preds, im_to_torch, get_max_pred
-from wrappers import prepare_detection_results, prepare_poses_results
+from convert_results_format import prepare_detection_results, prepare_poses_results
 
 import torch
 import cv2
@@ -16,8 +16,10 @@ import time
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
 import logging
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 class Detector:
     def __init__(self, config):
