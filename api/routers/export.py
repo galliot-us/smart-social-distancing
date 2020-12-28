@@ -37,7 +37,7 @@ def export_folder_into_zip(source_path, destination_path, zip_file, from_date, t
                 if not date_matches:
                     continue
                 file_date = datetime.strptime(date_matches[0], '%Y-%m-%d').date()
-                if not from_date < file_date < to_date:
+                if not from_date <= file_date <= to_date:
                     continue
             zip_file.write(os.path.join(source_path, filename), arcname=os.path.join(destination_path, filename))
 
