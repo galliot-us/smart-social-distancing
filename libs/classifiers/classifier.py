@@ -18,7 +18,8 @@ class Classifier:
         return self.classifier.inference(objects)
 
     def object_post_process(self, object, classifier_result, classifier_score):
-        if object['face'] is not None and classifier_score > self.min_threshold:
-            object['face_label'] = classifier_result
-        else:
-            object['face_label'] = -1
+        if 'face' in object.keys():
+            if object['face'] is not None and classifier_score > self.min_threshold:
+                object['face_label'] = classifier_result
+            else:
+                object['face_label'] = -1
