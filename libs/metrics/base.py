@@ -261,8 +261,9 @@ class BaseMetric:
         return report
 
     @classmethod
-    def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,
-                          from_date: date = None, to_date: date = None) -> Dict:
+    def generate_weekly_report_data(cls, entities: List[str], number_of_weeks: int = 0,
+                                    from_date: date = None, to_date: date = None) -> Dict:
+        weekly_report_data = {}
         number_of_days = number_of_weeks*7
         if number_of_days > 0:
             # Separate weeks in range taking a number of weeks ago, considering the week ended yesterday
@@ -276,12 +277,21 @@ class BaseMetric:
             week_span = list(parse_date_range(date_range))
         else:
             week_span = []
+        for start_date, end_date in week_span:
+            weekly_report_data[
+                f"{start_date.strftime('%Y-%m-%d')} {end_date.strftime('%Y-%m-%d')}"
+            ] = cls.get_daily_report(entities, start_date, end_date)
+        return weekly_report_data
+
+    @classmethod
+    def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,
+                          from_date: date = None, to_date: date = None) -> Dict:
+        weekly_report_data = cls.generate_weekly_report_data(entities, number_of_weeks, from_date, to_date)
         report = {"Weeks": []}
         for header in cls.csv_headers:
             report[header] = []
-        for start_date, end_date in week_span:
-            week_data = cls.get_daily_report(entities, start_date, end_date)
-            report["Weeks"].append(f"{start_date.strftime('%Y-%m-%d')} {end_date.strftime('%Y-%m-%d')}")
+        for week, week_data in weekly_report_data.items():
+            report["Weeks"].append(week)
             for header in cls.csv_headers:
                 report[header].append(sum(week_data[header]))
         return report
