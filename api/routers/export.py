@@ -67,10 +67,6 @@ def get_cameras(export_info: ExportDTO, areas: List[Tuple[str, str]]) -> List[Tu
     if export_info.all_cameras:
         selected_cameras = all_cameras
     else:
-        areas_cameras = []
-        areas_ids = [a[0] for a in areas]
-        for area in [a for a in extract_config("areas").values() if a['Id'] in areas_ids]:
-            areas_cameras.extend(area["Cameras"].split(","))
         selected_cameras = [c for c in all_cameras if c["Id"] in export_info.cameras]
         if len(selected_cameras) != len(export_info.cameras):
             # Some of the selected cameras don't exit
