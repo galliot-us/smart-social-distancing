@@ -21,6 +21,10 @@ class Detector:
         if self.name == 'ssd_mobilenet_v2_coco' or self.name == "ssd_mobilenet_v2_pedestrian_softbio":
             from . import mobilenet_ssd_v2
             self.net = mobilenet_ssd_v2.Detector(self.config)
+        elif self.name == "openpifpaf_tensorrt":
+            from libs.detectors.jetson.openpifpaf_tensorrt import openpifpaf_tensorrt
+            self.net = openpifpaf_tensorrt.Detector(self.config)
+
         else:
             raise ValueError('Not supported network named: ', self.name)
     

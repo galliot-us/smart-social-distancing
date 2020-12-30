@@ -10,7 +10,7 @@ from libs.area_threading import run_area_processing
 from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
-
+logging.getLogger().setLevel(logging.INFO)
 
 class QueueManager(BaseManager):
     pass

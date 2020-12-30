@@ -32,7 +32,7 @@ from .routers.tracker import tracker_router
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
-
+logging.getLogger().setLevel(logging.INFO)
 
 class ProcessorAPI:
     """
