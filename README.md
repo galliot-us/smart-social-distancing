@@ -130,7 +130,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -
 ```
 
 ##### Run on Jetson TX2
-* You need to have JetPack 4.3 installed on your Jetson TX2.
+* You need to have JetPack 4.4 installed on your Jetson TX2. If you are using Openpifpaf as a detector, skip the first step as the TensorRT engine will be generated automatically with calling the `generate_tensorrt.bash` script by detector.
 
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.3:
@@ -310,6 +310,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
   - `ModelPath`: The same behavior as in the section `Detector`.
   - `MinScore`: Defines the facemask detection threshold. Any facemask detected by the model with a score less than the threshold will be ignored.
+  - `TensorrtPrecision`: When you are using TensorRT version of Openpifpaf with GPU, Set TensorRT Precison 32 for float32 and 16 for float16 precision based on your GPU, if it supports both of them, float32 engine is more accurate and float16 is faster.
 
 - `[Tracker]`:
   - `Name`: Name of the tracker used.
