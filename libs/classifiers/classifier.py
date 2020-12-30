@@ -3,7 +3,13 @@ import logging
 logging.getLogger().setLevel(logging.INFO)
 
 class Classifier:
-
+    """
+    Classifier class is a high level class for classifying images for all devices.
+    When an instance of the Classifier is created, it returns a proper classifier
+    instance based on your device and you can call inference method and feed your
+    input image in order to get the classifier results.
+    :param config: Is a ConfigEngine instance which provides necessary parameters.
+    """
     def __init__(self, config):
         self.config = config
         self.classifier = None
