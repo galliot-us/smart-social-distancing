@@ -283,7 +283,9 @@ To configure OAuth2 in the processor you need to follow these steps:
 ### Change the default configuration
 You can read and modify the configurations in `config-*.ini` files, accordingly:
 
-`config-jetson.ini`: for Jetson Nano / TX2
+`config-jetson-nano.ini`: for Jetson Nano
+
+`config-jetson-tx2.ini`: for Jetson TX2
 
 `config-coral.ini`: for Coral dev board / usb accelerator
 
