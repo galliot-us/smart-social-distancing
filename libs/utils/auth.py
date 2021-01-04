@@ -13,6 +13,8 @@ API_USER_PATH = f"{API_USER_CREDENTIALS_FOLDER}/api_user.txt"
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+user_cache = dict()
+
 
 def create_api_user(user: str, password: str):
     if os.path.isfile(API_USER_PATH) and os.path.getsize(API_USER_PATH) != 0:
@@ -51,4 +53,10 @@ def create_access_token(user: str):
 
 
 def validate_jwt_token(token):
-    jwt.decode(token, os.environ.get("SECRET_ACCESS_KEY"), algorithms=["HS256"])
+    playload = jwt.decode(token, os.environ.get("SECRET_ACCESS_KEY"), algorithms=["HS256"])
+    if not user_cache.get("user"):
+        with open(API_USER_PATH, "r") as api_user_file:
+            stored_credentials = json.load(api_user_file)
+            user_cache["user"] = stored_credentials["user"]
+    if playload["sub"] != user_cache["user"]:
+        raise Exception("JWT doesn't belong to user.")
