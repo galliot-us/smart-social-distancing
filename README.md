@@ -238,7 +238,7 @@ By default all docker containers use **UTC** as timezone, passing the flag ``` -
 
 You may hardcode a value rather than using the `timezone.sh` script, such as `US/Pacific`. Changing the processor's timezone allows to have better control of when the `reports` are generated and the hours to correlate to the place where the processor is running.
 
-Please note that the bash script may require permissions to execute `chmod +777 timezone.sh`
+Please note that the bash script may require permissions to execute (run `chmod +x timezone.sh`)
 
 #### Persisting changes files
 
@@ -433,8 +433,8 @@ The complete list of endpoints, with a short description and the signature speci
 
 ### Interacting with the processors' generated information
 
-#### Information generated
-The information generated can be split into 3 categories:
+#### Generated information
+The generated information can be split into 3 categories:
   - `Raw data`: This is the most basic information generated. It only includes the results of the detector, the classifier, the tracker and the post-processor steps configured.
   - `Metrics data`: Only generated if you have enabled the metrics periodic task (see [section](#change-the-default-configuration)). Includes metrics related to occupancy, social-distancing, and facemask usage aggregated by hour and day.
   - `Notifications`: Situations that require an immediate response (for example, the max occupancy was reached) and need to be notified ASAP. The currently supported notification channels are email and slack.
@@ -465,7 +465,7 @@ You only need to implement an endpoint that matches the previous signature; conf
 
 Another alternative is to activate the periodic task `s3_backup`. This task will back up inside the configured S3 bucket all the generated data (raw data and metrics) according to the time interval defined by the `BackupInterval` parameter. Before enabling this feature remember to configure AWS following the steps defined in the section [Configuring AWS credentials](#configuring-aws-credentials).
 
-##### Accessing to the metrics data
+##### Accessing the metrics data
 The aggregated metrics data is stored in a set of CSV files inside the device. We don't have implemented any mechanism to store these files outside the processor (the `web_hook_logger` only sends "raw data" events).
 However, if you enable the `s3_backup` task, the previous day's metrics files will be backed up at AWS at the beginning of the day.
 
