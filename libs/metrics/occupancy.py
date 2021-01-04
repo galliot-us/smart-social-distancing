@@ -69,7 +69,7 @@ class OccupancyMetric(BaseMetric):
             }
             for hour in objects_logs:
                 objects_logs_merged[0]["Occupancy"].extend(objects_logs[hour]["Occupancy"])
-        occupancy_live = cls.generate_hourly_metric_data(objects_logs_merged)[0].tolist()
+        occupancy_live = cls.generate_hourly_metric_data(objects_logs_merged, entity)[0].tolist()
         occupancy_live.append(int(entity["occupancy_threshold"]))
         daily_violations = 0
         entity_directory = entity["base_directory"]

@@ -37,7 +37,7 @@ class SocialDistancingMetric(BaseMetric):
             )
 
     @classmethod
-    def generate_hourly_metric_data(cls, objects_logs, entity):
+    def generate_hourly_metric_data(cls, objects_logs, entity=None):
         summary = np.zeros((len(objects_logs), 5), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
