@@ -143,7 +143,7 @@ To configure OAuth2 in the processor you need to follow these steps:
       }
       ```
 
-      After executing one of these steps, the `user` and `password` (hashed) will be stored in the file `/repo/data/auth/api_user.txt` inside the container. To avoid lost that file when the container is restarted, we recommend mounting the `/repo` directory.
+      After executing one of these steps, the `user` and `password` (hashed) will be stored in the file `/repo/data/auth/api_user.txt` inside the container. To avoid losing that file when the container is restarted, we recommend mounting the `/repo` directory as a volume.
   4. Request a valid token. You can obtain one by sending a PUT request to the endpoint `http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/auth/access_token` with the following body:
       ```
       {
