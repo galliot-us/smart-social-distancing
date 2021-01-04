@@ -25,4 +25,6 @@ def update_core_config(core: CoreDTO, reboot_processor: Optional[bool] = True):
     core_dict = map_to_config_file_format(core)
     config_dict["CORE"] = core_dict
     success = update_config(config_dict, reboot_processor)
-    return handle_response(core_dict, success)
+    if not success:
+        return handle_response(core_dict, success)
+    return map_section_from_config("CORE", extract_config())

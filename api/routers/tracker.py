@@ -25,4 +25,6 @@ def update_tracker_config(tracker: TrackerDTO, reboot_processor: Optional[bool] 
     tracker_dict = map_to_config_file_format(tracker)
     config_dict["Tracker"] = tracker_dict
     success = update_config(config_dict, reboot_processor)
-    return handle_response(tracker_dict, success)
+    if not success:
+        return handle_response(tracker_dict, success)
+    return map_section_from_config("Tracker", extract_config())

@@ -70,10 +70,13 @@ async def create_periodic_task(new_periodic_task: PeriodicTaskDTO, reboot_proces
         index = max(periodic_tasks_index) + 1
     config_dict[f"PeriodicTask_{index}"] = periodic_task_file
     success = update_config(config_dict, reboot_processor)
-    return handle_response(periodic_task_file, success, status.HTTP_201_CREATED)
+    if not success:
+        return handle_response(periodic_task_file, success, status.HTTP_201_CREATED)
+    return next((ps for ps in get_periodic_tasks() if ps["name"] == periodic_task_file["Name"]), None)
 
 
-@periodic_tasks_router.put("/{periodic_task_name}", response_model=PeriodicTaskDTO)
+@periodic_tasks_router.put("/{periodic_task_name}", response_model=PeriodicTaskDTO,
+                           response_model_exclude_none=True)
 async def edit_periodic_task(periodic_task_name: str, edited_periodic_task: PeriodicTaskDTO,
                              reboot_processor: Optional[bool] = True):
     """
@@ -99,7 +102,9 @@ async def edit_periodic_task(periodic_task_name: str, edited_periodic_task: Peri
     periodic_task_file = map_to_config_file_format(edited_periodic_task, True)
     config_dict[edited_periodic_task_section] = periodic_task_file
     success = update_config(config_dict, reboot_processor)
-    return handle_response(periodic_task_file, success)
+    if not success:
+        return handle_response(periodic_task_file, success)
+    return next((ps for ps in get_periodic_tasks() if ps["name"] == periodic_task_name), None)
 
 
 @periodic_tasks_router.delete("/{periodic_task_name}", status_code=status.HTTP_204_NO_CONTENT)

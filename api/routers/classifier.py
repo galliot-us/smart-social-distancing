@@ -26,4 +26,6 @@ def update_classifier_config(classifier: ClassifierDTO, reboot_processor: Option
     classifier_dict = map_to_config_file_format(classifier)
     config_dict["Classifier"] = classifier_dict
     success = update_config(config_dict, reboot_processor)
-    return handle_response(classifier_dict, success)
+    if not success:
+        return handle_response(classifier_dict, success)
+    return map_section_from_config("Classifier", extract_config())
