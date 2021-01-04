@@ -27,6 +27,11 @@ OCCUPANCY = ExportDataType.occupancy
 
 
 def export_folder_into_zip(source_path, destination_path, zip_file, from_date, to_date):
+    """
+    Export into the <zip_file> all the csv files included in the <source_path>.
+    If the parameters <from_date> and <to_date> are sent, only the files between these days
+    are exported.
+    """
     if not os.path.exists(source_path):
         return None
     for filename in os.listdir(source_path):
@@ -43,6 +48,9 @@ def export_folder_into_zip(source_path, destination_path, zip_file, from_date, t
 
 
 def get_areas(export_info: ExportDTO) -> List[Tuple[str, str]]:
+    """
+    Returns the list of areas (area_id, area_name) requested in the <export_info>.
+    """
     all_areas = extract_config("areas").values()
     selected_areas = []
     if export_info.all_areas:
@@ -62,6 +70,10 @@ def get_areas(export_info: ExportDTO) -> List[Tuple[str, str]]:
 
 
 def get_cameras(export_info: ExportDTO, areas: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+    """
+    Returns the list of cameras (camera_id, camera_list) requested in the <export_info> and the cameras
+    included in the <areas>.
+    """
     all_cameras = extract_config("cameras").values()
     selected_cameras = []
     if export_info.all_cameras:
@@ -89,6 +101,9 @@ def get_cameras(export_info: ExportDTO, areas: List[Tuple[str, str]]) -> List[Tu
 
 
 def export_camera_data_into_file(export_info: ExportDTO, camera_id: str, camera_name: str, zip_file: str) -> None:
+    """
+    Includes into the <zip_file> all the information requested in the <export_info> for the camera <camera_id>.
+    """
     if ALL_DATA in export_info.data_types or RAW_DATA in export_info.data_types:
         object_logs_path = os.path.join(os.getenv("SourceLogDirectory"), camera_id, "objects_log")
         export_folder_into_zip(
@@ -123,6 +138,9 @@ def export_camera_data_into_file(export_info: ExportDTO, camera_id: str, camera_
 
 
 def export_area_data_into_file(export_info: ExportDTO, area_id: str, area_name: str, zip_file: str) -> None:
+    """
+    Includes into the <zip_file> all the information requested in the <export_info> for the area <area_id>.
+    """
     if ALL_DATA in export_info.data_types or RAW_DATA in export_info.data_types:
         occupancy_logs_path = os.path.join(os.getenv("AreaLogDirectory"), area_id, "occupancy_log")
         export_folder_into_zip(
