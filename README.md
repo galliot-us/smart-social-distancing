@@ -6,35 +6,15 @@
   - [Introduction](#introduction)
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
-      - [Hardware](#hardware)
-      - [Software](#software)
-    - [Install](#install)
-    - [Download a sample video](#download-a-sample-video)
+    - [Installation](#installation)
     - [Usage](#usage)
-      - [Frontend](#frontend)
-      - [Run the processor](#run-the-processor)
-        - [Run on Jetson Nano](#run-on-jetson-nano)
-        - [Run on Jetson TX2](#run-on-jetson-tx2)
-        - [Run on Coral Dev Board](#run-on-coral-dev-board)
-        - [Run on AMD64 node with a connected Coral USB Accelerator](#run-on-amd64-node-with-a-connected-coral-usb-accelerator)
-        - [Run on x86](#run-on-x86)
-        - [Run on x86 with GPU](#run-on-x86-with-gpu)
-        - [Run on x86 with GPU using TensorRT optimization](#run-on-x86-with-gpu-using-tensorrt-optimization)
-        - [Run on x86 using OpenVino](#run-on-x86-using-openvino)
   - [Processor](#processor)
     - [Optional Parameters](#optional-parameters)
-      - [Logging in the system's timezone](#logging-in-the-systems-timezone)
-      - [Persisting changes files](#persisting-changes-files)
     - [Configuring AWS credentials](#configuring-aws-credentials)
     - [Enabling SSL](#enabling-ssl)
     - [Change the default configuration](#change-the-default-configuration)
     - [API usage](#api-usage)
     - [Interacting with the processors' generated information](#interacting-with-the-processors-generated-information)
-      - [Information generated](#information-generated)
-      - [Accessing and storing the information](#accessing-and-storing-the-information)
-        - [Storing the raw data](#storing-the-raw-data)
-        - [Accessing to the metrics data](#accessing-to-the-metrics-data)
-        - [Exporting the data](#exporting-the-data)
   - [Issues and Contributing](#issues-and-contributing)
   - [Contact Us](#contact-us)
   - [License](#license)
@@ -76,7 +56,17 @@ The features supported, the detection accuracy reached and the performance can v
 
 You should have [Docker](https://docs.docker.com/get-docker/) on your device.
 
-### Install
+#### Download a sample video (Optional)
+
+If you don't have any camera to test the solution you can use any video as an input source. You can download an example with the following command.
+
+```bash
+# Download a sample video file from multiview object tracking dataset
+# The video is complied from this dataset: https://researchdatafinder.qut.edu.au/display/n27416
+./download_sample_video.sh
+```
+
+### Installation
 
 Make sure you have the prerequisites and then clone this repository to your local system by running this command:
 
@@ -90,16 +80,6 @@ After that, `checkout` to the latest release:
 git fetch --tags
 # Checkout to the latest release tag
 git checkout $(git tag | tail -1)
-```
-
-### Download a sample video
-
-If you don't have any camera to test the solution you can use any video as an input source. You can download an example with the following command.
-
-```bash
-# Download a sample video file from multiview object tracking dataset
-# The video is complied from this dataset: https://researchdatafinder.qut.edu.au/display/n27416
-./download_sample_video.sh
 ```
 
 ### Usage
@@ -240,7 +220,7 @@ You may hardcode a value rather than using the `timezone.sh` script, such as `US
 
 Please note that the bash script may require permissions to execute (run `chmod +x timezone.sh`)
 
-#### Persisting changes files
+#### Persisting changes
 
 We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`).
 
@@ -281,7 +261,7 @@ Please note that if you modify these values you should also set `[App]` `HasBeen
 This allows for a client to recognize if this processor was previously configured.
 
 You can also modify some of them using the [UI](https://beta.lanthorn.ai). 
-If you choose this option, make sure to mount the config file as a volume to keep the changes after any restart of the container (see section [Persisting changes files](#persisting-changes-files)).
+If you choose this option, make sure to mount the config file as a volume to keep the changes after any restart of the container (see section [Persisting changes](#persisting-changes)).
 
 All the configurations are grouped in *sections* and some of them can vary depending on the chosen device.
 
@@ -429,7 +409,7 @@ The available endpoints are grouped in the following subapis:
 
 The complete list of endpoints, with a short description and the signature specification is documented (with swagger) in the url `PROCESSOR_IP:PROCESSOR_PORT/docs`.
 
- ***NOTE*** Most of the endpoints update the config file given in the Dockerfile. If you don't have this file mounted (see section [Persisting changes files](#persisting-changes-files)), these changes will be inside your container and will be lost after stopping it.
+ ***NOTE*** Most of the endpoints update the config file given in the Dockerfile. If you don't have this file mounted (see section [Persisting changes](#persisting-changes)), these changes will be inside your container and will be lost after stopping it.
 
 ### Interacting with the processors' generated information
 
@@ -443,7 +423,7 @@ The generated information can be split into 3 categories:
 All the information generated by the processor is stored (by default) inside the edge device for security reasons. However, the processor provides features to easily export or backup the data outside the device when is required.
 
 ##### Storing the raw data
-The raw data storage is managed by the `SourceLogger` and `AreaLogger` steps. By default, only the `video_logger` and the `file_system_logger` are enabled. As both steps store the data inside the processor (by default the folder `/repo/data/processor/static/`), we strongly recommend mounting that folder to keep the data safe when the process is restarted ([Persisting changes files](#persisting-changes-files)).
+The raw data storage is managed by the `SourceLogger` and `AreaLogger` steps. By default, only the `video_logger` and the `file_system_logger` are enabled. As both steps store the data inside the processor (by default the folder `/repo/data/processor/static/`), we strongly recommend mounting that folder to keep the data safe when the process is restarted ([Persisting changes](#persisting-changes)).
 Moreover, we recommend keeping active these steps because the [frontend](https://beta.lanthorn.ai) and the metrics need them.
 
 If you need to store (or process) the raw data in *real-time* outside the processor, you can activate the `web_hook_logger` and implement an endpoint that handles these events.
