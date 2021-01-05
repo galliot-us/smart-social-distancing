@@ -58,7 +58,7 @@ def get_areas(export_info: ExportDTO) -> List[Tuple[str, str]]:
     else:
         selected_areas = [a for a in all_areas if a["Id"] in export_info.areas]
         if len(selected_areas) != len(export_info.areas):
-            # Some of the selected areas don't exit
+            # Some of the selected areas don't exist
             missing_areas = set(export_info.areas) - set([a["Id"]for a in selected_areas])
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -81,7 +81,7 @@ def get_cameras(export_info: ExportDTO, areas: List[Tuple[str, str]]) -> List[Tu
     else:
         selected_cameras = [c for c in all_cameras if c["Id"] in export_info.cameras]
         if len(selected_cameras) != len(export_info.cameras):
-            # Some of the selected cameras don't exit
+            # Some of the selected cameras don't exist
             missing_cameras = set(export_info.cameras) - set([c["Id"]for c in selected_cameras])
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
