@@ -5,16 +5,17 @@ from fastapi import HTTPException, status
 from typing import Iterator
 
 from api.utils import bad_request_serializer, extract_config
+from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING
 from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric
 
 
-CAMERAS_METRICS = ["social-distancing", "facemask-usage"]
+CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE]
 
 
 def get_cameras(cameras: str) -> Iterator[str]:
     if cameras:
         return cameras.split(",")
-    config = extract_config(config_type="cameras")
+    config = extract_config(config_type=CAMERAS)
     return [x["Id"] for x in config.values()]
 
 
@@ -27,16 +28,16 @@ def validate_camera_existence(camera_id: str):
 def get_areas(areas: str) -> Iterator[str]:
     if areas:
         return areas.split(",")
-    config = extract_config(config_type="areas")
+    config = extract_config(config_type=AREAS)
     return [x["Id"] for x in config.values()]
 
 
 def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
-    config = extract_config(config_type="areas")
+    config = extract_config(config_type=AREAS)
     cameras = []
     for area_config in config.values():
         if area_config["Id"] in areas:
-            cameras.extend(area_config["Cameras"].split(","))
+            cameras.extend(area_config[CAMERAS].split(","))
     return cameras
 
 
@@ -60,26 +61,26 @@ def validate_dates(from_date: date, to_date: date):
 
 def get_entities(entity: str, entities_ids: str, metric: str):
     entities = []
-    if entity == "cameras":
+    if entity == CAMERAS:
         entities = get_cameras(entities_ids)
         for e in entities:
             validate_camera_existence(e)
     else:
-        # entities == "areas"
+        # entities == AREAS
         entities = get_areas(entities_ids)
         for e in entities:
             validate_area_existence(e)
-    if entity == "areas" and metric in CAMERAS_METRICS:
+    if entity == AREAS and metric in CAMERAS_METRICS:
         entities = get_cameras_for_areas(entities)
     return entities
 
 
 def get_metric_class(metric: str):
-    if metric == "social-distancing":
+    if metric == SOCIAL_DISTANCING:
         return SocialDistancingMetric
-    elif metric == "facemask-usage":
+    elif metric == FACEMASK_USAGE:
         return FaceMaskUsageMetric
-    elif metric == "occupancy":
+    elif metric == OCCUPANCY:
         return OccupancyMetric
     else:
         raise ValueError(f"Metric {metric} not supported.")
