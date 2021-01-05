@@ -3,9 +3,9 @@ import numpy as np
 import os
 
 from collections import deque
-from datetime import datetime
+from datetime import date, datetime
 from statistics import mean
-from typing import Dict, Iterator
+from typing import Dict, Iterator, List
 
 from .base import BaseMetric
 
@@ -99,3 +99,18 @@ class OccupancyMetric(BaseMetric):
                         latest_occupancy_results[index] = 0
                     latest_occupancy_results[index] += int(item["MaxOccupancy"])
         return [item for item in latest_occupancy_results.values() if item is not None]
+
+    @classmethod
+    def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,
+                          from_date: date = None, to_date: date = None) -> Dict:
+        # The occupancy metrics can not be aggregated using "sum"
+        weekly_report_data = cls.generate_weekly_report_data(entities, number_of_weeks, from_date, to_date)
+        report = {"Weeks": []}
+        for header in cls.csv_headers:
+            report[header] = []
+        for week, week_data in weekly_report_data.items():
+            report["Weeks"].append(week)
+            report["AverageOccupancy"].append(round(mean(week_data["AverageOccupancy"]), 2))
+            report["MaxOccupancy"].append(max(week_data["MaxOccupancy"]))
+            report["OccupancyThreshold"].append(max(week_data["OccupancyThreshold"]))
+        return report
