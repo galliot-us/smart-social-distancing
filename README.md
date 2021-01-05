@@ -2,6 +2,23 @@
 
 # Smart Social Distancing
 
+- [Smart Social Distancing](#smart-social-distancing)
+  - [Introduction](#introduction)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Usage](#usage)
+  - [Processor](#processor)
+    - [Optional Parameters](#optional-parameters)
+    - [Configuring AWS credentials](#configuring-aws-credentials)
+    - [Enabling SSL](#enabling-ssl)
+    - [Change the default configuration](#change-the-default-configuration)
+    - [API usage](#api-usage)
+    - [Interacting with the processors' generated information](#interacting-with-the-processors-generated-information)
+  - [Issues and Contributing](#issues-and-contributing)
+  - [Contact Us](#contact-us)
+  - [License](#license)
+
 ## Introduction
 
 Smart Distancing is an open-source application to quantify social distancing measures using edge computer vision systems. Since all computation runs on the device, it requires minimal setup and minimizes privacy and security concerns. It can be used in retail, workplaces, schools, construction sites, healthcare facilities, factories, etc.
@@ -17,15 +34,13 @@ If you want to understand more about the architecture you can read the following
 
 Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to covid19project@neuralet.com if you have any questions.
 
-
-
 ## Getting Started
 
 You can read the [Get Started tutorial](https://www.lanthorn.ai/get-started) on Lanthorn's [website](https://www.lanthorn.ai/). The following instructions will help you get started.
 
 ### Prerequisites
 
-**Hardware**
+#### Hardware
 
 A host edge device. We currently support the following:
 
@@ -37,11 +52,21 @@ A host edge device. We currently support the following:
 
 The features supported, the detection accuracy reached and the performance can vary from device to device.
  
-**Software**
+#### Software
 
 You should have [Docker](https://docs.docker.com/get-docker/) on your device.
 
-### Install
+#### Download a sample video (Optional)
+
+If you don't have any camera to test the solution you can use any video as an input source. You can download an example with the following command.
+
+```bash
+# Download a sample video file from multiview object tracking dataset
+# The video is complied from this dataset: https://researchdatafinder.qut.edu.au/display/n27416
+./download_sample_video.sh
+```
+
+### Installation
 
 Make sure you have the prerequisites and then clone this repository to your local system by running this command:
 
@@ -57,67 +82,23 @@ git fetch --tags
 git checkout $(git tag | tail -1)
 ```
 
-### Download a sample video
-If you don't have any camera to test the solution you can use any video as an input source. You can download an example with the following command.
-
-```bash
-# Download a sample video file from multiview object tracking dataset
-# The video is complied from this dataset: https://researchdatafinder.qut.edu.au/display/n27416
-./download_sample_video.sh
-```
-
 ### Usage
+
 The smart social distancing app consists of two components: the `frontend` and the `processor`. 
 
 #### Frontend
+
 The frontend is a public [web app](https://beta.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. 
 This web app allows you to configure some aspects of the processor (such as notifications and camera calibration) using a friendly UI. 
 Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
 
-The frontend site uses HTTPs, in order to have it communicate with the processor, the latter must be either **Running with SSL enabled** (See `Enabling SSL` on this Readme), **or** you must edit your site settings for `https://beta.lanthorn.ai` in order to allow for Mixed Content (Insecure Content). **Without doing any of these, communication with the local processor will fail**
+The frontend site uses HTTPs, in order to have it communicate with the processor, the latter must be either **Running with SSL enabled** (See [Enabling SSL](#enabling-ssl) on this Readme), **or** you must edit your site settings for `https://beta.lanthorn.ai` in order to allow for Mixed Content (Insecure Content). **Without doing any of these, communication with the local processor will fail**
 
-#### Processor
+#### Run the processor
 
 Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
+The command that you need to execute will depend on the chosen device because each one has an independent Dockerfile.
 
-##### Optional Parameters
-
-This is a list of optional parameters for the `docker run` commands.
-They are included in the examples of this section.
-
-**Logging in the system's timezone**
-
-By default all docker containers use **UTC** as timezone, passing the flag ``` -e TZ=`./timezone.sh` ``` will make the container run on your system's timezone.
-
-You may hardcode a value rather than using the `timezone.sh` script, such as `US/Pacific`. Changing the processor's timezone allows to have better control of when the `reports` are generated and the hours to correlate to the place where the processor is running.
-
-Please note that the bash script may require permissions to execute `chmod +777 timezone.sh`
-
-**Persisting changes files**
-
-We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`).
-
-##### Configuring AWS credentials
-
-Some of the implemented features allow you to upload files into an S3 bucket. To do that you need to provide the envs `AWS_BUCKET_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. An easy way to do that is to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
-
-##### Enabling SSL
-
-We recommend exposing the processors' APIs using HTTPS. To do that, you need to create a folder named `certs` with a valid certificate for the processor (with its corresponding private key) and configure it in the `config-*.ini` file (`SSLCertificateFile` and `SSLKeyFile` configurations).
-
-If you don't have a certificate for the processor, you can create a self-signed one using [openssl](https://www.openssl.org/) and the scripts `create_ca.sh` and `create_processor_certificate.sh`.
-
-```bash
-# 1) Create your own CA (certification authority)
-./create_ca.sh
-# After the script execution, you should have a folder `certificates/ca` with the corresponding *.key, *.pem and *.srl files
-
-# 2) Create a certificate for the processor
-./create_processor_certificate.sh <PROCESSOR_IP>
-# After the script execution, you should have a folder `certificates/processor` with the corresponding *.key, *.crt, *.csr and *.ext files
-```
-
-As you are using a self-signed certificate you will need to import the created CA (using the `.pem` file) in your browser as a trusted CA.
 
 ##### Configuring OAuth2 in the endpoints
 
@@ -247,7 +228,6 @@ docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "neuralet/smart-social
 docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
 ```
 
-
 ##### Run on x86 using OpenVino
 ```bash
 # download model first
@@ -259,8 +239,48 @@ docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:lat
 # 2) Run Docker container:
 docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
+## Processor
 
-### Configurations
+### Optional Parameters
+
+This is a list of optional parameters for the `docker run` commands.
+They are included in the examples of the [Run the processor](#run-the-processor) section.
+
+#### Logging in the system's timezone
+
+By default all docker containers use **UTC** as timezone, passing the flag ``` -e TZ=`./timezone.sh` ``` will make the container run on your system's timezone.
+
+You may hardcode a value rather than using the `timezone.sh` script, such as `US/Pacific`. Changing the processor's timezone allows to have better control of when the `reports` are generated and the hours to correlate to the place where the processor is running.
+
+Please note that the bash script may require permissions to execute (run `chmod +x timezone.sh`)
+
+#### Persisting changes
+
+We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`).
+
+### Configuring AWS credentials
+
+Some of the implemented features allow you to upload files into an S3 bucket. To do that you need to provide the envs `AWS_BUCKET_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. An easy way to do that is to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
+
+### Enabling SSL
+
+We recommend exposing the processors' APIs using HTTPS. To do that, you need to create a folder named `certs` with a valid certificate for the processor (with its corresponding private key) and configure it in the `config-*.ini` file (`SSLCertificateFile` and `SSLKeyFile` configurations).
+
+If you don't have a certificate for the processor, you can create a self-signed one using [openssl](https://www.openssl.org/) and the scripts `create_ca.sh` and `create_processor_certificate.sh`.
+
+```bash
+# 1) Create your own CA (certification authority)
+./create_ca.sh
+# After the script execution, you should have a folder `certificates/ca` with the corresponding *.key, *.pem and *.srl files
+
+# 2) Create a certificate for the processor
+./create_processor_certificate.sh <PROCESSOR_IP>
+# After the script execution, you should have a folder `certificates/processor` with the corresponding *.key, *.crt, *.csr and *.ext files
+```
+
+As you are using a self-signed certificate you will need to import the created CA (using the `.pem` file) in your browser as a trusted CA.
+
+### Change the default configuration
 You can read and modify the configurations in `config-*.ini` files, accordingly:
 
 `config-jetson.ini`: for Jetson Nano / TX2
@@ -275,7 +295,7 @@ Please note that if you modify these values you should also set `[App]` `HasBeen
 This allows for a client to recognize if this processor was previously configured.
 
 You can also modify some of them using the [UI](https://beta.lanthorn.ai). 
-If you choose this option, make sure to mount the config file as a volume to keep the changes after any restart of the container.
+If you choose this option, make sure to mount the config file as a volume to keep the changes after any restart of the container (see section [Persisting changes](#persisting-changes)).
 
 All the configurations are grouped in *sections* and some of them can vary depending on the chosen device.
 
@@ -419,13 +439,58 @@ The available endpoints are grouped in the following subapis:
 - `/auth`: a set of endpoints required to configure OAuth2 in the processors' endpoints.
  
  Additionally, the API exposes 2 endpoints to stop/start the video processing
- - `PUT PROCESSOR_IP:PROCESSOR_PORT/start-process-video`: Sends command `PROCESS_VIDEO_CFG` to core and returns the response. It starts to process the video adressed in the configuration file. If the response is `true`, it means the core is going to try to process the video (no guarantee if it will do it), and if the response is `false`, it means the process can not be started now (e.g. another process is already requested and running)
+ - `PUT PROCESSOR_IP:PROCESSOR_PORT/start-process-video`: Sends command `PROCESS_VIDEO_CFG` to core and returns the response. It starts to process the video adressed in the configuration file. If the response is `true`, it means the core is going to try to process the video (no guarantee if it will do it), and if the response is `false`, it means the process can not be started now (e.g. another process is already requested and running).
  
- - `PUT PROCESSOR_IP:PROCESSOR_PORT/stop-process-video`: Sends command `STOP_PROCESS_VIDEO` to core and returns the response. It stops processing the video at hand, returns the response `true` if it stopped or `false`, meaning it can not (e.g. no video is already being processed to stop!)
+ - `PUT PROCESSOR_IP:PROCESSOR_PORT/stop-process-video`: Sends command `STOP_PROCESS_VIDEO` to core and returns the response. It stops processing the video at hand, returns the response `true` if it stopped or `false`, meaning it can not (e.g. no video is already being processed to stop!).
 
-The complete list of endpoints, with a short description and the signature specification is documented (with swagger) in the url `PROCESSOR_IP:PROCESSOR_PORT/docs`
+The complete list of endpoints, with a short description and the signature specification is documented (with swagger) in the url `PROCESSOR_IP:PROCESSOR_PORT/docs`.
 
- ***NOTE*** Most of the endpoints update the config file given in the Dockerfile. If you don't have this file mounted, these changes will be inside your container and will be lost after stopping it.
+ ***NOTE*** Most of the endpoints update the config file given in the Dockerfile. If you don't have this file mounted (see section [Persisting changes](#persisting-changes)), these changes will be inside your container and will be lost after stopping it.
+
+### Interacting with the processors' generated information
+
+#### Generated information
+The generated information can be split into 3 categories:
+  - `Raw data`: This is the most basic level of information. It only includes the results of the detector, classifier, tracker, and any configured post-processor step.
+  - `Metrics data`: **Only written if you have enabled the metrics periodic task** (see [section](#change-the-default-configuration)). These include metrics related to occupancy, social-distancing, and facemask usage; aggregated by hour and day.
+  - `Notifications`: Situations that require an immediate response (such as surpassing the maximum occupancy threshold for an area) and need to be notified ASAP. The currently supported notification channels are email and slack.
+
+#### Accessing and storing the information
+All of the information that is generated by the processor is stored (by default) inside the edge device for security reasons. However, the processor provides features to easily export or backup the data to another system if required.
+
+##### Storing the raw data
+The raw data storage is managed by the `SourceLogger` and `AreaLogger` steps. By default, only the `video_logger` and the `file_system_logger` are enabled. As both steps store the data inside the processor (by default the folder `/repo/data/processor/static/`), we strongly recommend mounting that folder to keep the data safe when the process is restarted ([Persisting changes](#persisting-changes)).
+Moreover, we recommend keeping active these steps because the [frontend](https://beta.lanthorn.ai) and the metrics need them.
+
+If you need to store (or process) the raw data in *real-time* outside the processor, you can activate the `web_hook_logger` and implement an endpoint that handles these events.
+The `web_hook_logger` step is configured to send an event (a PUT request) using the following format:
+
+```
+{
+            "version": ...,
+            "timestamp": ...,
+            "detected_objects": ...,
+            "violating_objects": ...,
+            "environment_score": ...,
+            "detections": ...,
+            "violations_indexes": ...
+        }
+```
+
+You only need to implement an endpoint that matches the previous signature; configure its URL in the config file and the integration will be done. We recommend this approach if you want to integrate "Smart social distancing" with another existing system with real-time data.
+
+Another alternative is to activate the periodic task `s3_backup`. This task will back up all the generated data (raw data and metrics) inside the configured S3 bucket, according to the time interval defined by the `BackupInterval` parameter. Before enabling this feature remember to configure AWS following the steps defined in the section [Configuring AWS credentials](#configuring-aws-credentials).
+
+##### Accessing the metrics data
+The data of aggregated metrics is stored in a set of CSV files inside the device. For now, we don't have implemented any mechanism to store these files outside the processor (the `web_hook_logger` only sends "raw data" events).
+However, if you enable the `s3_backup` task, the previous day's metrics files will be backed up at AWS at the beginning of the day.
+
+You can easily visualize the metrics information in the dashboard exposed in the [frontend](https://beta.lanthorn.ai).
+In addition, you can retrieve the same information through the API (see the metrics section in the API documentation exposed in http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/docs#/Metrics).
+
+##### Exporting the data
+In addition to the previous features, the processor exposes an endpoint to export in zip format all the generated data.
+The signature of this endpoint can be found in  http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/docs#/Export.
 
 ## Issues and Contributing
 
