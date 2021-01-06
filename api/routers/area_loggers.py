@@ -5,7 +5,9 @@ from typing import Optional
 
 from api.models.area_logger import AreaLoggerDTO, AreaLoggerListDTO, validate_logger
 from api.utils import (
-    extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
+    extract_config, handle_response, update_config,
+    map_section_from_config, map_to_config_file_format, bad_request_serializer
+)
 
 area_loggers_router = APIRouter()
 
@@ -51,9 +53,15 @@ async def create_logger(new_logger: AreaLoggerDTO, reboot_processor: Optional[bo
     try:
         validate_logger(new_logger)
     except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(str(e))
+        )
     if new_logger.name in [ps["name"] for ps in loggers]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Logger already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Logger already exists", error_type="config duplicated logger")
+        )
     logger_file = map_to_config_file_format(new_logger, True)
     index = 0
     if loggers_index:
@@ -82,7 +90,10 @@ async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
     try:
         validate_logger(edited_logger)
     except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(str(e))
+        )
     logger_file = map_to_config_file_format(edited_logger, True)
     config_dict[edited_logger_section] = logger_file
     success = update_config(config_dict, reboot_processor)

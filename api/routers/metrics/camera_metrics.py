@@ -1,14 +1,14 @@
 import os
 
 from datetime import date, timedelta
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, status
 from typing import Iterator, Optional
 
 from api.models.metrics import (
     FaceMaskDaily, FaceMaskLive, FaceMaskHourly, FaceMaskWeekly, HeatmapReport,
     SocialDistancingDaily, SocialDistancingHourly, SocialDistancingLive,
     SocialDistancingWeekly)
-from api.utils import extract_config
+from api.utils import bad_request_serializer, extract_config
 from libs.metrics import FaceMaskUsageMetric, SocialDistancingMetric
 from libs.metrics.utils import generate_heatmap
 
@@ -24,13 +24,20 @@ def get_cameras(cameras: str) -> Iterator[str]:
 
 def validate_dates(from_date, to_date):
     if from_date > to_date:
-        raise HTTPException(status_code=400, detail="Invalid range of dates")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(
+                "Invalid range of dates",
+                error_type="from_date doesn't come before to_date",
+                loc=["query", "from_date"]
+            )
+        )
 
 
 def validate_camera_existence(camera_id: str):
     dir_path = os.path.join(os.getenv("SourceLogDirectory"), camera_id, "objects_log")
     if not os.path.exists(dir_path):
-        raise HTTPException(status_code=404, detail=f"Camera with id '{camera_id}' does not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Camera with id '{camera_id}' does not exist")
 
 
 @metrics_router.get("/{camera_id}/heatmap", response_model=HeatmapReport)
@@ -45,7 +52,10 @@ def get_heatmap(camera_id: str,
     if report_type in ["violations", "detections"]:
         return generate_heatmap(camera_id, from_date, to_date, report_type)
     else:
-        raise HTTPException(status_code=400, detail="Invalid report_type")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Invalid report_type", error_type="invalid config")
+        )
 
 # Social Distancing Metrics
 @metrics_router.get("/social-distancing/live", response_model=SocialDistancingLive)

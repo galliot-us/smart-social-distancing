@@ -10,6 +10,7 @@ from fastapi.openapi.utils import get_openapi
 from share.commands import Commands
 
 from libs.utils.loggers import get_area_log_directory, get_source_log_directory, get_screenshots_directory
+from api.utils import bad_request_serializer
 
 from .dependencies import validate_token
 from .queue_manager import QueueManager

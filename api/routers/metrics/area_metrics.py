@@ -7,7 +7,7 @@ from typing import Iterator
 from api.models.metrics import (
     FaceMaskDaily, FaceMaskHourly, FaceMaskWeekly, FaceMaskLive, SocialDistancingDaily, SocialDistancingHourly,
     SocialDistancingWeekly, SocialDistancingLive, OccupancyHourly, OccupancyDaily, OccupancyLive, OccupancyWeekly)
-from api.utils import extract_config
+from api.utils import bad_request_serializer, extract_config
 from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric
 
 metrics_router = APIRouter()
@@ -29,9 +29,16 @@ def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
     return cameras
 
 
-def validate_dates(from_date: date, to_date: date):
+def validate_dates(from_date, to_date):
     if from_date > to_date:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid range of dates")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(
+                "Invalid range of dates",
+                error_type="from_date doesn't come before to_date",
+                loc=["query", "from_date"]
+            )
+        )
 
 
 def validate_area_existence(area_id: str):

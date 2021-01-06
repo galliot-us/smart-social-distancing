@@ -5,7 +5,9 @@ from typing import Optional
 
 from api.models.periodic_task import PeriodicTaskDTO, PeriodicTaskListDTO, validate_periodic_task
 from api.utils import (
-    extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
+    extract_config, handle_response, update_config,
+    map_section_from_config, map_to_config_file_format, bad_request_serializer
+)
 import logging
 logger = logging.getLogger(__name__)
 
@@ -53,9 +55,15 @@ async def create_periodic_task(new_periodic_task: PeriodicTaskDTO, reboot_proces
     try:
         validate_periodic_task(new_periodic_task)
     except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(str(e))
+        )
     if new_periodic_task.name in [ps["name"] for ps in periodic_tasks]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Periodict task already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Periodic task already exists", error_type="config duplicated periodic_task")
+        )
     periodic_task_file = map_to_config_file_format(new_periodic_task, True)
     index = 0
     if periodic_tasks_index:
@@ -84,7 +92,10 @@ async def edit_periodic_task(periodic_task_name: str, edited_periodic_task: Peri
     try:
         validate_periodic_task(edited_periodic_task)
     except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(str(e))
+        )
     periodic_task_file = map_to_config_file_format(edited_periodic_task, True)
     config_dict[edited_periodic_task_section] = periodic_task_file
     success = update_config(config_dict, reboot_processor)

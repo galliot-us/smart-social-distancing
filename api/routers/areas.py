@@ -6,7 +6,7 @@ from api.models.area import AreaConfigDTO, AreasListDTO
 from .cameras import map_camera
 from api.utils import (
     extract_config, handle_response, reestructure_areas, update_config, map_section_from_config,
-    map_to_config_file_format
+    map_to_config_file_format, bad_request_serializer
 )
 
 areas_router = APIRouter()
@@ -47,7 +47,10 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
     areas = [map_section_from_config(x, config_dict) for x in areas_name]
     if new_area.id in [area["id"] for area in areas]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Area already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area already exists", error_type="config duplicated area")
+        )
 
     cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict, []) for x in cameras]

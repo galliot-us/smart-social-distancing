@@ -13,7 +13,7 @@ from libs.utils.camera_calibration import (get_camera_calibration_path, compute_
 from api.settings import Settings
 from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas,
-    update_config, map_section_from_config, map_to_config_file_format
+    update_config, map_section_from_config, map_to_config_file_format, bad_request_serializer
 )
 from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel
 
@@ -152,7 +152,10 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
     cameras_name = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict) for x in cameras_name]
     if new_camera.id in [camera["id"] for camera in cameras]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Camera already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Camera already exists", error_type="config duplicated camera")
+        )
     camera_dict = map_to_camera_file_format(new_camera)
     config_dict[f"Source_{len(cameras)}"] = camera_dict
     success = update_config(config_dict, reboot_processor)
