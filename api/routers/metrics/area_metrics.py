@@ -29,7 +29,7 @@ def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
     return cameras
 
 
-def validate_dates(from_date, to_date):
+def validate_dates(from_date: date, to_date: date):
     if from_date > to_date:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
