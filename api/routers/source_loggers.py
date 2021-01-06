@@ -1,6 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from pydantic import ValidationError
-from starlette import status
 from starlette.exceptions import HTTPException
 from typing import Optional
 

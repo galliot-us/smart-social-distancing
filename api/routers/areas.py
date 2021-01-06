@@ -34,7 +34,7 @@ async def get_area(area_id: str):
     """
     area = next((area for area in get_areas() if area["id"] == area_id), None)
     if not area:
-        raise HTTPException(status_code=404, detail=f"The area: {area_id} does not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
     return area
 
 
@@ -47,14 +47,14 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
     areas = [map_section_from_config(x, config_dict) for x in areas_name]
     if new_area.id in [area["id"] for area in areas]:
-        raise HTTPException(status_code=400, detail="Area already exists")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Area already exists")
 
     cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict, []) for x in cameras]
     camera_ids = [camera["id"] for camera in cameras]
     if not all(x in camera_ids for x in new_area.cameras.split(",")):
         non_existent_cameras = set(new_area.cameras.split(",")) - set(camera_ids)
-        raise HTTPException(status_code=404, detail=f"The cameras: {non_existent_cameras} do not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The cameras: {non_existent_cameras} do not exist")
     area_dict = map_to_config_file_format(new_area)
     config_dict[f"Area_{len(areas)}"] = area_dict
 
@@ -75,14 +75,14 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     try:
         index = areas_ids.index(area_id)
     except ValueError:
-        raise HTTPException(status_code=404, detail=f"The area: {area_id} does not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
 
     cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict, []) for x in cameras]
     camera_ids = [camera["id"] for camera in cameras]
     if not all(x in camera_ids for x in edited_area.cameras.split(",")):
         non_existent_cameras = set(edited_area.cameras.split(",")) - set(camera_ids)
-        raise HTTPException(status_code=404, detail=f"The cameras: {non_existent_cameras} do not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The cameras: {non_existent_cameras} do not exist")
 
     area_dict = map_to_config_file_format(edited_area)
     config_dict[f"Area_{index}"] = area_dict
@@ -103,7 +103,7 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     try:
         index = areas_ids.index(area_id)
     except ValueError:
-        raise HTTPException(status_code=404, detail=f"The area: {area_id} does not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
 
     config_dict.pop(f"Area_{index}")
     config_dict = reestructure_areas((config_dict))

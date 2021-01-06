@@ -1,7 +1,7 @@
 import os
 
 from datetime import date, timedelta
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, status
 from typing import Iterator
 
 from api.models.metrics import (
@@ -31,13 +31,13 @@ def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
 
 def validate_dates(from_date: date, to_date: date):
     if from_date > to_date:
-        raise HTTPException(status_code=400, detail="Invalid range of dates")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid range of dates")
 
 
 def validate_area_existence(area_id: str):
     dir_path = os.path.join(os.getenv("AreaLogDirectory"), area_id, "occupancy_log")
     if not os.path.exists(dir_path):
-        raise HTTPException(status_code=404, detail=f"Area with id '{area_id}' does not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Area with id '{area_id}' does not exist")
 
 
 # Occupancy Metrics
