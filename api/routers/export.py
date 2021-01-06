@@ -47,7 +47,7 @@ def export_folder_into_zip(source_path, destination_path, zip_file, from_date, t
             zip_file.write(os.path.join(source_path, filename), arcname=os.path.join(destination_path, filename))
 
 
-def get_areas(export_info: ExportDTO) -> List[Tuple[str, str]]:
+def get_areas_to_export(export_info: ExportDTO) -> List[Tuple[str, str]]:
     """
     Returns the list of areas (area_id, area_name) requested in the <export_info>.
     """
@@ -69,7 +69,7 @@ def get_areas(export_info: ExportDTO) -> List[Tuple[str, str]]:
     return []
 
 
-def get_cameras(export_info: ExportDTO, areas: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
+def get_cameras_to_export(export_info: ExportDTO, areas: List[Tuple[str, str]]) -> List[Tuple[str, str]]:
     """
     Returns the list of cameras (camera_id, camera_list) requested in the <export_info> and the cameras
     included in the <areas>.
@@ -173,8 +173,8 @@ async def export(export_info: ExportDTO, background_tasks: BackgroundTasks):
     - *Data Type*: (the type of information that you want to export. The available values are raw_data, occupancy,
         social-distancing, facemask-usage and all_data)
     """
-    areas = get_areas(export_info)
-    cameras = get_cameras(export_info, areas)
+    areas = get_areas_to_export(export_info)
+    cameras = get_cameras_to_export(export_info, areas)
     temp_dir = tempfile.mkdtemp()
     export_filename = f"export-{date.today()}.zip"
     zip_path = os.path.join(temp_dir, export_filename)
