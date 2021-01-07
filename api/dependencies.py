@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 
@@ -11,4 +11,4 @@ def validate_token(token: str = Depends(oauth2_scheme)):
     try:
         validate_jwt_token(token)
     except JWTError as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))

@@ -1,12 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 from pydantic import ValidationError
-from starlette import status
 from starlette.exceptions import HTTPException
 from typing import Optional
 
 from api.models.source_post_processor import SourcePostProcessorDTO, SourcePostProcessorListDTO, validate_post_processor
 from api.utils import (
-    extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format)
+    extract_config, handle_response, update_config,
+    map_section_from_config, map_to_config_file_format, bad_request_serializer
+)
 
 source_post_processors_router = APIRouter()
 
@@ -52,9 +53,15 @@ async def create_post_processor(new_post_processor: SourcePostProcessorDTO, rebo
     try:
         validate_post_processor(new_post_processor)
     except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(str(e))
+        )
     if new_post_processor.name in [ps["name"] for ps in post_processors]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Post Processor already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Post Processor already exists", error_type="config duplicated post_processor")
+        )
     post_processor_file = map_to_config_file_format(new_post_processor, True)
     index = 0
     if post_processors_index:
@@ -83,7 +90,10 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
     try:
         validate_post_processor(edited_post_processor)
     except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(str(e))
+        )
     post_processor_file = map_to_config_file_format(edited_post_processor, True)
     config_dict[edited_post_processor_section] = post_processor_file
     success = update_config(config_dict, reboot_processor)

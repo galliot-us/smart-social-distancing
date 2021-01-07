@@ -2,6 +2,7 @@ from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
 
 from api.models.auth import AuthDTO, Token
+from api.utils import bad_request_serializer
 from libs.utils.auth import create_access_token, create_api_user, validate_user_credentials
 
 auth_router = APIRouter()
@@ -15,7 +16,10 @@ async def create_user(auth_info: AuthDTO):
     try:
         create_api_user(auth_info.user, auth_info.password)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer(str(e))
+        )
 
 
 @auth_router.put("/access_token", response_model=Token)
