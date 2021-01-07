@@ -78,6 +78,8 @@ def handle_response(response, success, status_code=status.HTTP_200_OK):
         )
     content = humps.decamelize(response) if response else None
     return JSONResponse(status_code=status_code, content=content)
+
+
 def reestructure_areas(config_dict):
     """Ensure that all [Area_0, Area_1, ...] are consecutive"""
     area_names = [x for x in config_dict.keys() if x.startswith("Area_")]
