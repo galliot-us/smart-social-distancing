@@ -18,3 +18,4 @@ class AppDTO(SnakeModel):
     dailyGlobalReport: bool = Field(False)
     weeklyGlobalReport: bool = Field(False)
     heatmapResolution = Field("150,150")
+    logPerformance: bool = Field(False)

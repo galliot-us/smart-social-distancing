@@ -311,6 +311,13 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `OccupancyAlertsMinInterval`:  Sets the desired interval (in seconds) between occupancy alerts.
   - `MaxThreadRestarts`: Defines the number of restarts allowed per thread.
   - `HeatmapResolution`: Sets the resolution used by the heatmap report.
+  - `LogPerformance`: A boolean parameter to enable/disable the logging of "Performance Metrics" in the default processor log. We recommend enabling it to compare the performance of different devices, models, resolutions, etc.
+  When is enabled, the processor logs will include the following information every time 100 frames are processed:
+      - Frames per second (FPS)
+      - Average Detector time
+      - Average Classifier time
+      - Average Tracker time
+      - Average Post Processors time
 
 - `[Api]`
   - `Host`: Configures the host IP of the processor's API (inside docker). We recommend don't change that value and keep it as *0.0.0.0*.
