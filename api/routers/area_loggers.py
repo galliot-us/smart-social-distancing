@@ -68,7 +68,9 @@ async def create_logger(new_logger: AreaLoggerDTO, reboot_processor: Optional[bo
         index = max(loggers_index) + 1
     config_dict[f"AreaLogger_{index}"] = logger_file
     success = update_config(config_dict, reboot_processor)
-    return handle_response(logger_file, success, status.HTTP_201_CREATED)
+    if not success:
+        return handle_response(logger_file, success, status.HTTP_201_CREATED)
+    return next((ps for ps in get_area_loggers() if ps["name"] == logger_file["Name"]), None)
 
 
 @area_loggers_router.put("/{logger_name}", response_model=AreaLoggerDTO)
@@ -97,7 +99,9 @@ async def edit_logger(logger_name: str, edited_logger: AreaLoggerDTO,
     logger_file = map_to_config_file_format(edited_logger, True)
     config_dict[edited_logger_section] = logger_file
     success = update_config(config_dict, reboot_processor)
-    return handle_response(logger_file, success)
+    if not success:
+        return handle_response(logger_file, success)
+    return next((ps for ps in get_area_loggers() if ps["name"] == logger_name), None)
 
 
 @area_loggers_router.delete("/{logger_name}", status_code=status.HTTP_204_NO_CONTENT)

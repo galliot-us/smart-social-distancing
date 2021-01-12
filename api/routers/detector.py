@@ -25,4 +25,6 @@ def update_detector_config(detector: DetectorDTO, reboot_processor: Optional[boo
     detector_dict = map_to_config_file_format(detector)
     config_dict["Detector"] = detector_dict
     success = update_config(config_dict, reboot_processor)
-    return handle_response(detector_dict, success)
+    if not success:
+        return handle_response(detector_dict, success)
+    return map_section_from_config("Detector", extract_config())

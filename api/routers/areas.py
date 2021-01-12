@@ -60,9 +60,10 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The cameras: {non_existent_cameras} do not exist")
     area_dict = map_to_config_file_format(new_area)
     config_dict[f"Area_{len(areas)}"] = area_dict
-
     success = update_config(config_dict, reboot_processor)
-    return handle_response(area_dict, success, status.HTTP_201_CREATED)
+    if not success:
+        return handle_response(area_dict, success, status.HTTP_201_CREATED)
+    return next((area for area in get_areas() if area["id"] == area_dict["Id"]), None)
 
 
 @areas_router.put("/{area_id}", response_model=AreaConfigDTO)
@@ -89,9 +90,10 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
 
     area_dict = map_to_config_file_format(edited_area)
     config_dict[f"Area_{index}"] = area_dict
-
     success = update_config(config_dict, reboot_processor)
-    return handle_response(area_dict, success)
+    if not success:
+        return handle_response(area_dict, success)
+    return next((area for area in get_areas() if area["id"] == area_id), None)
 
 
 @areas_router.delete("/{area_id}", status_code=status.HTTP_204_NO_CONTENT)

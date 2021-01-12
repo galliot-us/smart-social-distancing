@@ -12,6 +12,7 @@
     - [Optional Parameters](#optional-parameters)
     - [Configuring AWS credentials](#configuring-aws-credentials)
     - [Enabling SSL](#enabling-ssl)
+    - [Configuring OAuth2 in the endpoints](#configuring-oauth2-in-the-endpoints)
     - [Change the default configuration](#change-the-default-configuration)
     - [API usage](#api-usage)
     - [Interacting with the processors' generated information](#interacting-with-the-processors-generated-information)
@@ -98,41 +99,6 @@ The frontend site uses HTTPs, in order to have it communicate with the processor
 
 Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
 The command that you need to execute will depend on the chosen device because each one has an independent Dockerfile.
-
-
-##### Configuring OAuth2 in the endpoints
-
-By default, all the endpoints exposed by the processors are accessible by everyone with access to the LAN. To avoid this vulnerability, the processor includes the possibility of configuring OAuth2 to keep your API secure.
-
-To configure OAuth2 in the processor you need to follow these steps:
-  1. Enabling OAuth2 in the API by setting in `True` the parameter `UseAuthToken` (included in the `API` section).
-  2. Set into the container the env `SECRET_ACCESS_KEY`. This env is used to encode the JWT token. An easy way to do that is 
-     to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
-  3. Create an API user. You can do that in two ways:
-     1. Using the `create_api_user.py` script:
-
-      Inside the docker container, execute the script `python3 create_api_user.py --user=<USER> --password=<PASSWORD>`. For example, if you are using an x86 device, you can execute the following script.
-      ```bash
-      docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64 python3 create_api_user.py --user=<USER> --password=<PASSWORD>
-      ```
-     2. Using the `/auth/create_api_user` endpoint:
-      Send a POST request to the endpoint `http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/auth/create_api_user` with the following body:
-      ```
-      {
-          "user": <USER>,
-          "password": <PASSWORD>
-      }
-      ```
-
-      After executing one of these steps, the `user` and `password` (hashed) will be stored in the file `/repo/data/auth/api_user.txt` inside the container. To avoid losing that file when the container is restarted, we recommend mounting the `/repo` directory as a volume.
-  4. Request a valid token. You can obtain one by sending a PUT request to the endpoint `http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/auth/access_token` with the following body:
-      ```
-      {
-          "user": <USER>,
-          "password": <PASSWORD>
-      }
-      ```
-      The obtained token will be valid for 1 week (then a new one must be requested from the API) and needs to be sent as an `Authorization` header in all the requests. If you don't send the token (when the `UseAuthToken` attribute is set in `True`), you will receive a `401 Unauthorized` response.
 
 ##### Run on Jetson Nano
 * You need to have JetPack 4.3 installed on your Jetson Nano.
@@ -279,6 +245,40 @@ If you don't have a certificate for the processor, you can create a self-signed 
 ```
 
 As you are using a self-signed certificate you will need to import the created CA (using the `.pem` file) in your browser as a trusted CA.
+
+### Configuring OAuth2 in the endpoints
+
+By default, all the endpoints exposed by the processors are accessible by everyone with access to the LAN. To avoid this vulnerability, the processor includes the possibility of configuring OAuth2 to keep your API secure.
+
+To configure OAuth2 in the processor you need to follow these steps:
+  1. Enabling OAuth2 in the API by setting in `True` the parameter `UseAuthToken` (included in the `API` section).
+  2. Set into the container the env `SECRET_ACCESS_KEY`. This env is used to encode the JWT token. An easy way to do that is 
+     to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
+  3. Create an API user. You can do that in two ways:
+     1. Using the `create_api_user.py` script:
+
+      Inside the docker container, execute the script `python3 create_api_user.py --user=<USER> --password=<PASSWORD>`. For example, if you are using an x86 device, you can execute the following script.
+      ```bash
+      docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64 python3 create_api_user.py --user=<USER> --password=<PASSWORD>
+      ```
+     2. Using the `/auth/create_api_user` endpoint:
+      Send a POST request to the endpoint `http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/auth/create_api_user` with the following body:
+      ```
+      {
+          "user": <USER>,
+          "password": <PASSWORD>
+      }
+      ```
+
+      After executing one of these steps, the `user` and `password` (hashed) will be stored in the file `/repo/data/auth/api_user.txt` inside the container. To avoid losing that file when the container is restarted, we recommend mounting the `/repo` directory as a volume.
+  4. Request a valid token. You can obtain one by sending a PUT request to the endpoint `http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/auth/access_token` with the following body:
+      ```
+      {
+          "user": <USER>,
+          "password": <PASSWORD>
+      }
+      ```
+      The obtained token will be valid for 1 week (then a new one must be requested from the API) and needs to be sent as an `Authorization` header in all the requests. If you don't send the token (when the `UseAuthToken` attribute is set in `True`), you will receive a `401 Unauthorized` response.
 
 ### Change the default configuration
 You can read and modify the configurations in `config-*.ini` files, accordingly:

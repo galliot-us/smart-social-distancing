@@ -68,10 +68,13 @@ async def create_post_processor(new_post_processor: SourcePostProcessorDTO, rebo
         index = max(post_processors_index) + 1
     config_dict[f"SourcePostProcessor_{index}"] = post_processor_file
     success = update_config(config_dict, reboot_processor)
-    return handle_response(post_processor_file, success, status.HTTP_201_CREATED)
+    if not success:
+        return handle_response(post_processor_file, success, status.HTTP_201_CREATED)
+    return next((ps for ps in get_source_post_processors() if ps["name"] == post_processor_file["Name"]), None)
 
 
-@source_post_processors_router.put("/{post_processor_name}", response_model=SourcePostProcessorDTO)
+@source_post_processors_router.put("/{post_processor_name}", response_model=SourcePostProcessorDTO,
+                                   response_model_exclude_none=True)
 async def edit_post_processor(post_processor_name: str, edited_post_processor: SourcePostProcessorDTO,
                               reboot_processor: Optional[bool] = True):
     """
@@ -97,7 +100,9 @@ async def edit_post_processor(post_processor_name: str, edited_post_processor: S
     post_processor_file = map_to_config_file_format(edited_post_processor, True)
     config_dict[edited_post_processor_section] = post_processor_file
     success = update_config(config_dict, reboot_processor)
-    return handle_response(post_processor_file, success)
+    if not success:
+        return handle_response(post_processor_file, success)
+    return next((ps for ps in get_source_post_processors() if ps["name"] == post_processor_name), None)
 
 
 @source_post_processors_router.delete("/{post_processor_name}", status_code=status.HTTP_204_NO_CONTENT)

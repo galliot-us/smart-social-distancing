@@ -91,7 +91,9 @@ async def update_config_file(config: ConfigDTO, reboot_processor: Optional[bool]
     """
     config_dict = map_to_file_format(config)
     success = update_config(config_dict, reboot_processor)
-    return handle_response(config_dict, success)
+    if not success:
+        return handle_response(config_dict, success)
+    return map_config(extract_config(), "")
 
 
 @config_router.get("/info", response_model=ConfigInfo)

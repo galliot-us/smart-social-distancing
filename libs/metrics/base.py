@@ -240,6 +240,8 @@ class BaseMetric:
             entity_directory = os.path.join(base_directory, entity)
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             file_path = os.path.join(reports_directory, "report.csv")
+            if not os.path.isfile(file_path):
+                continue
             df = pd.read_csv(file_path)
             df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%d')
             mask = (df['Date'] >= pd.to_datetime(from_date)) & (df['Date'] <= pd.to_datetime(to_date))

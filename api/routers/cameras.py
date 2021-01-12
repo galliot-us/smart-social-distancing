@@ -159,7 +159,9 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
     camera_dict = map_to_camera_file_format(new_camera)
     config_dict[f"Source_{len(cameras)}"] = camera_dict
     success = update_config(config_dict, reboot_processor)
-    return handle_response(camera_dict, success, status.HTTP_201_CREATED)
+    if not success:
+        return handle_response(camera_dict, success, status.HTTP_201_CREATED)
+    return next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_dict["Id"]), None)
 
 
 @cameras_router.put("/{camera_id}", response_model=CameraDTO)
@@ -173,7 +175,9 @@ async def edit_camera(camera_id: str, edited_camera: CameraDTO, reboot_processor
     camera_dict = map_to_camera_file_format(edited_camera)
     config_dict[f"Source_{index}"] = map_to_camera_file_format(edited_camera)
     success = update_config(config_dict, reboot_processor)
-    return handle_response(camera_dict, success)
+    if not success:
+        return handle_response(camera_dict, success)
+    return next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_id), None)
 
 
 @cameras_router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT)

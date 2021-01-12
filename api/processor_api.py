@@ -37,6 +37,7 @@ from .settings import Settings
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
 
+
 class ProcessorAPI:
     """
     The ProcessorAPI object implements a fastapi application that should allow configuring, starting and stopping processing,

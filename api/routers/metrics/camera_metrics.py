@@ -1,43 +1,19 @@
-import os
-
 from datetime import date, timedelta
 from fastapi import APIRouter, Query, HTTPException, status
-from typing import Iterator, Optional
+from typing import Optional
 
 from api.models.metrics import (
     FaceMaskDaily, FaceMaskLive, FaceMaskHourly, FaceMaskWeekly, HeatmapReport,
     SocialDistancingDaily, SocialDistancingHourly, SocialDistancingLive,
     SocialDistancingWeekly)
-from api.utils import bad_request_serializer, extract_config
-from libs.metrics import FaceMaskUsageMetric, SocialDistancingMetric
+from api.utils import bad_request_serializer
+from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING
 from libs.metrics.utils import generate_heatmap
 
+from .metrics import (validate_camera_existence, get_live_metric, get_hourly_metric, get_daily_metric,
+                      get_weekly_metric)
+
 metrics_router = APIRouter()
-
-
-def get_cameras(cameras: str) -> Iterator[str]:
-    if cameras:
-        return cameras.split(",")
-    config = extract_config(config_type="cameras")
-    return [x["Id"] for x in config.values()]
-
-
-def validate_dates(from_date: date, to_date: date):
-    if from_date > to_date:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=bad_request_serializer(
-                "Invalid range of dates",
-                error_type="from_date doesn't come before to_date",
-                loc=["query", "from_date"]
-            )
-        )
-
-
-def validate_camera_existence(camera_id: str):
-    dir_path = os.path.join(os.getenv("SourceLogDirectory"), camera_id, "objects_log")
-    if not os.path.exists(dir_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Camera with id '{camera_id}' does not exist")
 
 
 @metrics_router.get("/{camera_id}/heatmap", response_model=HeatmapReport)
@@ -64,10 +40,7 @@ def get_camera_distancing_live(cameras: str = ""):
     Returns a report with live information about the social distancing infractions
     detected in the cameras <cameras>.
     """
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    return SocialDistancingMetric.get_live_report(cameras)
+    return get_live_metric(CAMERAS, cameras, SOCIAL_DISTANCING)
 
 
 @metrics_router.get("/social-distancing/hourly", response_model=SocialDistancingHourly)
@@ -76,10 +49,7 @@ def get_camera_distancing_hourly_report(cameras: str = "", date: date = Query(da
     Returns a hourly report (for the date specified) with information about the social distancing infractions
     detected in the cameras <cameras>.
     """
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    return SocialDistancingMetric.get_hourly_report(cameras, date)
+    return get_hourly_metric(CAMERAS, cameras, SOCIAL_DISTANCING, date)
 
 
 @metrics_router.get("/social-distancing/daily", response_model=SocialDistancingDaily)
@@ -90,11 +60,7 @@ def get_camera_distancing_daily_report(cameras: str = "",
     Returns a daily report (for the date range specified) with information about the social distancing infractions
     detected in the cameras <cameras>.
     """
-    validate_dates(from_date, to_date)
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    return SocialDistancingMetric.get_daily_report(cameras, from_date, to_date)
+    return get_daily_metric(CAMERAS, cameras, SOCIAL_DISTANCING, from_date, to_date)
 
 
 @metrics_router.get("/social-distancing/weekly", response_model=SocialDistancingWeekly)
@@ -116,16 +82,7 @@ def get_camera_distancing_weekly_report(
     - Report spans from `from_Date` to `to_date`.
     - Taking Sunday as the end of week
     """
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    if weeks > 0:
-        # Report from weeks*7 days ago (grouped by week, ending on yesterday)
-        return SocialDistancingMetric.get_weekly_report(cameras, number_of_weeks=weeks)
-    else:
-        # Report from the defined date_range, weeks ending on Sunday.
-        validate_dates(from_date, to_date)
-        return SocialDistancingMetric.get_weekly_report(cameras, from_date=from_date, to_date=to_date)
+    return get_weekly_metric(CAMERAS, cameras, SOCIAL_DISTANCING, from_date, to_date, weeks)
 
 
 # Face Mask Metrics
@@ -135,10 +92,7 @@ def get_camera_face_mask_detections_live(cameras: str = ""):
     Returns a report with live information about the facemasks detected in the
     cameras <cameras>.
     """
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    return FaceMaskUsageMetric.get_live_report(cameras)
+    return get_live_metric(CAMERAS, cameras, FACEMASK_USAGE)
 
 
 @metrics_router.get("/face-mask-detections/hourly", response_model=FaceMaskHourly)
@@ -147,10 +101,7 @@ def get_camera_face_mask_detections_hourly_report(cameras: str = "", date: date 
     Returns a hourly report (for the date specified) with information about the facemasks detected in
     the cameras <cameras>.
     """
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    return FaceMaskUsageMetric.get_hourly_report(cameras, date)
+    return get_hourly_metric(CAMERAS, cameras, FACEMASK_USAGE, date)
 
 
 @metrics_router.get("/face-mask-detections/daily", response_model=FaceMaskDaily)
@@ -161,11 +112,7 @@ def get_camera_face_mask_detections_daily_report(cameras: str = "",
     Returns a daily report (for the date range specified) with information about the facemasks detected in
     the cameras <cameras>.
     """
-    validate_dates(from_date, to_date)
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    return FaceMaskUsageMetric.get_daily_report(cameras, from_date, to_date)
+    return get_daily_metric(CAMERAS, cameras, FACEMASK_USAGE, from_date, to_date)
 
 
 @metrics_router.get("/face-mask-detections/weekly", response_model=FaceMaskWeekly)
@@ -187,13 +134,4 @@ def get_camera_face_mask_detections_weekly_report(
     - Report spans from `from_Date` to `to_date`.
     - Taking Sunday as the end of week
     """
-    cameras = get_cameras(cameras)
-    for camera in cameras:
-        validate_camera_existence(camera)
-    if weeks > 0:
-        # Report from weeks*7 days ago (grouped by week, ending on yesterday)
-        return FaceMaskUsageMetric.get_weekly_report(cameras, number_of_weeks=weeks)
-    else:
-        # Report from the defined date_range, weeks ending on Sunday.
-        validate_dates(from_date, to_date)
-        return FaceMaskUsageMetric.get_weekly_report(cameras, from_date=from_date, to_date=to_date)
+    return get_weekly_metric(CAMERAS, cameras, FACEMASK_USAGE, from_date, to_date, weeks)
