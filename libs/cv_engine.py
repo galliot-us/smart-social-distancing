@@ -15,7 +15,7 @@ from libs.source_post_processors.source_post_processor import SourcePostProcesso
 
 logger = logging.getLogger(__name__)
 FRAMES_LOG_BATCH_SIZE = 100
-LOG_SECTIONS = ["Detector", "Classifier", "Tracker", "Post Processors"]
+LOG_SECTIONS = ["Detector", "Classifier", "Tracker", "Post processing steps"]
 
 
 class CvEngine:
@@ -50,9 +50,7 @@ class CvEngine:
         self.log_performance = self.config.get_boolean("App", "LogPerformance")
         if self.log_performance:
             self.last_log_time = None
-            self.log_detail = {}
-            for section in LOG_SECTIONS:
-                self.log_detail[section] = []
+            self.reset_log_detail()
 
     def __process(self, cv_image):
         """
@@ -99,15 +97,19 @@ class CvEngine:
         }
         begin_time = datetime.now()
         for post_processor in self.post_processors:
+            begin_time = datetime.now()
             cv_image, tmp_objects_list, post_processing_data = post_processor.process(
                 cv_image, tmp_objects_list, post_processing_data)
-        post_processors_time = (datetime.now() - begin_time).total_seconds()
+            post_processors_time = (datetime.now() - begin_time).total_seconds()
+            if self.log_performance:
+                p_processor_name = post_processor.post_processor_name.replace("_", " ").title()
+                self.log_detail["Post processing steps"][p_processor_name].append(post_processors_time)
+
         if self.log_performance:
             self.log_detail["Detector"].append(detector_time)
             if self.classifier:
                 self.log_detail["Classifier"].append(classifier_time)
             self.log_detail["Tracker"].append(tracker_time)
-            self.log_detail["Post Processors"].append(post_processors_time)
         return cv_image, tmp_objects_list, post_processing_data
 
     def process_video(self, video_uri):
@@ -130,20 +132,11 @@ class CvEngine:
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
             if np.shape(cv_image) != ():
-
                 cv_image, objects, post_processing_data = self.__process(cv_image)
                 frame_num += 1
                 if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
-                    if self.log_performance:
-                        if self.last_log_time:
-                            logger.info(f"FPS: {FRAMES_LOG_BATCH_SIZE / (datetime.now() - self.last_log_time).total_seconds()}")
-                            for section in LOG_SECTIONS:
-                                logger.info(f"Average {section} time: {mean(self.log_detail[section])}")
-                    self.last_log_time = datetime.now()
-                    for section in LOG_SECTIONS:
-                        self.log_detail[section] = []
-
+                    self.write_performance_log()
                 for source_logger in self.loggers:
                     source_logger.update(cv_image, objects, post_processing_data, self.detector.fps)
         input_cap.release()
@@ -153,3 +146,28 @@ class CvEngine:
 
     def stop_process_video(self):
         self.running_video = False
+
+    def reset_log_detail(self):
+        self.log_detail = {}
+        for section in LOG_SECTIONS:
+            if section == "Post processing steps":
+                self.log_detail[section] = {}
+                for p_processor in self.post_processors:
+                    self.log_detail[section][p_processor.post_processor_name.replace("_", " ").title()] = []
+            else:
+                self.log_detail[section] = []
+
+    def write_performance_log(self):
+        if self.log_performance:
+            if self.last_log_time:
+                logger.info(f"FPS: {FRAMES_LOG_BATCH_SIZE / (datetime.now() - self.last_log_time).total_seconds()}")
+                for section in LOG_SECTIONS:
+                    if isinstance(self.log_detail[section], list):
+                        logger.info(f"Average {section} time: {mean(self.log_detail[section])}")
+                    else:
+                        logger.info(f"{section}:")
+                        for key, value in self.log_detail[section].items():
+                            logger.info(f"  - Average {key} time: {mean(value)}")
+        # Reset the performance log
+        self.last_log_time = datetime.now()
+        self.reset_log_detail()
