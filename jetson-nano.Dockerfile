@@ -95,7 +95,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
-ENV CONFIG_FILE=config-jetson.ini
+ENV CONFIG_FILE=config-jetson-nano.ini
 
 COPY . /repo/
 WORKDIR /repo

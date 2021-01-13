@@ -125,7 +125,7 @@ RUN git clone https://github.com/onnx/onnx-tensorrt.git \
 
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
-ENV CONFIG_FILE=config-jetson.ini
+ENV CONFIG_FILE=config-jetson-tx2.ini
 
 COPY . /repo/
 WORKDIR /repo
