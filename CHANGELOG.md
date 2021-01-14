@@ -2,6 +2,32 @@
 
 This file includes a list of notable changes to this project.
 
+## [0.4.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.4.0)
+Released on 2021-01-14.
+
+#### Added:
+
+* Backup files into S3 ([#106](https://github.com/neuralet/smart-social-distancing/pull/106))
+* Yolov3 detector for x86 devices ([#103](https://github.com/neuralet/smart-social-distancing/pull/103))
+* Openpifpaf and OFM face-mask classifier TensorRT support for Jetson TX2 ([#101](https://github.com/neuralet/smart-social-distancing/pull/101))
+* OAuth in endpoints ([#112](https://github.com/neuralet/smart-social-distancing/pull/112))
+* Measure performance ([#123](https://github.com/neuralet/smart-social-distancing/pull/123))
+
+#### Updated:
+
+* Screenshot logger ([#111](https://github.com/neuralet/smart-social-distancing/pull/111))
+* Video live feed ([#110](https://github.com/neuralet/smart-social-distancing/pull/110))
+* Readme ([#118](https://github.com/neuralet/smart-social-distancing/pull/118))
+* Export endpoints ([#114](https://github.com/neuralet/smart-social-distancing/pull/114))
+* Small refactor in API responses ([#120](https://github.com/neuralet/smart-social-distancing/pull/120))
+* Split `config-jetson.ini` into  `config-jetson-nano.ini` and `config-jetson-tx2.ini` ([#117](https://github.com/neuralet/smart-social-distancing/pull/117))
+
+#### Fixed:
+
+* Fixed minor issues in classifier ([#102](https://github.com/neuralet/smart-social-distancing/pull/102))
+* Fixed minor issues in occupancy metrics ([#115](https://github.com/neuralet/smart-social-distancing/pull/115))
+
+
 ## [0.3.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.3.0)
 Released on 2020-12-22.
 
