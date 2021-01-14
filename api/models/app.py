@@ -18,4 +18,5 @@ class AppDTO(SnakeModel):
     dailyGlobalReport: bool = Field(False)
     weeklyGlobalReport: bool = Field(False)
     heatmapResolution = Field("150,150")
-    logPerformance: bool = Field(False)
+    logPerformanceMetricsMetrics: bool = Field(False)
+    logPerformanceMetricsDirectory: str = Field("", example="/repo/data/processor/static/data/performace-metrics")

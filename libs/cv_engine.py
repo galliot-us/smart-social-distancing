@@ -1,9 +1,10 @@
+import csv
 import cv2 as cv
 import logging
 import numpy as np
 import os
 
-from datetime import datetime
+from datetime import date, datetime
 from statistics import mean
 
 from libs.classifiers.classifier import Classifier
@@ -16,6 +17,7 @@ from libs.source_post_processors.source_post_processor import SourcePostProcesso
 logger = logging.getLogger(__name__)
 FRAMES_LOG_BATCH_SIZE = 100
 LOG_SECTIONS = ["Detector", "Classifier", "Tracker", "Post processing steps"]
+POST_PROCESSING = "Post processing steps"
 
 
 class CvEngine:
@@ -47,10 +49,12 @@ class CvEngine:
                 self.loggers.append(Logger(self.config, source, l_name))
         self.running_video = False
 
-        self.log_performance = self.config.get_boolean("App", "LogPerformance")
+        self.log_performance = self.config.get_boolean("App", "LogPerformanceMetrics")
         if self.log_performance:
+            self.log_performance_directory = self.config.get_section_dict('App')['LogPerformanceMetricsDirectory']
+            self.log_performance_headers = []
             self.last_log_time = None
-            self.reset_log_detail()
+            self.reset_log_detail(set_headers=bool(self.log_performance_directory))
 
     def __process(self, cv_image):
         """
@@ -95,7 +99,6 @@ class CvEngine:
         post_processing_data = {
             "tracks": tracks
         }
-        begin_time = datetime.now()
         for post_processor in self.post_processors:
             begin_time = datetime.now()
             cv_image, tmp_objects_list, post_processing_data = post_processor.process(
@@ -147,27 +150,50 @@ class CvEngine:
     def stop_process_video(self):
         self.running_video = False
 
-    def reset_log_detail(self):
+    def reset_log_detail(self, set_headers=False):
         self.log_detail = {}
+        if set_headers:
+            self.log_performance_headers.append("FPS")
         for section in LOG_SECTIONS:
-            if section == "Post processing steps":
+            if section == POST_PROCESSING:
                 self.log_detail[section] = {}
                 for p_processor in self.post_processors:
-                    self.log_detail[section][p_processor.post_processor_name.replace("_", " ").title()] = []
+                    p_processor_name = p_processor.post_processor_name.replace("_", " ").title()
+                    self.log_detail[section][p_processor_name] = []
+                    if set_headers:
+                        self.log_performance_headers.append(p_processor_name)
             else:
                 self.log_detail[section] = []
+                if set_headers:
+                    self.log_performance_headers.append(section)
 
     def write_performance_log(self):
         if self.log_performance:
             if self.last_log_time:
-                logger.info(f"FPS: {FRAMES_LOG_BATCH_SIZE / (datetime.now() - self.last_log_time).total_seconds()}")
+                fps_time = FRAMES_LOG_BATCH_SIZE / (datetime.now() - self.last_log_time).total_seconds()
+                logger.info(f"FPS: {fps_time}")
+                csv_info = {"FPS": str(fps_time)}
                 for section in LOG_SECTIONS:
                     if isinstance(self.log_detail[section], list):
-                        logger.info(f"Average {section} time: {mean(self.log_detail[section])}")
+                        section_time = mean(self.log_detail[section])
+                        logger.info(f"Average {section} time: {section_time}")
+                        csv_info[section] = str(section_time)
                     else:
                         logger.info(f"{section}:")
                         for key, value in self.log_detail[section].items():
-                            logger.info(f"  - Average {key} time: {mean(value)}")
+                            key_time = mean(value)
+                            logger.info(f"  - Average {key} time: {key_time}")
+                            csv_info[key] = str(key_time)
+                if self.log_performance_directory:
+                    os.makedirs(self.log_performance_directory, exist_ok=True)
+                    file_name = str(date.today())
+                    file_path = os.path.join(self.log_performance_directory, file_name + ".csv")
+                    file_exists = os.path.isfile(file_path)
+                    with open(file_path, "a") as csvfile:
+                        writer = csv.DictWriter(csvfile, fieldnames=self.log_performance_headers)
+                        if not file_exists:
+                            writer.writeheader()
+                        writer.writerow(csv_info)
         # Reset the performance log
         self.last_log_time = datetime.now()
         self.reset_log_detail()
