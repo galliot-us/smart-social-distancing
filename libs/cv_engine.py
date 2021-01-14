@@ -153,7 +153,7 @@ class CvEngine:
     def reset_log_detail(self, set_headers=False):
         self.log_detail = {}
         if set_headers:
-            self.log_performance_headers.append("FPS")
+            self.log_performance_headers = ["Timestamp", "FPS"]
         for section in LOG_SECTIONS:
             if section == POST_PROCESSING:
                 self.log_detail[section] = {}
@@ -170,9 +170,14 @@ class CvEngine:
     def write_performance_log(self):
         if self.log_performance:
             if self.last_log_time:
-                fps_time = FRAMES_LOG_BATCH_SIZE / (datetime.now() - self.last_log_time).total_seconds()
+                now = datetime.now()
+                fps_time = FRAMES_LOG_BATCH_SIZE / (now - self.last_log_time).total_seconds()
                 logger.info(f"FPS: {fps_time}")
-                csv_info = {"FPS": str(fps_time)}
+                current_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+                csv_info = {
+                    "Timestamp": current_time_str,
+                    "FPS": str(fps_time)
+                }
                 for section in LOG_SECTIONS:
                     if isinstance(self.log_detail[section], list):
                         section_time = mean(self.log_detail[section])
