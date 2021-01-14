@@ -71,21 +71,10 @@ def section_string_to_section_multi_type(dictionary):
     return response
 
 
-def get_app_from_config_file(config_sample_path, flag=True):
-    """A problem was detected here. The response body of the endpoint GET /app returns a json with the key
-    "dashboardurl", while the endpoint PUT /config returns a json with the key "dashboard_url". If it ever
-    resolves, the "if" and the flag argument will no longer be needed. """
-    if flag:
-        config_sample_json = get_config_file_json_strings(config_sample_path)
-        config_mapped_string = map_section_from_config("App", config_sample_json)
-        config_mapped = section_string_to_section_multi_type(config_mapped_string)
-    else:
-        config_sample_json = get_config_file_json_strings(config_sample_path)
-        config_mapped_string = map_section_from_config("App", config_sample_json)
-        config_mapped = section_string_to_section_multi_type(config_mapped_string)
-        config_mapped["dashboard_url"] = config_mapped["dashboardurl"]
-        del config_mapped["dashboardurl"]
-
+def get_app_from_config_file(config_sample_path):
+    config_sample_json = get_config_file_json_strings(config_sample_path)
+    config_mapped_string = map_section_from_config("App", config_sample_json)
+    config_mapped = section_string_to_section_multi_type(config_mapped_string)
     return config_mapped
 # Get App from config file -- end
 
@@ -136,7 +125,7 @@ def camel_case_to_snake_case_dict(dictionary):
         di[camel_key] = value
 
     if "dashboardURL" in dictionary.keys():
-        di["dashboard_url"] = dictionary["dashboardURL"]
+        di["dashboardurl"] = dictionary["dashboardURL"]
         del di["dashboard_u_r_l"]
 
     return di

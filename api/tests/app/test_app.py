@@ -1,29 +1,17 @@
 import pytest
 
 from api.models.app import AppDTO
-from api.tests.utils.common_functions import json_multi_type_to_json_string, \
-    create_app_config, camel_case_to_snake_case_dict, get_app_from_config_file
+from api.tests.utils.common_functions import create_app_config, camel_case_to_snake_case_dict, get_app_from_config_file
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
 from api.tests.utils.fixtures_tests import config_rollback, app_config
-
-
-def expected_response_function(config_sample_path):
-    expected_response = get_app_from_config_file(config_sample_path, flag=False)
-    expected_response = json_multi_type_to_json_string(expected_response)
-
-    # It is weird that this change does not appear in response.json()
-    # Because if request was successfully, the PUT request will change the flag "has_been_configured"
-    expected_response["has_been_configured"] = "False"
-
-    return expected_response
 
 
 def expected_response_default():
     """When no valid key is provided to the PUT request, config is updated with default values stored in AppDTO"""
     expected_response = AppDTO().__dict__
     expected_response = camel_case_to_snake_case_dict(expected_response)
-    expected_response = json_multi_type_to_json_string(expected_response)
+    expected_response['has_been_configured'] = True
     return expected_response
 
 
@@ -53,7 +41,7 @@ class TestClassUpdateAppConfig:
         body = app_config
         response = client.put('/app', json=body)
 
-        expected_response = expected_response_function(config_sample_path)
+        expected_response = get_app_from_config_file(config_sample_path)
         assert response.status_code == 200
         assert response.json() == expected_response
 
@@ -69,8 +57,6 @@ class TestClassUpdateAppConfig:
         ({"max_processes": False}, "integer"),
         ({"dashboardurl": 40}, "string"),
         ({"dashboardurl": False}, "string"),
-        ({"screenshots_directory": 40}, "string"),
-        ({"screenshots_directory": False}, "string"),
         ({"slack_channel": 40}, "string"),
         ({"slack_channel": False}, "string"),
         ({"occupancy_alerts_min_interval": False}, "integer"),
@@ -110,7 +96,11 @@ class TestClassUpdateAppConfig:
 
         if correct_type == "string":
             assert response.status_code == 200
-            expected_response = expected_response_function(config_sample_path)
+            expected_response = get_app_from_config_file(config_sample_path)
+            key = list(key_value_dict.keys())[0]
+            value = list(key_value_dict.values())[0]
+            expected_response[key] = str(value)
+
             assert response.json() == expected_response
         elif correct_type == "integer":
             for key, value in key_value_dict.items():
@@ -119,7 +109,7 @@ class TestClassUpdateAppConfig:
                     assert response.json()['detail'][0]['type'] == 'type_error.' + correct_type
                 else:
                     assert response.status_code == 200
-                    expected_response = expected_response_function(config_sample_path)
+                    expected_response = get_app_from_config_file(config_sample_path)
                     assert response.json() == expected_response
         elif correct_type == "bool":
             assert response.status_code == 400
@@ -138,7 +128,7 @@ class TestClassUpdateAppConfig:
         }
         response = client.put('/app', json=body)
 
-        expected_response = expected_response_function(config_sample_path)
+        expected_response = get_app_from_config_file(config_sample_path)
         default_response = expected_response_default()
 
         assert response.status_code == 200
@@ -152,7 +142,7 @@ class TestClassUpdateAppConfig:
         body = {}
         response = client.put('/app', json=body)
 
-        expected_response = expected_response_function(config_sample_path)
+        expected_response = get_app_from_config_file(config_sample_path)
         default_response = expected_response_default()
 
         assert response.status_code == 200
