@@ -14,7 +14,7 @@ class SnakeModel(BaseModel):
 
 
 class EntityConfigDTO(SnakeModel):
-    id: str = Field(example='0')
+    id: Optional[str] = Field(example='SABORR')
     name: str = Field(example='Kitchen')
 
 
