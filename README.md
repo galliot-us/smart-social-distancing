@@ -284,7 +284,7 @@ To configure OAuth2 in the processor you need to follow these steps:
 This processor uses [OpenCV VideoCapture](https://docs.opencv.org/3.4/d8/dfe/classcv_1_1VideoCapture.html) , which means that it can process:
 
 * Video files that are compatible with [FFmpeg](https://en.wikipedia.org/wiki/FFmpeg)
-* Any URL of video stream in a **public protocol** such as RTCP and HTTP (`protocol://host:port/script_name?script_params|auth`)
+* Any URL of video stream in a **public protocol** such as RTSP and HTTP (`protocol://host:port/script_name?script_params|auth`)
 
 Please note that:
 
