@@ -96,6 +96,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV CONFIG_FILE=config-jetson-nano.ini
+ENV OPENBLAS_CORETYPE=armv8
 
 COPY . /repo/
 WORKDIR /repo
