@@ -280,8 +280,8 @@ To configure OAuth2 in the processor you need to follow these steps:
       ```
       The obtained token will be valid for 1 week (then a new one must be requested from the API) and needs to be sent as an `Authorization` header in all the requests. If you don't send the token (when the `UseAuthToken` attribute is set in `True`), you will receive a `401 Unauthorized` response.
 
-### Video feeds the processor can consume from
-This processor uses [OpenCV VideoCapture](https://docs.opencv.org/3.4/d8/dfe/classcv_1_1VideoCapture.html) , which means that it can process:
+### Supported video feeds formats
+This processor uses [OpenCV VideoCapture](https://docs.opencv.org/3.4/d8/dfe/classcv_1_1VideoCapture.html), which means that it can process:
 
 * Video files that are compatible with [FFmpeg](https://en.wikipedia.org/wiki/FFmpeg)
 * Any URL of video stream in a **public protocol** such as RTSP and HTTP (`protocol://host:port/script_name?script_params|auth`)
@@ -290,6 +290,10 @@ Please note that:
 
 * Although this processor can read and process a video, this is mostly a development functionality; this is due to the fact that loggers yield statistics that are time dependant that assume a real-time stream being processed, in which if the processing capacity is lower than the FPS frames are lost in favour of processing new frames. With a video file all frames are processed and on a slower model this might take a while (and yield wrong analytics).
 * Some IP cameras implement their own private protocol that's not compatible with OpenCV.
+
+If wanting to integrate an IP camera that uses a private protocol, you should check with the camera provider if the device supports exporting its stream in a public protocol.
+For example, [WYZE](https://wyze.com/) doesn't support RTSP as default, but [you have the possibility of installing a firmware that supports it](https://wyzelabs.zendesk.com/hc/en-us/articles/360026245231-Wyze-Cam-RTSP).
+Same goes for [Google Nest Cameras](https://developers.google.com/nest/device-access/traits/device/camera-live-stream), although here a token must be kept alive to access the RTSP stream
 
 ### Change the default configuration
 You can read and modify the configurations in `config-*.ini` files, accordingly:
