@@ -2,6 +2,7 @@ import base64
 import cv2 as cv
 import logging
 import os
+import re
 
 from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
@@ -143,24 +144,17 @@ async def get_camera(camera_id: str):
     return camera
 
 
-def get_first_unused_id(arr):
-    if not arr:
+def get_first_unused_id(cameras_ids):
+    if not cameras_ids:
         return 0
 
-    ids_numbers = []
-    for value in arr:
-        try:
-            number = int(value)
-            if number >= 0:
-                ids_numbers.append(number)
-        except ValueError:
-            pass
+    is_a_number = re.compile("^[0-9]+$")
+    ids_numbers = [int(value) for value in cameras_ids if is_a_number.match(value)]
 
     if not ids_numbers:
         return 0
 
     ids_numbers.sort()
-
     result = 0
     for i in range(0, ids_numbers[len(ids_numbers)-1]+1):
         if ids_numbers[i] != i:
