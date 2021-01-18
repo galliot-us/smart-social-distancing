@@ -288,10 +288,10 @@ This processor uses [OpenCV VideoCapture](https://docs.opencv.org/3.4/d8/dfe/cla
 
 Please note that:
 
-* Although this processor can read and process a video, this is mostly a development functionality; this is due to the fact that loggers yield statistics that are time dependant that assume a real-time stream being processed, in which if the processing capacity is lower than the FPS frames are lost in favour of processing new frames. With a video file all frames are processed and on a slower model this might take a while (and yield wrong analytics).
+* Although this processor can read and process a video file, this is mostly a development functionality; this is due to the fact that loggers yield statistics that are time dependant that assume a real-time stream being processed, in which if the processing capacity is lower than the FPS, frames are lost in favour of processing new frames. With a video file all frames are processed and on a slower model this might take a while (and yield wrong analytics).
 * Some IP cameras implement their own private protocol that's not compatible with OpenCV.
 
-If wanting to integrate an IP camera that uses a private protocol, you should check with the camera provider if the device supports exporting its stream in a public protocol.
+If you want to integrate an IP camera that uses a private protocol, you should check with the camera provider if the device supports exporting its stream in a public protocol.
 For example, [WYZE](https://wyze.com/) doesn't support RTSP as default, but [you have the possibility of installing a firmware that supports it](https://wyzelabs.zendesk.com/hc/en-us/articles/360026245231-Wyze-Cam-RTSP).
 Same goes for [Google Nest Cameras](https://developers.google.com/nest/device-access/traits/device/camera-live-stream), although here a token must be kept alive to access the RTSP stream
 
