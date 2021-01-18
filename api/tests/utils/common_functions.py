@@ -79,6 +79,15 @@ def get_app_from_config_file(config_sample_path):
 # Get App from config file -- end
 
 
+# Get any section from config file -- begin
+def get_section_from_config_file(section, config_sample_path):
+    config_sample_json = get_config_file_json_strings(config_sample_path)
+    config_mapped_string = map_section_from_config(section, config_sample_json)
+    config_mapped = section_string_to_section_multi_type(config_mapped_string)
+    return config_mapped
+# Get any section from config file -- end
+
+
 def json_multi_type_to_json_string(json_dict):
     """ json_dict is a json with values of all kinds. """
     for key in json_dict:
