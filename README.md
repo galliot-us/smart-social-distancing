@@ -6,7 +6,6 @@
   - [Introduction](#introduction)
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
     - [Usage](#usage)
   - [Processor](#processor)
     - [Optional Parameters](#optional-parameters)
@@ -50,6 +49,7 @@ A host edge device. We currently support the following:
 * Coral Dev Board
 * AMD64 node with attached Coral USB Accelerator
 * X86 node (also accelerated with Openvino)
+* X86 node with Nvidia GPU
 
 The features supported, the detection accuracy reached and the performance can vary from device to device.
  
@@ -67,7 +67,28 @@ If you don't have any camera to test the solution you can use any video as an in
 ./download_sample_video.sh
 ```
 
-### Installation
+### Usage
+
+The smart social distancing app consists of two components: the `frontend` and the `processor`. 
+
+#### Frontend
+
+The frontend is a public [web app](https://beta.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. 
+This web app allows you to configure some aspects of the processor (such as notifications and camera calibration) using a friendly UI. 
+Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
+
+The frontend site uses HTTPs, in order to have it communicate with the processor, the latter must be either **Running with SSL enabled** (See [Enabling SSL](#enabling-ssl) on this Readme), **or** you must edit your site settings for `https://beta.lanthorn.ai` in order to allow for Mixed Content (Insecure Content). **Without doing any of these, communication with the local processor will fail**
+
+#### Running the processor
+
+Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
+The command that you need to execute will depend on the chosen device because each one has an independent Dockerfile.
+
+There are two alternatives to run the processor in your device:
+  1. Using `git` and building yourself the docker image.
+  2. Pulling the image (already built) from [neuralet Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing).
+
+##### Running the processor from github repository
 
 Make sure you have the prerequisites and then clone this repository to your local system by running this command:
 
@@ -83,52 +104,35 @@ git fetch --tags
 git checkout $(git tag | tail -1)
 ```
 
-### Usage
-
-The smart social distancing app consists of two components: the `frontend` and the `processor`. 
-
-#### Frontend
-
-The frontend is a public [web app](https://beta.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. 
-This web app allows you to configure some aspects of the processor (such as notifications and camera calibration) using a friendly UI. 
-Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
-
-The frontend site uses HTTPs, in order to have it communicate with the processor, the latter must be either **Running with SSL enabled** (See [Enabling SSL](#enabling-ssl) on this Readme), **or** you must edit your site settings for `https://beta.lanthorn.ai` in order to allow for Mixed Content (Insecure Content). **Without doing any of these, communication with the local processor will fail**
-
-#### Run the processor
-
-Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
-The command that you need to execute will depend on the chosen device because each one has an independent Dockerfile.
-
-##### Run on Jetson Nano
+###### Run on Jetson Nano
 * You need to have JetPack 4.3 installed on your Jetson Nano.
 
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.3:
 ./download_jetson_nano_trt.sh
 
-# 2) Build Docker image for Jetson Nano (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 2) Build Docker image for Jetson Nano
 docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 
 # 3) Run Docker container:
 docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
 ```
 
-##### Run on Jetson TX2
+###### Run on Jetson TX2
 * You need to have JetPack 4.4 installed on your Jetson TX2. If you are using Openpifpaf as a detector, skip the first step as the TensorRT engine will be generated automatically with calling the `generate_tensorrt.bash` script by detector.
 
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.3:
 ./download_jetson_tx2_trt.sh
 
-# 2) Build Docker image for Jetson TX2 (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 2) Build Docker image for Jetson TX2
 docker build -f jetson-tx2.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-tx2" .
 
 # 3) Run Docker container:
 docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-tx2
 ```
 
-##### Run on Coral Dev Board
+###### Run on Coral Dev Board
 ```bash
 # 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
 docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
@@ -137,16 +141,16 @@ docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:
 docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
 ```
 
-##### Run on AMD64 node with a connected Coral USB Accelerator
+###### Run on AMD64 node with a connected Coral USB Accelerator
 ```bash
-# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 1) Build Docker image
 docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
 
 # 2) Run Docker container:
 docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
 ```
 
-##### Run on x86
+###### Run on x86
 ```bash
 
 # If you use the OpenPifPaf model, download the model first:
@@ -155,14 +159,14 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.
 # If you use the MobileNet model run this instead:
 # ./download_x86_model.sh
 
-# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 1) Build Docker image
 docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
 
 # 2) Run Docker container:
 docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
 ```
 
-##### Run on x86 with GPU
+###### Run on x86 with GPU
 Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
 ```bash
 
@@ -172,7 +176,7 @@ Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvid
 # If you use the MobileNet model run this instead:
 # ./download_x86_model.sh
 
-# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 1) Build Docker image
 docker build -f x86-gpu.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_gpu" .
 
 # 2) Run Docker container:
@@ -180,13 +184,13 @@ Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
 docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
 ```
 
-##### Run on x86 with GPU using TensorRT optimization
+###### Run on x86 with GPU using TensorRT optimization
 
 Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
 ```bash
 
 
-# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 1) Build Docker image
 docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt" .
 
 # 2) Run Docker container:
@@ -194,17 +198,107 @@ docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "neuralet/smart-social
 docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
 ```
 
-##### Run on x86 using OpenVino
+###### Run on x86 using OpenVino
 ```bash
 # download model first
 ./download_openvino_model.sh
 
-# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
+# 1) Build Docker image
 docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
 
 # 2) Run Docker container:
 docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
+
+##### Running the processor from neuralet dockerhub repository
+
+Before running any of the images available in the Docker repository, you need to follow these steps to have your device ready.
+  1. Create a `data` folder.
+  2. Copy the `config` file (available in this repository) corresponding to your device.
+  3. Copy the bash script(s) (available in this repository) required to download the model(s) your device requires.
+
+###### Run on Jetson Nano
+* You need to have JetPack 4.3 installed on your Jetson Nano.
+```bash
+# 1) Download TensorRT engine file built with JetPack 4.3:
+mkdir data/jetsonmkdir data/jetson
+./download_jetson_nano_trt.sh
+
+# 3) Run Docker container:
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-jetson-nano.ini:/repo/config-jetson-nano.ini neuralet/smart-social-distancing:latest-jetson-nano
+```
+
+###### Run on Jetson TX2
+* You need to have JetPack 4.4 installed on your Jetson TX2. If you are using Openpifpaf as a detector, skip the first step as the TensorRT engine will be generated automatically with calling the `generate_tensorrt.bash` script by detector.
+
+```bash
+# 1) Download TensorRT engine file built with JetPack 4.4
+mkdir data/jetsonmkdir data/jetson
+./download_jetson_tx2_trt.sh
+
+# Run Docker container:
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-jetson-tx2.ini:/repo/config-jetson-tx2.ini neuralet/smart-social-distancing:latest-jetson-tx2
+```
+
+###### Run on Coral Dev Board
+```bash
+# Run Docker container:
+docker run -it --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-coral.ini:/repo/config-coral.ini neuralet/smart-social-distancing:latest-coral-dev-board
+```
+
+###### Run on AMD64 node with a connected Coral USB Accelerator
+```bash
+# Run Docker container:
+docker run -it --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-coral.ini:/repo/config-coral.ini neuralet/smart-social-distancing:latest-amd64
+```
+
+###### Run on x86
+```bash
+# Download the models
+mkdir data/x86
+# If you use the OpenPifPaf model, download the model first:
+./download-x86-openpifpaf-model.sh
+# If you use the MobileNet model run this instead:
+# ./download_x86_model.sh
+
+# Run Docker container:
+docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86.ini:/repo/config-x86.ini neuralet/smart-social-distancing:latest-x86_64
+```
+
+###### Run on x86 with GPU
+Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
+```bash
+# Download the models
+mkdir data/x86
+# If you use the OpenPifPaf model, download the model first:
+./download-x86-openpifpaf-model.sh
+# If you use the MobileNet model run this instead:
+# ./download_x86_model.sh
+
+# Docker container:
+# Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
+docker run -it --gpus all -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-gpu.ini:/repo/config-x86-gpu.ini neuralet/smart-social-distancing:latest-x86_64_gpu
+```
+
+###### Run on x86 with GPU using TensorRT optimization
+
+Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
+```bash
+# Run Docker container:
+# Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
+docker run -it --gpus all -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-gpu-tensorrt.ini:/repo/config-x86-gpu-tensorrt.ini neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+```
+
+###### Run on x86 using OpenVino
+```bash
+# Download the model
+mkdir data/x86
+./download_openvino_model.sh
+
+# Run Docker container:
+docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-openvino.ini:/repo/config-x86-openvino.ini neuralet/smart-social-distancing:latest-x86_64_openvino
+```
+
 ## Processor
 
 ### Optional Parameters
