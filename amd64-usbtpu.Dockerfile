@@ -95,7 +95,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV DEV_ALLOW_ALL_ORIGINS=true
 
 RUN cd / && apt-get update && apt-get install -y git python3-edgetpu && git clone \
-    https://github.com/google-coral/project-posenet.git && sed -i 's/sudo / /g' \
+    https://github.com/google-coral/project-posenet.git && cd project-posenet && \
+    git checkout f74ff7973e4b4349aaad9f50c7f0bc77fe33775b && sed -i 's/sudo / /g' \
     /project-posenet/install_requirements.sh && sh /project-posenet/install_requirements.sh
 ENV PYTHONPATH=$PYTHONPATH:/project-posenet
 ENV CONFIG_FILE=config-coral.ini
