@@ -12,6 +12,7 @@
     - [Configuring AWS credentials](#configuring-aws-credentials)
     - [Enabling SSL](#enabling-ssl)
     - [Configuring OAuth2 in the endpoints](#configuring-oauth2-in-the-endpoints)
+    - [Supported video feeds formats](#supported-video-feeds-formats)
     - [Change the default configuration](#change-the-default-configuration)
     - [API usage](#api-usage)
     - [Interacting with the processors' generated information](#interacting-with-the-processors-generated-information)
@@ -88,7 +89,7 @@ There are two alternatives to run the processor in your device:
   1. Using `git` and building yourself the docker image.
   2. Pulling the image (already built) from [neuralet Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing).
 
-##### Running the processor from github repository
+##### Running the processor building the image
 
 Make sure you have the prerequisites and then clone this repository to your local system by running this command:
 
@@ -210,7 +211,7 @@ docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:lat
 docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
-##### Running the processor from neuralet dockerhub repository
+##### Running the processor from neuralet Docker Hub repository
 
 Before running any of the images available in the Docker repository, you need to follow these steps to have your device ready.
   1. Create a `data` folder.
@@ -314,9 +315,11 @@ You may hardcode a value rather than using the `timezone.sh` script, such as `US
 
 Please note that the bash script may require permissions to execute (run `chmod +x timezone.sh`)
 
+If you are running the processor directly from the Docker Hub repository remember to copy/paste the script in the execution folder before adding the flag ``` -e TZ=`./timezone.sh` ```.
+
 #### Persisting changes
 
-We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`).
+We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`) if you are building the docker image. If you are using the already built one we recommend creating a directory named `data` and mount it (`-v $PWD/data:/repo/data`).
 
 ### Configuring AWS credentials
 
@@ -331,11 +334,11 @@ If you don't have a certificate for the processor, you can create a self-signed 
 ```bash
 # 1) Create your own CA (certification authority)
 ./create_ca.sh
-# After the script execution, you should have a folder `certificates/ca` with the corresponding *.key, *.pem and *.srl files
+# After the script execution, you should have a folder `certs/ca` with the corresponding *.key, *.pem and *.srl files
 
 # 2) Create a certificate for the processor
 ./create_processor_certificate.sh <PROCESSOR_IP>
-# After the script execution, you should have a folder `certificates/processor` with the corresponding *.key, *.crt, *.csr and *.ext files
+# After the script execution, you should have a folder `certs/processor` with the corresponding *.key, *.crt, *.csr and *.ext files
 ```
 
 As you are using a self-signed certificate you will need to import the created CA (using the `.pem` file) in your browser as a trusted CA.
