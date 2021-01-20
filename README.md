@@ -86,12 +86,12 @@ Make sure you have `Docker` installed on your device by following [these instruc
 The command that you need to execute will depend on the chosen device because each one has an independent Dockerfile.
 
 There are two alternatives to run the processor in your device:
-  1. Using `git` and building the docker image yourself.
-  2. Pulling the (already built) image from [Neuralet's Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing).
+  1. Using `git` and building the docker image yourself (Follow the guide in [this](#running-the-processor-building-the-image) section). 
+  2. Pulling the (already built) image from [Neuralet's Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing) (Follow the guide in [this](#running-the-processor-from-neuralet-docker-hub-repository) section).
 
 ##### Running the processor building the image
 
-Make sure you have the prerequisites and then clone this repository to your local system by running this command:
+Make sure your system fulfills the prerequisites and then clone this repository to your local system by running this command:
 
 ```bash
 git clone https://github.com/neuralet/smart-social-distancing.git
@@ -217,6 +217,7 @@ Before running any of the images available in the Docker repository, you need to
   1. Create a `data` folder.
   2. Copy the `config` file (available in this repository) corresponding to your device.
   3. Copy the bash script(s) (available in this repository) required to download the model(s) your device requires.
+  4. Optionally, copy the script `timezone.sh` (available in this repository) to run the processor using your system timezone instead of UTC.
 
 ###### Run on Jetson Nano
 * You need to have JetPack 4.3 installed on your Jetson Nano.
@@ -226,7 +227,7 @@ mkdir data/jetsonmkdir data/jetson
 ./download_jetson_nano_trt.sh
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-jetson-nano.ini:/repo/config-jetson-nano.ini neuralet/smart-social-distancing:latest-jetson-nano
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-jetson-nano.ini:/repo/config-jetson-nano.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
 ```
 
 ###### Run on Jetson TX2
@@ -238,19 +239,19 @@ mkdir data/jetsonmkdir data/jetson
 ./download_jetson_tx2_trt.sh
 
 # Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-jetson-tx2.ini:/repo/config-jetson-tx2.ini neuralet/smart-social-distancing:latest-jetson-tx2
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-jetson-tx2.ini:/repo/config-jetson-tx2.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-tx2
 ```
 
 ###### Run on Coral Dev Board
 ```bash
 # Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-coral.ini:/repo/config-coral.ini neuralet/smart-social-distancing:latest-coral-dev-board
+docker run -it --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-coral.ini:/repo/config-coral.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
 ```
 
 ###### Run on AMD64 node with a connected Coral USB Accelerator
 ```bash
 # Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-coral.ini:/repo/config-coral.ini neuralet/smart-social-distancing:latest-amd64
+docker run -it --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-coral.ini:/repo/config-coral.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
 ```
 
 ###### Run on x86
@@ -263,7 +264,7 @@ mkdir data/x86
 # ./download_x86_model.sh
 
 # Run Docker container:
-docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86.ini:/repo/config-x86.ini neuralet/smart-social-distancing:latest-x86_64
+docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86.ini:/repo/config-x86.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
 ```
 
 ###### Run on x86 with GPU
@@ -278,7 +279,7 @@ mkdir data/x86
 
 # Docker container:
 # Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-gpu.ini:/repo/config-x86-gpu.ini neuralet/smart-social-distancing:latest-x86_64_gpu
+docker run -it --gpus all -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-gpu.ini:/repo/config-x86-gpu.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
 ```
 
 ###### Run on x86 with GPU using TensorRT optimization
@@ -287,7 +288,7 @@ Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvid
 ```bash
 # Run Docker container:
 # Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-gpu-tensorrt.ini:/repo/config-x86-gpu-tensorrt.ini neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+docker run -it --gpus all -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-gpu-tensorrt.ini:/repo/config-x86-gpu-tensorrt.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
 ```
 
 ###### Run on x86 using OpenVino
@@ -297,7 +298,7 @@ mkdir data/x86
 ./download_openvino_model.sh
 
 # Run Docker container:
-docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-openvino.ini:/repo/config-x86-openvino.ini neuralet/smart-social-distancing:latest-x86_64_openvino
+docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-openvino.ini:/repo/config-x86-openvino.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
 
 ## Processor
