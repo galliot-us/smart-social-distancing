@@ -223,7 +223,7 @@ Before running any of the images available in the Docker repository, you need to
 * You need to have JetPack 4.3 installed on your Jetson Nano.
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.3:
-mkdir data/jetsonmkdir data/jetson
+mkdir data/jetson
 ./download_jetson_nano_trt.sh
 
 # 3) Run Docker container:
@@ -235,7 +235,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/rep
 
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.4
-mkdir data/jetsonmkdir data/jetson
+mkdir data/jetson
 ./download_jetson_tx2_trt.sh
 
 # Run Docker container:
