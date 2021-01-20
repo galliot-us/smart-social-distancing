@@ -222,11 +222,11 @@ Before running any of the images available in the Docker repository, you need to
 ###### Run on Jetson Nano
 * You need to have JetPack 4.3 installed on your Jetson Nano.
 ```bash
-# 1) Download TensorRT engine file built with JetPack 4.3:
+# Download TensorRT engine file built with JetPack 4.3:
 mkdir data/jetson
 ./download_jetson_nano_trt.sh
 
-# 3) Run Docker container:
+# Run Docker container:
 docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-jetson-nano.ini:/repo/config-jetson-nano.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
 ```
 
@@ -234,7 +234,7 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v $PWD/data:/rep
 * You need to have JetPack 4.4 installed on your Jetson TX2. If you are using Openpifpaf as a detector, skip the first step as the TensorRT engine will be generated automatically with calling the `generate_tensorrt.bash` script by detector.
 
 ```bash
-# 1) Download TensorRT engine file built with JetPack 4.4
+# Download TensorRT engine file built with JetPack 4.4
 mkdir data/jetson
 ./download_jetson_tx2_trt.sh
 
