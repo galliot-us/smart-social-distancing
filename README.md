@@ -315,7 +315,7 @@ You may hardcode a value rather than using the `timezone.sh` script, such as `US
 
 Please note that the bash script may require permissions to execute (run `chmod +x timezone.sh`)
 
-If you are running the processor directly from the Docker Hub repository remember to copy/paste the script in the execution folder before adding the flag ``` -e TZ=`./timezone.sh` ```.
+If you are running the processor directly from the Docker Hub repository, remember to copy/paste the script in the execution folder before adding the flag ``` -e TZ=`./timezone.sh` ```.
 
 #### Persisting changes
 
