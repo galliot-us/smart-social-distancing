@@ -86,8 +86,8 @@ Make sure you have `Docker` installed on your device by following [these instruc
 The command that you need to execute will depend on the chosen device because each one has an independent Dockerfile.
 
 There are two alternatives to run the processor in your device:
-  1. Using `git` and building yourself the docker image.
-  2. Pulling the image (already built) from [neuralet Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing).
+  1. Using `git` and building the docker image yourself.
+  2. Pulling the (already built) image from [Neuralet's Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing).
 
 ##### Running the processor building the image
 
