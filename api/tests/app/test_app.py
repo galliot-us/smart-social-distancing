@@ -2,8 +2,8 @@ import pytest
 
 from api.models.app import AppDTO
 from api.tests.utils.common_functions import create_app_config, camel_case_to_snake_case_dict, get_app_from_config_file
-# The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
-# not recognized them.
+# The line below is absolutely necessary. Fixtures are passed as arguments to test functions.
+# This is why the IDE cannot recognize them.
 from api.tests.utils.fixtures_tests import config_rollback, app_config
 
 
@@ -78,15 +78,14 @@ class TestClassUpdateAppConfig:
                                                            correct_type):
         """
         It is important to mention, the fact that if pydantic expects a string, it will try to
-        cast what was sent, so if we send a bool or an integer to a string field, pydantic will work:
+        cast what was sent, so if we send a bool or an integer to a string field, the field will be valid:
           Example:
-              a = bool or integer
-              str(a)
+              a = bool or integer -> str(a)
           Pydantic will accept it and PUT request will work.
 
-        Idem when we send a bool, and an integer is expected.
-            int(False) = 0
-            int(True) = 1
+        Same happens when we send bool, and an integer is expected.
+            int(False) -> 0
+            int(True) -> 1
         """
         client, config_sample_path = config_rollback
 
@@ -121,6 +120,7 @@ class TestClassUpdateAppConfig:
     def test_try_change_app_config_non_existence_key(self, config_rollback):
         client, config_sample_path = config_rollback
 
+        # Extra keys are ignored
         body = {
             "invalid_1": "example_1",
             "invalid_2": "example_2",

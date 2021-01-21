@@ -4,7 +4,6 @@ import os
 
 from fastapi.testclient import TestClient
 
-# from api.tests.utils.common_variables import default
 from libs.config_engine import ConfigEngine
 from api.settings import Settings
 from api.tests.utils.common_functions import create_app_config
@@ -19,8 +18,7 @@ def config_rollback():
     config = ConfigEngine(config_sample_path_to_modify)
     Settings(config=config)
 
-    # Here, to import ProcessorAPI successfully, "Settings" must be previously initialized with a config, that is why
-    # import order matters
+    # Import ProcessorAPI after Settings has been initialized with a config.
     from api.processor_api import ProcessorAPI
 
     app_instance = ProcessorAPI()

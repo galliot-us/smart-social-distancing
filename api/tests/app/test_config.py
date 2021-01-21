@@ -1,8 +1,8 @@
 import pytest
 
 from api.tests.utils.common_functions import get_config_file_json, app_config_file_multi_type_json_to_string_json
-# The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
-# not recognized them.
+# The line below is absolutely necessary. Fixtures are passed as arguments to test functions.
+# This is why the IDE cannot recognize them.
 from api.tests.utils.fixtures_tests import config_rollback, app_config
 
 
@@ -10,8 +10,6 @@ def expected_response_update_report_info(config_sample_path):
     app_config = get_config_file_json(config_sample_path)
     expected_response = app_config_file_multi_type_json_to_string_json(app_config)
 
-    # It is weird that this change does not appear in response.json()
-    # Because if request was successfully, the PUT request will change the flag "has_been_configured"
     expected_response['app']['has_been_configured'] = 'False'
     return expected_response
 
