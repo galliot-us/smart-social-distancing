@@ -158,7 +158,7 @@ def get_first_unused_id(cameras_ids):
     for i in range(0, ids_numbers[len(ids_numbers)-1]+1):
         if ids_numbers[i] != i:
             return i
-    return ids_numbers[len(ids_numbers)-1] + 1
+    return ids_numbers[-1] + 1
 
 
 @cameras_router.post("", response_model=CameraDTO, status_code=status.HTTP_201_CREATED)
