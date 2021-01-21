@@ -2,6 +2,8 @@ import base64
 import cv2 as cv
 import logging
 import os
+from pathlib import Path
+import shutil
 
 from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
@@ -161,7 +163,11 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
     success = update_config(config_dict, reboot_processor)
     if not success:
         return handle_response(camera_dict, success, status.HTTP_201_CREATED)
-    return next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_dict["Id"]), None)
+
+    camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), new_camera.id)
+    Path(camera_screenshot_directory).mkdir(parents=True, exist_ok=True)
+
+    return next((camera for camera in get_cameras() if camera["id"] == camera_dict["Id"]), None)
 
 
 @cameras_router.put("/{camera_id}", response_model=CameraDTO)
@@ -191,6 +197,11 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     config_dict.pop(f"Source_{index}")
     config_dict = reestructure_cameras((config_dict))
     success = update_config(config_dict, reboot_processor)
+
+    # Deletes the camera screenshots directory and all its content.
+    camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), camera_id)
+    shutil.rmtree(camera_screenshot_directory)
+
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 
 

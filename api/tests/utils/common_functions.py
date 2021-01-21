@@ -13,6 +13,9 @@ def get_config_file_json_strings(config_sample_path, decamelize=False):
         config_sample_json[section] = config_sample.get_section_dict(section)
 
     if decamelize:
+        """
+        It is strange how humps.decamelize works, beacuse "Source_1" turns into "source__1". To take into account. 
+        """
         config_sample_json = humps.decamelize(config_sample_json)
 
     return config_sample_json
@@ -31,8 +34,8 @@ def json_string_to_json_multi_type_config_file(config_sample_json):
     return config_sample_json
 
 
-def get_config_file_json(config_sample_path):
-    config_sample_json = get_config_file_json_strings(config_sample_path, decamelize=True)
+def get_config_file_json(config_sample_path, decamelize=True):
+    config_sample_json = get_config_file_json_strings(config_sample_path, decamelize=decamelize)
     config_sample_json = json_string_to_json_multi_type_config_file(config_sample_json)
     return config_sample_json
 # Functions to get values from config file (.ini) -- end
@@ -138,3 +141,23 @@ def camel_case_to_snake_case_dict(dictionary):
         del di["dashboard_u_r_l"]
 
     return di
+
+"""
+def camera_example():
+    example = {
+        "violation_threshold": 100,
+        "notify_every_minutes": 15,
+        "emails": "john@email.com,doe@email.com",
+        "enable_slack_notifications": False,
+        "daily_report": True,
+        "daily_report_time": "06:00",
+        "id": '49',
+        "name": "Kitchen",
+        "video_path": "/repo/data/softbio_vid.mp4",
+        "tags": "kitchen,living_room",
+        "dist_method": "CenterPointsDistance",
+        "live_feed_enabled": True
+    }
+    camera_sample = example
+    return camera_sample
+"""
