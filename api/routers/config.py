@@ -64,9 +64,9 @@ def map_config(config, options):
 
 
 def processor_info(config):
-    has_been_configured = bool(config["App"]["HasBeenConfigured"])
-    device = config["Detector"]["Device"]
-    if config["Detector"]["Name"] == "openvino":
+    has_been_configured = config.get_boolean("App", "HasBeenConfigured")
+    device = config.get_section_dict("Detector")["Device"]
+    if config.get_section_dict("Detector")["Name"] == "openvino":
         device += "-openvino"
     return {
         "version": PROCESSOR_VERSION,
@@ -101,7 +101,7 @@ async def get_processor_info():
     """
     Returns basic info regarding this processor
     """
-    return processor_info(extract_config())
+    return processor_info(get_config())
 
 
 @config_router.get("/global_report", response_model=GlobalReportingEmailsInfo)
