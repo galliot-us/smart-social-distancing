@@ -14,7 +14,7 @@ def get_config_file_json_strings(config_sample_path, decamelize=False):
 
     if decamelize:
         """
-        It is strange how humps.decamelize works, beacuse "Source_1" turns into "source__1". To take into account. 
+        It is strange how humps.decamelize works, beacuse "Source_1" turns into "source__1". 
         """
         config_sample_json = humps.decamelize(config_sample_json)
 
@@ -133,7 +133,7 @@ def create_app_config(key_value_dict=None):
 def camel_case_to_snake_case_dict(dictionary):
     di = {}
     for key, value in dictionary.items():
-        camel_key = re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower()
+        camel_key = re.sub(r"(?<!^)(?=[A-Z])", "_", key).lower()
         di[camel_key] = value
 
     if "dashboardURL" in dictionary.keys():

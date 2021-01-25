@@ -10,12 +10,12 @@ def expected_response_update_report_info(config_sample_path):
     app_config = get_config_file_json(config_sample_path)
     expected_response = app_config_file_multi_type_json_to_string_json(app_config)
 
-    expected_response['app']['has_been_configured'] = 'False'
+    expected_response["app"]["has_been_configured"] = "False"
     return expected_response
 
 
 def body_without_app_field(client):
-    response_get_config = client.get('/config')
+    response_get_config = client.get("/config")
     body = response_get_config.json()
     del body["app"]
     return body
@@ -29,7 +29,7 @@ class TestClassGetProcessorInfo:
         """I dont get why has been configured is True"""
         client, config_sample_path = config_rollback
 
-        response = client.get('/config/info')
+        response = client.get("/config/info")
 
         # Expected response
         config = get_config_file_json(config_sample_path)
@@ -59,7 +59,7 @@ class TestClassGetConfigFile:
     def test_get_config_file(self, config_rollback):
         client, config_sample_path = config_rollback
 
-        response = client.get('/config')
+        response = client.get("/config")
 
         assert response.status_code == 200
 
@@ -71,7 +71,7 @@ class TestClassGetReportInfo:
     def test_get_global_report(self, config_rollback):
         client, config_sample_path = config_rollback
 
-        response = client.get('/config/global_report')
+        response = client.get("/config/global_report")
 
         config = get_config_file_json(config_sample_path)
         app_config = config["app"]
@@ -93,9 +93,9 @@ class TestClassUpdateConfigFile:
     def test_update_config_file_properly(self, config_rollback):
         client, config_sample_path = config_rollback
 
-        response_get_config = client.get('/config')
+        response_get_config = client.get("/config")
 
-        response = client.put('/config', json=response_get_config.json())
+        response = client.put("/config", json=response_get_config.json())
 
         assert response.status_code == 200
 
@@ -105,10 +105,10 @@ class TestClassUpdateConfigFile:
 
         body = body_without_app_field(client)
 
-        response = client.put('/config', json=body)
+        response = client.put("/config", json=body)
 
         assert response.status_code == 400
-        assert response.json()['detail'][0]['type'] == 'value_error.missing'
+        assert response.json()["detail"][0]["type"] == "value_error.missing"
 
     def test_try_update_config_file_bad_request_II(self, config_rollback):
         """App filed with a string instead of a dict"""
@@ -117,10 +117,10 @@ class TestClassUpdateConfigFile:
         body = body_without_app_field(client)
         body["app"] = "Here should be a dict instead of string"
 
-        response = client.put('/config', json=body)
+        response = client.put("/config", json=body)
 
         assert response.status_code == 400
-        assert response.json()['detail'][0]['type'] == 'type_error.dict'
+        assert response.json()["detail"][0]["type"] == "type_error.dict"
 
 
 # pytest -v api/tests/app/test_config.py::TestClassUpdateReportInfo
@@ -137,16 +137,16 @@ class TestClassUpdateReportInfo:
             "weekly": True
         }
 
-        response = client.put('/config/global_report', json=body)
+        response = client.put("/config/global_report", json=body)
 
         expected_response = expected_response_update_report_info(config_sample_path)
 
         assert response.status_code == 200
         assert response.json() == expected_response
-        assert expected_response['app']['global_reporting_emails'] == "john@email.com,doe@email.com"
-        assert expected_response['app']['global_report_time'] == "0:00"
-        assert expected_response['app']['daily_global_report'] == "True"
-        assert expected_response['app']['weekly_global_report'] == "True"
+        assert expected_response["app"]["global_reporting_emails"] == "john@email.com,doe@email.com"
+        assert expected_response["app"]["global_report_time"] == "0:00"
+        assert expected_response["app"]["daily_global_report"] == "True"
+        assert expected_response["app"]["weekly_global_report"] == "True"
 
     def test_try_update_report_info_invalid_keys(self, config_rollback):
         """Here, as no valid key was sent, PUT request was processed with the example values from models/config
@@ -159,7 +159,7 @@ class TestClassUpdateReportInfo:
             "invalid_3": "example_3"
         }
 
-        response = client.put('/config/global_report', json=body)
+        response = client.put("/config/global_report", json=body)
 
         expected_response = expected_response_update_report_info(config_sample_path)
 
@@ -173,7 +173,7 @@ class TestClassUpdateReportInfo:
 
         body = {}
 
-        response = client.put('/config/global_report', json=body)
+        response = client.put("/config/global_report", json=body)
 
         expected_response = expected_response_update_report_info(config_sample_path)
 
@@ -190,10 +190,10 @@ class TestClassUpdateReportInfo:
             "weekly": 40
         }
 
-        response = client.put('/config/global_report', json=body)
+        response = client.put("/config/global_report", json=body)
 
         assert response.status_code == 400
-        assert response.json()['detail'][0]['type'] == 'type_error.bool'
+        assert response.json()["detail"][0]["type"] == "type_error.bool"
 
     def test_try_update_report_info_wrong_variable_type_II(self, config_rollback):
         client, config_sample_path = config_rollback
@@ -205,13 +205,13 @@ class TestClassUpdateReportInfo:
             "weekly": True
         }
 
-        response = client.put('/config/global_report', json=body)
+        response = client.put("/config/global_report", json=body)
 
         expected_response = expected_response_update_report_info(config_sample_path)
 
         assert response.status_code == 200
         assert response.json() == expected_response
-        assert expected_response['app']['global_reporting_emails'] == "40"
-        assert expected_response['app']['global_report_time'] == "True"
-        assert expected_response['app']['daily_global_report'] == "False"
-        assert expected_response['app']['weekly_global_report'] == "True"
+        assert expected_response["app"]["global_reporting_emails"] == "40"
+        assert expected_response["app"]["global_report_time"] == "True"
+        assert expected_response["app"]["daily_global_report"] == "False"
+        assert expected_response["app"]["weekly_global_report"] == "True"
