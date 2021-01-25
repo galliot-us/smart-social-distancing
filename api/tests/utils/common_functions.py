@@ -141,23 +141,3 @@ def camel_case_to_snake_case_dict(dictionary):
         del di["dashboard_u_r_l"]
 
     return di
-
-"""
-def camera_example():
-    example = {
-        "violation_threshold": 100,
-        "notify_every_minutes": 15,
-        "emails": "john@email.com,doe@email.com",
-        "enable_slack_notifications": False,
-        "daily_report": True,
-        "daily_report_time": "06:00",
-        "id": '49',
-        "name": "Kitchen",
-        "video_path": "/repo/data/softbio_vid.mp4",
-        "tags": "kitchen,living_room",
-        "dist_method": "CenterPointsDistance",
-        "live_feed_enabled": True
-    }
-    camera_sample = example
-    return camera_sample
-"""
