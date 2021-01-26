@@ -56,8 +56,8 @@ def get_camera_from_config_file(camera_id, config_sample_path):
     return None
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassListCameras
-class TestClassListCameras:
+# pytest -v api/tests/app/test_camera.py::TestsListCameras
+class TestsListCameras:
     """List Cameras, GET /cameras"""
 
     def test_get_all_cameras_no_image(self, config_rollback):
@@ -81,8 +81,8 @@ class TestClassListCameras:
         assert response.json() == list_of_cameras
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassCreateCamera
-class TestClassCreateCamera:
+# pytest -v api/tests/app/test_camera.py::TestsCreateCamera
+class TestsCreateCamera:
     """Create Camera, POST /cameras"""
 
     def test_create_one_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
@@ -137,8 +137,8 @@ class TestClassCreateCamera:
         assert response.status_code == 201
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassGetCamera
-class TestClassGetCamera:
+# pytest -v api/tests/app/test_camera.py::TestsGetCamera
+class TestsGetCamera:
     """ Get Camera, GET /cameras/{camera_id} """
 
     def test_get_one_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
@@ -163,8 +163,8 @@ class TestClassGetCamera:
         assert response.status_code == 404
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassEditCamera
-class TestClassEditCamera:
+# pytest -v api/tests/app/test_camera.py::TestsEditCamera
+class TestsEditCamera:
     """ Edit Camera, PUT /cameras/{camera_id} """
 
     def test_edit_a_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
@@ -346,8 +346,8 @@ class TestClassEditCamera:
                 assert response.json()[key] == body[key]
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassDeleteCamera
-class TestClassDeleteCamera:
+# pytest -v api/tests/app/test_camera.py::TestsDeleteCamera
+class TestsDeleteCamera:
     """ Delete Camera, DELETE /cameras/{camera_id} """
 
     def test_delete_a_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
@@ -409,8 +409,8 @@ def get_string_bytes_from_image(camera_id):
         return base64.b64encode(file.read()).decode("utf-8")
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassGetCameraImage
-class TestClassGetCameraImage:
+# pytest -v api/tests/app/test_camera.py::TestsGetCameraImage
+class TestsGetCameraImage:
     """ Get Camera Image, GET /cameras/{camera_id}/image """
 
     def test_get_camera_image_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
@@ -442,11 +442,11 @@ def get_h_inverse(camera_id):
     return h_inverse
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassConfigCalibratedDistance
-class TestClassConfigCalibratedDistance:
+# pytest -v api/tests/app/test_camera.py::TestsConfigCalibratedDistance
+class TestsConfigCalibratedDistance:
     """ Config Calibrated Distance, POST /cameras/{camera_id}/homography_matrix """
 
-    # pytest -v api/tests/app/test_camera.py::TestClassConfigCalibratedDistance::test_set_coordinates_properly
+    # pytest -v api/tests/app/test_camera.py::TestsConfigCalibratedDistance::test_set_coordinates_properly
     def test_set_coordinates_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder, h_inverse_matrix, pts_destination, rollback_homography_matrix_folder):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
@@ -458,7 +458,7 @@ class TestClassConfigCalibratedDistance:
         assert response.status_code == 204
         assert get_h_inverse(camera_id) == h_inverse_matrix["h_inverse.txt"]
 
-    # pytest -v api/tests/app/test_camera.py::TestClassConfigCalibratedDistance::test_try_set_coordinates_0_arrays
+    # pytest -v api/tests/app/test_camera.py::TestsConfigCalibratedDistance::test_try_set_coordinates_0_arrays
     def test_try_set_coordinates_0_arrays(self, config_rollback, camera_sample, rollback_screenshot_camera_folder, rollback_homography_matrix_folder):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
@@ -528,13 +528,12 @@ class TestClassConfigCalibratedDistance:
                                    "body": {"pts_destination": [None]}}
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassGetCameraCalibrationImage
-class TestClassGetCameraCalibrationImage:
+# pytest -v api/tests/app/test_camera.py::TestsGetCameraCalibrationImage
+class TestsGetCameraCalibrationImage:
     """ Get Camera Calibration Image, GET /cameras/{camera_id}/calibration_image """
 
     def test_get_camera_calibration_image_properly(self, config_rollback, camera_sample,
                                                    rollback_screenshot_camera_folder):
-        """ TODO: Maybe, here we could go deeper into the response.json() """
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -553,8 +552,8 @@ class TestClassGetCameraCalibrationImage:
         assert response.json() == {"detail": f"The camera: {camera_id} does not exist"}
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassGetVideoLiveFeedEnabled
-class TestClassGetVideoLiveFeedEnabled:
+# pytest -v api/tests/app/test_camera.py::TestsGetVideoLiveFeedEnabled
+class TestsGetVideoLiveFeedEnabled:
     """ Get Camera Calibration Image, GET /cameras/{camera_id}/video_live_feed_enabled """
 
     def test_get_camera_calibration_image_properly(self, config_rollback, camera_sample,
@@ -581,8 +580,8 @@ class TestClassGetVideoLiveFeedEnabled:
         assert response.json() == {"detail": f"The camera: {camera_id} does not exist"}
 
 
-# pytest -v api/tests/app/test_camera.py::TestClassEnableVideoLiveFeed
-class TestClassEnableVideoLiveFeed:
+# pytest -v api/tests/app/test_camera.py::TestsEnableVideoLiveFeed
+class TestsEnableVideoLiveFeed:
     """ Enable Video Live Feed, PUT /cameras/{camera_id}/enable_video_live_feed """
 
     def test_enable_video_live_feed_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):

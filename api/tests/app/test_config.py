@@ -21,8 +21,8 @@ def body_without_app_field(client):
     return body
 
 
-# pytest -v api/tests/app/test_config.py::TestClassGetProcessorInfo
-class TestClassGetProcessorInfo:
+# pytest -v api/tests/app/test_config.py::TestsGetProcessorInfo
+class TestsGetProcessorInfo:
     """Get Config File, GET /config/info"""
 
     def test_get_processor_info(self, config_rollback):
@@ -52,8 +52,8 @@ class TestClassGetProcessorInfo:
         assert response.json() == expected_response
 
 
-# pytest -v api/tests/app/test_config.py::TestClassGetConfigFile
-class TestClassGetConfigFile:
+# pytest -v api/tests/app/test_config.py::TestsGetConfigFile
+class TestsGetConfigFile:
     """Get Config File, GET /config"""
 
     def test_get_config_file(self, config_rollback):
@@ -64,8 +64,8 @@ class TestClassGetConfigFile:
         assert response.status_code == 200
 
 
-# pytest -v api/tests/app/test_config.py::TestClassGetReportInfo
-class TestClassGetReportInfo:
+# pytest -v api/tests/app/test_config.py::TestsGetReportInfo
+class TestsGetReportInfo:
     """Get Report Info, GET /config/global_report"""
 
     def test_get_global_report(self, config_rollback):
@@ -86,8 +86,8 @@ class TestClassGetReportInfo:
         assert response.json() == expected_response
 
 
-# pytest -v api/tests/app/test_config.py::TestClassUpdateConfigFile
-class TestClassUpdateConfigFile:
+# pytest -v api/tests/app/test_config.py::TestsUpdateConfigFile
+class TestsUpdateConfigFile:
     """Get Report Info, PUT /config"""
 
     def test_update_config_file_properly(self, config_rollback):
@@ -123,8 +123,8 @@ class TestClassUpdateConfigFile:
         assert response.json()["detail"][0]["type"] == "type_error.dict"
 
 
-# pytest -v api/tests/app/test_config.py::TestClassUpdateReportInfo
-class TestClassUpdateReportInfo:
+# pytest -v api/tests/app/test_config.py::TestsUpdateReportInfo
+class TestsUpdateReportInfo:
     """Update Report Info, PUT /config/global_report"""
 
     def test_update_report_info_properly(self, config_rollback):
