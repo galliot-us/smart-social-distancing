@@ -11,18 +11,18 @@ def expected_response_default():
     """When no valid key is provided to the PUT request, config is updated with default values stored in AppDTO"""
     expected_response = AppDTO().__dict__
     expected_response = camel_case_to_snake_case_dict(expected_response)
-    expected_response['has_been_configured'] = True
+    expected_response["has_been_configured"] = True
     return expected_response
 
 
-# pytest -v api/tests/app/test_app.py::TestClassGetAppConfig
-class TestClassGetAppConfig:
+# pytest -v api/tests/app/test_app.py::TestsGetAppConfig
+class TestsGetAppConfig:
     """Get App Config, GET /app"""
 
     def test_get_app_config(self, config_rollback):
         client, config_sample_path = config_rollback
 
-        response = client.get('/app')
+        response = client.get("/app")
 
         expected_response = get_app_from_config_file(config_sample_path)
 
@@ -30,22 +30,22 @@ class TestClassGetAppConfig:
         assert response.json() == expected_response
 
 
-# pytest -v api/tests/app/test_app.py::TestClassUpdateAppConfig
-class TestClassUpdateAppConfig:
+# pytest -v api/tests/app/test_app.py::TestsUpdateAppConfig
+class TestsUpdateAppConfig:
     """Update App Config, PUT /app"""
 
-    # pytest -v api/tests/app/test_app.py::TestClassUpdateAppConfig::test_change_app_config_properly
+    # pytest -v api/tests/app/test_app.py::TestsUpdateAppConfig::test_change_app_config_properly
     def test_change_app_config_properly(self, config_rollback, app_config):
         client, config_sample_path = config_rollback
 
         body = app_config
-        response = client.put('/app', json=body)
+        response = client.put("/app", json=body)
 
         expected_response = get_app_from_config_file(config_sample_path)
         assert response.status_code == 200
         assert response.json() == expected_response
 
-    # pytest -v api/tests/app/test_app.py::TestClassUpdateAppConfig::test_try_change_app_config_wrong_type_variable_all
+    # pytest -v api/tests/app/test_app.py::TestsUpdateAppConfig::test_try_change_app_config_wrong_type_variable_all
     @pytest.mark.parametrize("key_value_dict, correct_type", [
         ({"has_been_configured": "Here_must_be_a_bool_variable"}, "bool"),
         ({"has_been_configured": 40}, "bool"),
@@ -91,7 +91,7 @@ class TestClassUpdateAppConfig:
 
         body = create_app_config(key_value_dict)
 
-        response = client.put('/app', json=body)
+        response = client.put("/app", json=body)
 
         if correct_type == "string":
             assert response.status_code == 200
@@ -105,18 +105,18 @@ class TestClassUpdateAppConfig:
             for key, value in key_value_dict.items():
                 if isinstance(key_value_dict[key], str):
                     assert response.status_code == 400
-                    assert response.json()['detail'][0]['type'] == 'type_error.' + correct_type
+                    assert response.json()["detail"][0]["type"] == "type_error." + correct_type
                 else:
                     assert response.status_code == 200
                     expected_response = get_app_from_config_file(config_sample_path)
                     assert response.json() == expected_response
         elif correct_type == "bool":
             assert response.status_code == 400
-            assert response.json()['detail'][0]['type'] == 'type_error.' + "bool"
+            assert response.json()["detail"][0]["type"] == "type_error." + "bool"
         else:
             assert response.status_code == 400
 
-    # pytest -v api/tests/app/test_app.py::TestClassUpdateAppConfig::test_try_change_app_config_non_existence_key
+    # pytest -v api/tests/app/test_app.py::TestsUpdateAppConfig::test_try_change_app_config_non_existence_key
     def test_try_change_app_config_non_existence_key(self, config_rollback):
         client, config_sample_path = config_rollback
 
@@ -126,7 +126,7 @@ class TestClassUpdateAppConfig:
             "invalid_2": "example_2",
             "invalid_3": "example_3"
         }
-        response = client.put('/app', json=body)
+        response = client.put("/app", json=body)
 
         expected_response = get_app_from_config_file(config_sample_path)
         default_response = expected_response_default()
@@ -135,12 +135,12 @@ class TestClassUpdateAppConfig:
         assert response.json() == expected_response
         assert response.json() == default_response
 
-    # pytest -v api/tests/app/test_app.py::TestClassUpdateAppConfig::test_try_change_app_config_empty_json
+    # pytest -v api/tests/app/test_app.py::TestsUpdateAppConfig::test_try_change_app_config_empty_json
     def test_try_change_app_config_empty_json(self, config_rollback):
         client, config_sample_path = config_rollback
 
         body = {}
-        response = client.put('/app', json=body)
+        response = client.put("/app", json=body)
 
         expected_response = get_app_from_config_file(config_sample_path)
         default_response = expected_response_default()
