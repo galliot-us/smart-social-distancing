@@ -2,6 +2,7 @@ import base64
 import cv2 as cv
 import logging
 import os
+import re
 
 from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
@@ -143,6 +144,23 @@ async def get_camera(camera_id: str):
     return camera
 
 
+def get_first_unused_id(cameras_ids):
+    if not cameras_ids:
+        return 0
+
+    is_a_number = re.compile("^[0-9]+$")
+    ids_numbers = [int(value) for value in cameras_ids if is_a_number.match(value)]
+
+    if not ids_numbers:
+        return 0
+
+    ids_numbers.sort()
+    for i in range(0, ids_numbers[len(ids_numbers)-1]+1):
+        if ids_numbers[i] != i:
+            return i
+    return ids_numbers[-1] + 1
+
+
 @cameras_router.post("", response_model=CameraDTO, status_code=status.HTTP_201_CREATED)
 async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] = True):
     """
@@ -151,7 +169,11 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
     config_dict = extract_config()
     cameras_name = [x for x in config_dict.keys() if x.startswith("Source_")]
     cameras = [map_camera(x, config_dict) for x in cameras_name]
-    if new_camera.id in [camera["id"] for camera in cameras]:
+
+    if new_camera.id is None:
+        ids = [camera["id"] for camera in cameras]
+        new_camera.id = get_first_unused_id(ids)
+    elif new_camera.id in [camera["id"] for camera in cameras]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Camera already exists", error_type="config duplicated camera")
