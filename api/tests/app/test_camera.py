@@ -23,8 +23,6 @@ def create_n_cameras(client, camera_base, number_of_cameras, enable=False):
     for i in range(number_of_cameras):
         camera = copy.deepcopy(camera_base)
         del camera['id']
-        # camera['id'] = None
-        # camera['id'] = i+60
         camera["live_feed_enabled"] = enable
         created = client.post("/cameras", json=camera)
         list_of_created_cameras.append(created)
