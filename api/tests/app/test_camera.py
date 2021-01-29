@@ -3,6 +3,7 @@ import os
 import base64
 import copy
 import numpy
+import shutil
 
 from api.tests.utils.common_functions import get_section_from_config_file, get_config_file_json
 
@@ -17,7 +18,17 @@ def create_a_camera(client, camera):
     return client.post("/cameras", json=camera)
 
 
-def create_2_cameras(client, camera_base, enable=False):
+def create_n_cameras(client, camera_base, number_of_cameras, enable=False):
+    list_of_created_cameras = []
+    for i in range(number_of_cameras):
+        camera = copy.deepcopy(camera_base)
+        del camera['id']
+        # camera['id'] = None
+        # camera['id'] = i+60
+        camera["live_feed_enabled"] = enable
+        created = client.post("/cameras", json=camera)
+        list_of_created_cameras.append(created)
+    """
     camera_1 = copy.deepcopy(camera_base)
     camera_2 = copy.deepcopy(camera_base)
     camera_1["id"] = "321"
@@ -27,6 +38,8 @@ def create_2_cameras(client, camera_base, enable=False):
     client.post("/cameras", json=camera_1)
     client.post("/cameras", json=camera_2)
     return camera_1, camera_2
+    """
+    return list_of_created_cameras
 
 
 def get_all_cameras(config_sample_path, with_image=False):
@@ -304,12 +317,10 @@ class TestsEditCamera:
         response = client.put(f"cameras/{camera_id}", json=body)
 
         """
-        Fields required: id, name, video_path
+        Fields required: Name, video_path. Id is not required anymore.
         """
         assert response.status_code == 400
-        assert response.json() == {"detail": [{"loc": ["body", "id"], "msg": "field required", "type": "value_error"
-                                                                                                       ".missing"},
-                                              {"loc": ["body", "name"], "msg": "field required",
+        assert response.json() == {"detail": [{"loc": ["body", "name"], "msg": "field required",
                                                "type": "value_error.missing"}, {"loc": ["body", "video_path"],
                                                                                 "msg": "field required",
                                                                                 "type": "value_error.missing"}],
@@ -581,6 +592,14 @@ class TestsGetVideoLiveFeedEnabled:
 
 
 # pytest -v api/tests/app/test_camera.py::TestsEnableVideoLiveFeed
+def rollback_screenshot_cameras_list(cameras_list):
+    for camera in cameras_list:
+        # Deletes the camera screenshots directory and all its content.
+        camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), str(camera.json()["id"]))
+        if os.path.exists(camera_screenshot_directory):
+            shutil.rmtree(camera_screenshot_directory)
+
+
 class TestsEnableVideoLiveFeed:
     """ Enable Video Live Feed, PUT /cameras/{camera_id}/enable_video_live_feed """
 
@@ -606,38 +625,42 @@ class TestsEnableVideoLiveFeed:
         assert response.status_code == 404
         assert response.json() == {"detail": f"The camera: {camera_id} does not exist"}
 
-    def test_enable_one_video_live_feed_disable_the_rest(self, config_rollback, camera_sample,
-                                                         rollback_screenshot_camera_folder):
+    def test_enable_one_video_live_feed_disable_the_rest(self, config_rollback, camera_sample):
         client, config_sample_path = config_rollback
-        create_a_camera(client, camera_sample)
-        camera_1, camera_2 = create_2_cameras(client, camera_sample)
+        cameras_list = create_n_cameras(client, camera_sample, 3)
+        camera_1 = cameras_list[0].json()
+        camera_2 = cameras_list[1].json()
+        camera_3 = cameras_list[2].json()
 
-        camera_id = camera_sample["id"]
+        camera_id = camera_1['id']
         response = client.put(f"/cameras/{camera_id}/enable_video_live_feed?disable_other_cameras=true")
 
         camera_from_config_file_0 = get_camera_from_config_file(camera_id, config_sample_path)
-        camera_from_config_file_1 = get_camera_from_config_file(camera_1["id"], config_sample_path)
         camera_from_config_file_2 = get_camera_from_config_file(camera_2["id"], config_sample_path)
+        camera_from_config_file_1 = get_camera_from_config_file(camera_3["id"], config_sample_path)
 
         assert response.status_code == 204
         assert camera_from_config_file_0["live_feed_enabled"] is True
         assert camera_from_config_file_1["live_feed_enabled"] is False
         assert camera_from_config_file_2["live_feed_enabled"] is False
+        rollback_screenshot_cameras_list(cameras_list)
 
-    def test_enable_video_feed_disable_other_cameras_false(self, config_rollback, camera_sample,
-                                                      rollback_screenshot_camera_folder):
+    def test_enable_video_feed_disable_other_cameras_false(self, config_rollback, camera_sample):
         client, config_sample_path = config_rollback
-        create_a_camera(client, camera_sample)
-        camera_1, camera_2 = create_2_cameras(client, camera_sample, True)
+        cameras_list = create_n_cameras(client, camera_sample, 3, enable=True)
+        camera_1 = cameras_list[0].json()
+        camera_2 = cameras_list[1].json()
+        camera_3 = cameras_list[2].json()
 
-        camera_id = camera_sample["id"]
+        camera_id = camera_1['id']
         response = client.put(f"/cameras/{camera_id}/enable_video_live_feed?disable_other_cameras=false")
 
         camera_from_config_file_0 = get_camera_from_config_file(camera_id, config_sample_path)
-        camera_from_config_file_1 = get_camera_from_config_file(camera_1["id"], config_sample_path)
-        camera_from_config_file_2 = get_camera_from_config_file(camera_2["id"], config_sample_path)
+        camera_from_config_file_1 = get_camera_from_config_file(camera_2["id"], config_sample_path)
+        camera_from_config_file_2 = get_camera_from_config_file(camera_3["id"], config_sample_path)
 
         assert response.status_code == 204
         assert camera_from_config_file_0["live_feed_enabled"] is True
         assert camera_from_config_file_1["live_feed_enabled"] is True
         assert camera_from_config_file_2["live_feed_enabled"] is True
+        rollback_screenshot_cameras_list(cameras_list)
