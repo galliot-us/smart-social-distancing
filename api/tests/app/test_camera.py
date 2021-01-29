@@ -26,17 +26,6 @@ def create_n_cameras(client, camera_base, number_of_cameras, enable=False):
         camera["live_feed_enabled"] = enable
         created = client.post("/cameras", json=camera)
         list_of_created_cameras.append(created)
-    """
-    camera_1 = copy.deepcopy(camera_base)
-    camera_2 = copy.deepcopy(camera_base)
-    camera_1["id"] = "321"
-    camera_2["id"] = "123"
-    camera_1["live_feed_enabled"] = enable
-    camera_2["live_feed_enabled"] = enable
-    client.post("/cameras", json=camera_1)
-    client.post("/cameras", json=camera_2)
-    return camera_1, camera_2
-    """
     return list_of_created_cameras
 
 
