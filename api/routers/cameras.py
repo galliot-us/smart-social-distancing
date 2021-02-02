@@ -297,3 +297,24 @@ async def enable_video_live_feed(camera_id: str, disable_other_cameras: Optional
     config_dict[f"Source_{index}"]["LiveFeedEnabled"] = "True"
     success = update_config(config_dict, True)
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
+
+
+@cameras_router.get("/{camera_id}/boolean_mask")
+async def get_boolean_mask(camera_id: str, body: ConfigHomographyMatrix, reboot_processor: Optional[bool] = True):
+    """
+
+    """
+
+
+@cameras_router.put("/{camera_id}/boolean_mask")
+async def add_or_edit_boolean_mask(camera_id: str, body: ConfigHomographyMatrix, reboot_processor: Optional[bool] = True):
+    """
+
+    """
+
+
+@cameras_router.delete("/{camera_id}/boolean_mask", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_boolean_mask(camera_id: str, body: ConfigHomographyMatrix, reboot_processor: Optional[bool] = True):
+    """
+
+    """

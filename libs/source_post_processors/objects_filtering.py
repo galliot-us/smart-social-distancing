@@ -1,10 +1,14 @@
 import numpy as np
 
+from pathlib import Path
+
+from ..utils.loggers import get_source_log_directory
 
 class ObjectsFilteringPostProcessor:
 
     def __init__(self, config, source: str, post_processor: str):
         self.config = config
+        self.source = source
         self.overlap_threshold = float(
             self.config.get_section_dict(post_processor)["NMSThreshold"]
         )
@@ -80,9 +84,47 @@ class ObjectsFilteringPostProcessor:
         updated_object_list = [j for i, j in enumerate(object_list) if i in pick]
         return updated_object_list
 
+    @staticmethod
+    def ignore_objects_outside_roi(config, source, objects_list):
+
+        """
+        If a Region of Interest is defined, filer boxes which middle bottom point lies outside the RoI.
+        params:
+            object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
+            "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
+            of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
+        returns:
+        object_list: input object list with only the objets that fall under the Region of Interest.
+        """
+
+        camera_id = config.get_section_dict(source)["Id"]
+        roi_file = f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi.csv"
+
+        # If no Region of Interest is defined, the object list is not modified.
+        if (not Path(roi_file).is_file()) or (Path(roi_file).stat().st_size == 0):
+            print('')
+        #     return objects_list
+
+        # roi_bool_mask = np.genfromtxt(roi_file, delimiter=',')
+        filtered_objects = []
+        for i in range(len(objects_list)):
+            corners = objects_list[i]["bbox"]
+            x1 = corners[0]
+            x2 = corners[2]
+            y1 = corners[1]
+            y2 = corners[3]
+
+            middle_bottom = ((x2-x1),  y2)
+            # if (objects_list[i]["centroid"][2] * objects_list[i]["centroid"][3]) > 0.25:
+            #     large_boxes.append(i)
+        # updated_object_list = [j for i, j in enumerate(objects_list) if i not in large_boxes]
+        return objects_list
+
+
     def filter_objects(self, objects_list):
         new_objects_list = self.ignore_large_boxes(objects_list)
         new_objects_list = self.non_max_suppression_fast(new_objects_list, self.overlap_threshold)
+        new_objects_list = self.ignore_objects_outside_roi(self.config, self.source, new_objects_list)
         return new_objects_list
 
     def process(self, cv_image, objects_list, post_processing_data):
