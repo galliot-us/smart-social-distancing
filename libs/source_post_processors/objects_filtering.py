@@ -12,6 +12,17 @@ class ObjectsFilteringPostProcessor:
         self.overlap_threshold = float(
             self.config.get_section_dict(post_processor)["NMSThreshold"]
         )
+        camera_id = config.get_section_dict(source)["Id"]
+        roi_file_path = f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi.csv"
+
+        # If no Region of Interest is defined, the object list is not modified.
+        if Path(roi_file_path).is_file() and Path(roi_file_path).stat().st_size != 0:
+            self.roi_bool_mask = np.genfromtxt(roi_file_path, delimiter=',', dtype=bool)
+            # TODO: Remove these prints
+            print(f"A mask is defined for cam {camera_id}")
+        else:
+            self.roi_bool_mask = None
+            print(f"A mask was not defined for cam {camera_id}")
 
     @staticmethod
     def ignore_large_boxes(object_list):
@@ -85,7 +96,27 @@ class ObjectsFilteringPostProcessor:
         return updated_object_list
 
     @staticmethod
-    def ignore_objects_outside_roi(config, source, objects_list):
+    def is_inside_roi(detected_object, roi_bool_mask):
+        """
+        An object is inside the RoI if its middle bottom point lies inside it.
+        params:
+            detected_object: a dictionary, that has attributes of a detected object such as "id",
+            "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and
+            "bbox" (a tuple of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
+
+            roi_bool_mask: a 2d ndarray containing boolean elements, with a True value inside the ROI.
+        returns:
+        True of False: Depending if the objects coodinates are inside the RoI
+        """
+        corners = detected_object["bbox"]
+        x1, x2 = corners[0], corners[2]
+        y1, y2 = corners[1], corners[3]
+        if roi_bool_mask[x1 + (x2-x1)][y2]:
+            return True
+        return False
+
+    @staticmethod
+    def ignore_objects_outside_roi(objects_list, roi_bool_mask):
 
         """
         If a Region of Interest is defined, filer boxes which middle bottom point lies outside the RoI.
@@ -93,38 +124,20 @@ class ObjectsFilteringPostProcessor:
             object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
             "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
             of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
+
+            roi_bool_mask: a 2d ndarray containing boolean elements, with a True value inside the ROI.
         returns:
         object_list: input object list with only the objets that fall under the Region of Interest.
         """
 
-        camera_id = config.get_section_dict(source)["Id"]
-        roi_file = f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi.csv"
-
-        # If no Region of Interest is defined, the object list is not modified.
-        if (not Path(roi_file).is_file()) or (Path(roi_file).stat().st_size == 0):
-            print('')
-        #     return objects_list
-
-        # roi_bool_mask = np.genfromtxt(roi_file, delimiter=',')
-        filtered_objects = []
-        for i in range(len(objects_list)):
-            corners = objects_list[i]["bbox"]
-            x1 = corners[0]
-            x2 = corners[2]
-            y1 = corners[1]
-            y2 = corners[3]
-
-            middle_bottom = ((x2-x1),  y2)
-            # if (objects_list[i]["centroid"][2] * objects_list[i]["centroid"][3]) > 0.25:
-            #     large_boxes.append(i)
-        # updated_object_list = [j for i, j in enumerate(objects_list) if i not in large_boxes]
-        return objects_list
+        return [obj for obj in objects_list if ObjectsFilteringPostProcessor.is_inside_roi(obj, roi_bool_mask)]
 
 
     def filter_objects(self, objects_list):
         new_objects_list = self.ignore_large_boxes(objects_list)
         new_objects_list = self.non_max_suppression_fast(new_objects_list, self.overlap_threshold)
-        new_objects_list = self.ignore_objects_outside_roi(self.config, self.source, new_objects_list)
+        if self.roi_bool_mask is not None:
+            new_objects_list = self.ignore_objects_outside_roi(new_objects_list, self.roi_bool_mask)
         return new_objects_list
 
     def process(self, cv_image, objects_list, post_processing_data):
