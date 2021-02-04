@@ -117,6 +117,7 @@ class ObjectsFilteringPostProcessor:
     def ignore_objects_outside_roi(objects_list, roi_contour):
 
         """
+        Inspired by https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion
         If a Region of Interest is defined, filer boxes which middle bottom point lies outside the RoI.
         params:
             object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
