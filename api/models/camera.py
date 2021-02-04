@@ -2,7 +2,7 @@ import numpy as np
 import cv2 as cv
 
 from pydantic import BaseModel, Field, validator
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from .base import EntityConfigDTO, NotificationConfig, SnakeModel
 
@@ -50,3 +50,14 @@ class ImageModel(BaseModel):
 
 class VideoLiveFeedModel(BaseModel):
     enabled: bool
+
+
+class ContourRoI(BaseModel):
+    contour_roi: List[Tuple[int, int]]
+
+    class Config:
+        schema_extra = {
+            'example': {
+                'contour_roi': [[88, 58], [90, 284], [279, 284], [281, 58]]
+            }
+        }

@@ -1,3 +1,5 @@
+import os
+import cv2 as cv
 import numpy as np
 
 from pathlib import Path
@@ -13,16 +15,8 @@ class ObjectsFilteringPostProcessor:
             self.config.get_section_dict(post_processor)["NMSThreshold"]
         )
         camera_id = config.get_section_dict(source)["Id"]
-        roi_file_path = f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi.csv"
-
-        # If no Region of Interest is defined, the object list is not modified.
-        if Path(roi_file_path).is_file() and Path(roi_file_path).stat().st_size != 0:
-            self.roi_bool_mask = np.genfromtxt(roi_file_path, delimiter=',', dtype=bool)
-            # TODO: Remove these prints
-            print(f"A mask is defined for cam {camera_id}")
-        else:
-            self.roi_bool_mask = None
-            print(f"A mask was not defined for cam {camera_id}")
+        roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, config)
+        self.roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(roi_file_path)
 
     @staticmethod
     def ignore_large_boxes(object_list):
@@ -49,9 +43,11 @@ class ObjectsFilteringPostProcessor:
         """
         omitting duplicated boxes by applying an auxilary non-maximum-suppression.
         params:
-        object_list: a list of dictionaries. each dictionary has attributes of a detected object such
-        "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
-        of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
+        object_list: a list of dictionaries. each dictionary has attributes of a detected object such "id",
+        "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box),
+        "bbox" (a tuple of the normalized (xmin,ymin,xmax,ymax) coordinate of the box),
+        "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and
+        "bboxReal" (a tuple of the (xmin,ymin,xmax,ymax) coordinate of the box)
 
         overlapThresh: threshold of minimum IoU of to detect two box as duplicated.
 
@@ -96,27 +92,29 @@ class ObjectsFilteringPostProcessor:
         return updated_object_list
 
     @staticmethod
-    def is_inside_roi(detected_object, roi_bool_mask):
+    def is_inside_roi(detected_object, roi_contour):
         """
         An object is inside the RoI if its middle bottom point lies inside it.
         params:
             detected_object: a dictionary, that has attributes of a detected object such as "id",
-            "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and
-            "bbox" (a tuple of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
+            "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box),
+            "bbox" (a tuple of the normalized (xmin,ymin,xmax,ymax) coordinate of the box),
+            "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and
+            "bboxReal" (a tuple of the (xmin,ymin,xmax,ymax) coordinate of the box)
 
-            roi_bool_mask: a 2d ndarray containing boolean elements, with a True value inside the ROI.
+            roi_contour: An array of duples that compose the contour of the RoI
         returns:
         True of False: Depending if the objects coodinates are inside the RoI
         """
-        corners = detected_object["bbox"]
-        x1, x2 = corners[0], corners[2]
-        y1, y2 = corners[1], corners[3]
-        if roi_bool_mask[x1 + (x2-x1)][y2]:
+        corners = detected_object["bboxReal"]
+        x1, x2 = int(corners[0]), int(corners[2])
+        y1, y2 = int(corners[1]), int(corners[3])
+        if cv.pointPolygonTest(roi_contour, (x1 + (x2-x1), y2), False) >= 0:
             return True
         return False
 
     @staticmethod
-    def ignore_objects_outside_roi(objects_list, roi_bool_mask):
+    def ignore_objects_outside_roi(objects_list, roi_contour):
 
         """
         If a Region of Interest is defined, filer boxes which middle bottom point lies outside the RoI.
@@ -125,20 +123,36 @@ class ObjectsFilteringPostProcessor:
             "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
             of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
 
-            roi_bool_mask: a 2d ndarray containing boolean elements, with a True value inside the ROI.
+            roi_contour: An array of duples that compose the contour of the RoI
         returns:
         object_list: input object list with only the objets that fall under the Region of Interest.
         """
 
-        return [obj for obj in objects_list if ObjectsFilteringPostProcessor.is_inside_roi(obj, roi_bool_mask)]
+        return [obj for obj in objects_list if ObjectsFilteringPostProcessor.is_inside_roi(obj, roi_contour)]
+
+
+    @staticmethod
+    def get_roi_file_path(camera_id, config):
+        """ Returns the path to the roi_contour file """
+        return f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi_contour.csv"
+
+
+    @staticmethod
+    def get_roi_contour(roi_file_path):
+        """ Given the path to the roi file it loads it and returns it """
+        if os.path.exists(roi_file_path) and Path(roi_file_path).is_file() and Path(roi_file_path).stat().st_size != 0:
+            return np.loadtxt(roi_file_path, delimiter=',', dtype=int)
+        else:
+            return None
 
 
     def filter_objects(self, objects_list):
         new_objects_list = self.ignore_large_boxes(objects_list)
         new_objects_list = self.non_max_suppression_fast(new_objects_list, self.overlap_threshold)
-        if self.roi_bool_mask is not None:
-            new_objects_list = self.ignore_objects_outside_roi(new_objects_list, self.roi_bool_mask)
+        if self.roi_contour is not None:
+            new_objects_list = self.ignore_objects_outside_roi(new_objects_list, self.roi_contour)
         return new_objects_list
+
 
     def process(self, cv_image, objects_list, post_processing_data):
         new_objects_list = self.filter_objects(objects_list)
