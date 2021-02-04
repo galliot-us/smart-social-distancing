@@ -3,7 +3,6 @@ import humps
 from libs.config_engine import ConfigEngine
 
 
-# Functions to get values from config file (.ini) -- begin
 def get_config_file_json_strings(config_sample_path, decamelize=False):
     config_sample = ConfigEngine(config_sample_path)
     sections = config_sample.get_sections()
