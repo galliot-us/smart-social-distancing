@@ -314,7 +314,7 @@ async def get_roi_contour(camera_id: str):
 
 
 @cameras_router.put("/{camera_id}/roi_contour", status_code=status.HTTP_201_CREATED)
-async def add_or_replace_boolean_mask(camera_id: str, body: ContourRoI, reboot_processor: Optional[bool] = True):
+async def add_or_replace_roi_contour(camera_id: str, body: ContourRoI, reboot_processor: Optional[bool] = True):
     """
         Define a RoI for a camera or replace its current one.
         A RoI is defined by a vector of [x,y] duples, that map to coordinates in the image.
@@ -330,7 +330,7 @@ async def add_or_replace_boolean_mask(camera_id: str, body: ContourRoI, reboot_p
 
 
 @cameras_router.delete("/{camera_id}/roi_contour")
-async def remove_boolean_mask(camera_id: str, reboot_processor: Optional[bool] = True):
+async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = True):
     """
         Delete the defined RoI for a camera.
     """
