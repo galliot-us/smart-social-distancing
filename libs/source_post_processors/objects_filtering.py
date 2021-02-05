@@ -109,7 +109,7 @@ class ObjectsFilteringPostProcessor:
         corners = detected_object["bboxReal"]
         x1, x2 = int(corners[0]), int(corners[2])
         y1, y2 = int(corners[1]), int(corners[3])
-        if cv.pointPolygonTest(roi_contour, (x1 + (x2-x1), y2), False) >= 0:
+        if cv.pointPolygonTest(roi_contour, (x1 + (x2-x1)/2, y2), False) >= 0:
             return True
         return False
 
@@ -117,7 +117,6 @@ class ObjectsFilteringPostProcessor:
     def ignore_objects_outside_roi(objects_list, roi_contour):
 
         """
-        Inspired by https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion
         If a Region of Interest is defined, filer boxes which middle bottom point lies outside the RoI.
         params:
             object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
@@ -146,14 +145,12 @@ class ObjectsFilteringPostProcessor:
         else:
             return None
 
-
     def filter_objects(self, objects_list):
         new_objects_list = self.ignore_large_boxes(objects_list)
         new_objects_list = self.non_max_suppression_fast(new_objects_list, self.overlap_threshold)
         if self.roi_contour is not None:
             new_objects_list = self.ignore_objects_outside_roi(new_objects_list, self.roi_contour)
         return new_objects_list
-
 
     def process(self, cv_image, objects_list, post_processing_data):
         new_objects_list = self.filter_objects(objects_list)

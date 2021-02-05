@@ -323,7 +323,6 @@ async def add_or_replace_roi_contour(camera_id: str, body: ContourRoI, reboot_pr
     dir_path = Path(roi_file_path).parents[0]
     Path(dir_path).mkdir(parents=True, exist_ok=True)
     roi_contour = np.array(body.contour_roi, dtype=int)
-    Path("/my/directory").mkdir(parents=True, exist_ok=True)
     np.savetxt(roi_file_path, roi_contour, delimiter=',', fmt='%i')
     restart_processor() if reboot_processor else True
     return roi_contour.tolist()
