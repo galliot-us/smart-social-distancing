@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ..utils.loggers import get_source_log_directory
 
+
 class ObjectsFilteringPostProcessor:
 
     def __init__(self, config, source: str, post_processor: str):
@@ -130,12 +131,10 @@ class ObjectsFilteringPostProcessor:
 
         return [obj for obj in objects_list if ObjectsFilteringPostProcessor.is_inside_roi(obj, roi_contour)]
 
-
     @staticmethod
     def get_roi_file_path(camera_id, config):
         """ Returns the path to the roi_contour file """
         return f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi_contour.csv"
-
 
     @staticmethod
     def get_roi_contour(roi_file_path):
