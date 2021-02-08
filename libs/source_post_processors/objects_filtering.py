@@ -16,8 +16,8 @@ class ObjectsFilteringPostProcessor:
             self.config.get_section_dict(post_processor)["NMSThreshold"]
         )
         camera_id = config.get_section_dict(source)["Id"]
-        roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, config)
-        self.roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(roi_file_path)
+        roi_file_path = self.get_roi_file_path(camera_id, config)
+        self.roi_contour = self.get_roi_contour(roi_file_path)
 
     @staticmethod
     def ignore_large_boxes(object_list):
