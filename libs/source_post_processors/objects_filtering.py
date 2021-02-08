@@ -114,8 +114,8 @@ class ObjectsFilteringPostProcessor:
             return True
         return False
 
-    @staticmethod
-    def ignore_objects_outside_roi(objects_list, roi_contour):
+    @classmethod
+    def ignore_objects_outside_roi(cls, objects_list, roi_contour):
 
         """
         If a Region of Interest is defined, filer boxes which middle bottom point lies outside the RoI.
@@ -129,7 +129,7 @@ class ObjectsFilteringPostProcessor:
         object_list: input object list with only the objets that fall under the Region of Interest.
         """
 
-        return [obj for obj in objects_list if ObjectsFilteringPostProcessor.is_inside_roi(obj, roi_contour)]
+        return [obj for obj in objects_list if cls.is_inside_roi(obj, roi_contour)]
 
     @staticmethod
     def get_roi_file_path(camera_id, config):
