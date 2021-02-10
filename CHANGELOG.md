@@ -17,12 +17,11 @@ Released on 2021-02-10.
 * Readme: Supported video formats ([#126](https://github.com/neuralet/smart-social-distancing/pull/126))
 * Readme: DockerHub information ([#129](https://github.com/neuralet/smart-social-distancing/pull/129))
 * Moved references from beta.lanthorn.ai to app.lanthorn.ai ([#132](https://github.com/neuralet/smart-social-distancing/pull/132))
-* Readme: Friendly documentation to rapidly play with the processor ([#133](https://github.com/neuralet/smart-social-distancing/pull/133))
+* Readme: Added documentation on how to quickly get the processor running for a PoC ([#133](https://github.com/neuralet/smart-social-distancing/pull/133))
 * Polished configs making all default IDs `0` (instead of `default` or `area0`) ([#133](https://github.com/neuralet/smart-social-distancing/pull/133))
 
 #### Fixed:
 
-* Issue with the jetson-nano dockerfile ([#125](https://github.com/neuralet/smart-social-distancing/pull/125))
 * Broken Posenet reference on Coral ([#128](https://github.com/neuralet/smart-social-distancing/pull/128))
 
 ## [0.4.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.4.0)
