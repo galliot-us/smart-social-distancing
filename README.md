@@ -74,11 +74,11 @@ The smart social distancing app consists of two components: the `frontend` and t
 
 #### Frontend
 
-The frontend is a public [web app](https://beta.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. 
+The frontend is a public [web app](https://app.lanthorn.ai) provided by [lanthorn](https://www.lanthorn.ai/) where you can signup for free. 
 This web app allows you to configure some aspects of the processor (such as notifications and camera calibration) using a friendly UI. 
 Moreover, it provides a dashboard that helps you to analyze the data that your cameras are processing. 
 
-The frontend site uses HTTPs, in order to have it communicate with the processor, the latter must be either **Running with SSL enabled** (See [Enabling SSL](#enabling-ssl) on this Readme), **or** you must edit your site settings for `https://beta.lanthorn.ai` in order to allow for Mixed Content (Insecure Content). **Without doing any of these, communication with the local processor will fail**
+The frontend site uses HTTPs, in order to have it communicate with the processor, the latter must be either **Running with SSL enabled** (See [Enabling SSL](#enabling-ssl) on this Readme), **or** you must edit your site settings for `https://app.lanthorn.ai` in order to allow for Mixed Content (Insecure Content). **Without doing any of these, communication with the local processor will fail**
 
 #### Running the processor
 
@@ -409,7 +409,7 @@ You can read and modify the configurations in `config-*.ini` files, accordingly:
 Please note that if you modify these values you should also set `[App]` `HasBeenConfigured` to `"True"`.
 This allows for a client to recognize if this processor was previously configured.
 
-You can also modify some of them using the [UI](https://beta.lanthorn.ai). 
+You can also modify some of them using the [UI](https://app.lanthorn.ai). 
 If you choose this option, make sure to mount the config file as a volume to keep the changes after any restart of the container (see section [Persisting changes](#persisting-changes)).
 
 All the configurations are grouped in *sections* and some of them can vary depending on the chosen device.
@@ -419,7 +419,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `Resolution`: Specifies the image resolution that the whole processor will use. If you are using a single camera we recommend using that resolution.
   - `Encoder`: Specifies the video encoder used by the processing pipeline.
   - `MaxProcesses`: Defines the number of processes executed in the processor. If you are using multiple cameras per processor we recommend increasing this number.
-  - `DashboardURL`: Sets the url where the frontend is running. Unless you are using a custom domain, you should keep this value as https://beta.lanthorn.ai/.
+  - `DashboardURL`: Sets the url where the frontend is running. Unless you are using a custom domain, you should keep this value as https://app.lanthorn.ai/.
   - `SlackChannel`: Configures the slack channel used by the notifications. The chosen slack channel must exist in the configured workspace.
   - `OccupancyAlertsMinInterval`:  Sets the desired interval (in seconds) between occupancy alerts.
   - `MaxThreadRestarts`: Defines the number of restarts allowed per thread.
@@ -452,20 +452,20 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[Area_N]`:
 
-  A single processor can manage multiple areas and all of them must be configured in the config file. You can generate this configuration in 3 different ways: directly in the config file, using the [UI](https://beta.lanthorn.ai) or using the API.
+  A single processor can manage multiple areas and all of them must be configured in the config file. You can generate this configuration in 3 different ways: directly in the config file, using the [UI](https://app.lanthorn.ai) or using the API.
   - `Id`: A string parameter to identify each area. This value must be *unique*.
   - `Name`: A string parameter to name each area. Although you can repeat the same name in multiple areas, we recommend don't do that.
   - `Cameras`: Configures the cameras (using the *ids*) included in the area. If you are configuring multiple cameras you should write the ids separated by commas. Each area should have at least one camera.
   - `NotifyEveryMinutes` and `ViolationThreshold`: Defines the *period of time* and *number of social distancing violations* desired to send notifications. For example, if you want to notify when *occurs more than 10 violations every 15 minutes*, you must set `NotifyEveryMinutes` in 15 and `ViolationThreshold` in 10.
   - `Emails`: Defines the emails list to receive the notification. Multiple emails can be written separating them by commas.
-  - `EnableSlackNotifications`: A boolean parameter to enable/disable the Slack integration for notifications and daily reports. We recommend not editing this parameter directly and manage it from the [UI](https://beta.lanthorn.ai) to configure your workspace correctly.
+  - `EnableSlackNotifications`: A boolean parameter to enable/disable the Slack integration for notifications and daily reports. We recommend not editing this parameter directly and manage it from the [UI](https://app.lanthorn.ai) to configure your workspace correctly.
   - `OccupancyThreshold`: Defines the occupancy violation threshold. For example, if you want to notify when *there is more than 20 persons in the area* you must set `OccupancyThreshold` in 20.
   - `DailyReport`: When the parameter is set in *True*, the information of the previous day is sent in a summary report.
   - `DailyReportTime`: If the daily report is enabled, you can choose the time to receive the report. By default, the report is sent at 06:00.
 
 - `[Source_N]`:
 
-  In the config files, we use the *source* sections to specifies the camera's configurations. Similarly to the areas, a single processor can manage multiple cameras and all of them must be configured in the config file. You can generate this configuration in 3 different ways: directly in the config file, using the [UI](https://beta.lanthorn.ai) or using the API.
+  In the config files, we use the *source* sections to specifies the camera's configurations. Similarly to the areas, a single processor can manage multiple cameras and all of them must be configured in the config file. You can generate this configuration in 3 different ways: directly in the config file, using the [UI](https://app.lanthorn.ai) or using the API.
 
   - `Id`: A string parameter to identify each camera. This value must be *unique*.
   - `Name`: A string parameter to name each area. Although you can repeat the same name in multiple cameras, we recommend don't do that.
@@ -473,10 +473,10 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `Tags`: List of tags (separated by commas). This field only has an informative propose, change that value doesn't affect the processor behavior.
   - `NotifyEveryMinutes` and `ViolationThreshold`: Defines the *period of time* and *number of social distancing violations* desired to send notifications. For example, if you want to notify when *occurs more than 10 violations every 15 minutes*, you must set `NotifyEveryMinutes` in 15 and `ViolationThreshold` in 10.
   - `Emails`: Defines the emails list to receive the notification. Multiple emails can be written separating them by commas.
-  - `EnableSlackNotifications`: A boolean parameter to enable/disable the Slack integration for notifications and daily reports. We recommend not editing this parameter directly and manage it from the [UI](https://beta.lanthorn.ai) to configure your workspace correctly.
+  - `EnableSlackNotifications`: A boolean parameter to enable/disable the Slack integration for notifications and daily reports. We recommend not editing this parameter directly and manage it from the [UI](https://app.lanthorn.ai) to configure your workspace correctly.
   - `DailyReport`: When the parameter is set in *True*, the information of the previous day is sent in a summary report.
   - `DailyReportTime`: If the daily report is enabled, you can choose the time to receive the report. By default, the report is sent at 06:00.
-  - `DistMethod`: Configures the chosen distance method used by the processor to detect the violations. There are three different values: CalibratedDistance, CenterPointsDistance and FourCornerPointsDistance. If you want to use *CalibratedDistance* you will need to calibrate the camera from the [UI](https://beta.lanthorn.ai).
+  - `DistMethod`: Configures the chosen distance method used by the processor to detect the violations. There are three different values: CalibratedDistance, CenterPointsDistance and FourCornerPointsDistance. If you want to use *CalibratedDistance* you will need to calibrate the camera from the [UI](https://app.lanthorn.ai).
   - `LiveFeedEnabled`: A boolean parameter that enables/disables the video live feed for the source.
 
 - `[Detector]`:
@@ -537,7 +537,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 - `[PeriodicTask_N]`:
 
   The processor also supports the execution of periodic tasks to generate reports, accumulate metrics, backup your files, etc. For now, we support the *metrics* and *s3_backup* tasks. You can enable/disable these functionalities uncommenting/commenting the section or with the *Enabled* flag.
-  - `metrics`: Generates different reports (hourly, daily and live) with information about the social distancing infractions, facemask usage and occupancy in your cameras and areas. You need to have it enabled to see data in the [UI](https://beta.lanthorn.ai) dashboard or use the `/metrics` endpoints.
+  - `metrics`: Generates different reports (hourly, daily and live) with information about the social distancing infractions, facemask usage and occupancy in your cameras and areas. You need to have it enabled to see data in the [UI](https://app.lanthorn.ai) dashboard or use the `/metrics` endpoints.
       - `LiveInterval`: Expressed in minutes. Defines the time interval desired to generate live information.
   - `s3_backup`: Back up into an S3 bucket all the generated data (raw data and reports). To enable the functionality you need to configure the aws credentials following the steps explained in the section [Configuring AWS credentials](#configuring-aws-credentials).
       - `BackupInterval`: Expressed in minutes. Defines the time interval desired to back up the raw data.
@@ -562,7 +562,7 @@ The available endpoints are grouped in the following subapis:
 - `/periodict_tasks`: provides endpoints to retrieve and update the `PeriodicTask_N` sections in the configuration file. You can use that endpoint to enable/disable the metrics generation.
 - `/metrics`: a set of endpoints to retrieve the data generated by the metrics periodic task.
 - `/export`: an endpoint to export (in zip format) all the data generated by the processor.
-- `/slack`: a set of endpoints required to configure Slack correctly in the processor. We recommend to use these endpoints from the [UI](https://beta.lanthorn.ai) instead of calling them directly.
+- `/slack`: a set of endpoints required to configure Slack correctly in the processor. We recommend to use these endpoints from the [UI](https://app.lanthorn.ai) instead of calling them directly.
 - `/auth`: a set of endpoints required to configure OAuth2 in the processors' endpoints.
  
  Additionally, the API exposes 2 endpoints to stop/start the video processing
@@ -587,7 +587,7 @@ All of the information that is generated by the processor is stored (by default)
 
 ##### Storing the raw data
 The raw data storage is managed by the `SourceLogger` and `AreaLogger` steps. By default, only the `video_logger` and the `file_system_logger` are enabled. As both steps store the data inside the processor (by default the folder `/repo/data/processor/static/`), we strongly recommend mounting that folder to keep the data safe when the process is restarted ([Persisting changes](#persisting-changes)).
-Moreover, we recommend keeping active these steps because the [frontend](https://beta.lanthorn.ai) and the metrics need them.
+Moreover, we recommend keeping active these steps because the [frontend](https://app.lanthorn.ai) and the metrics need them.
 
 If you need to store (or process) the raw data in *real-time* outside the processor, you can activate the `web_hook_logger` and implement an endpoint that handles these events.
 The `web_hook_logger` step is configured to send an event (a PUT request) using the following format:
@@ -612,7 +612,7 @@ Another alternative is to activate the periodic task `s3_backup`. This task will
 The data of aggregated metrics is stored in a set of CSV files inside the device. For now, we don't have implemented any mechanism to store these files outside the processor (the `web_hook_logger` only sends "raw data" events).
 However, if you enable the `s3_backup` task, the previous day's metrics files will be backed up at AWS at the beginning of the day.
 
-You can easily visualize the metrics information in the dashboard exposed in the [frontend](https://beta.lanthorn.ai).
+You can easily visualize the metrics information in the dashboard exposed in the [frontend](https://app.lanthorn.ai).
 In addition, you can retrieve the same information through the API (see the metrics section in the API documentation exposed in http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/docs#/Metrics).
 
 ##### Exporting the data
