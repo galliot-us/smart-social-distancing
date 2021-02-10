@@ -92,17 +92,17 @@ There are two alternatives to run the processor in your device:
 ##### Running a proof of concept
 
 If you want to simply run the processor for just trying it out, then from the following steps you should only:
-   1. Select your device and find its image. On x86, without a dedicated edge device, you should use either:
+   1. Select your device and find its docker image. On x86, without a dedicated edge device, you should use either:
       a. **If the device has access to an Nvidia GPU:** GPU with TensorRT optimization.
       b. **If the device has access to an Intel CPU:** x86 using OpenVino.
-      c. **If the device has access to a CPU:** x86.
+      c. **Otherwise:** x86.
    2. Either **build the image or pull it from Dockerhub**. Don't forget to follow the script and download the model.
    3. Download the sample video running `./download_sample_video.sh`.
    4. Run the processor using the script listed in its device.
 
 This way you can skip security steps such as enabling HTTPs communication or oauth and get a simple version of the processor running to see if it fits your use case.
 
-Afterwards if you intend on running the processor while consuming from a dedicated videofeed we advice you to return to this README and reat it fully.
+Afterwards, if you intend on running the processor while consuming from a dedicated video feed, we advise you to return to this README and read it fully.
 
 ##### Running the processor building the image
 
@@ -507,7 +507,10 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[Classifier]`:
 
-  Some of the supported devices includes the *facemask detection* feature. If you want to include this feature, you need to specify the classifier section.
+  Some of the supported devices include models that allow for detecting the body-skeleton of a person.
+  This is a key component to **Facemask Detection**.
+  If you want to include this feature, you need to uncomment this section, and use a model that supports the Classifier.
+  Else you can delete or uncomment this section of the config file to save on CPU usage.
   - `Device`: Specifies the device. The available values are *Jetson*, *EdgeTPU*, *Dummy*, *x86*, *x86-gpu*
   - `Name`: Name of the facemask classifier used.
   - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
