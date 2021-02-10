@@ -507,10 +507,10 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 - `[Classifier]`:
 
-  Some of the supported devices include models that allow for detecting the body-skeleton of a person.
+  Some of the supported devices include models that allow for detecting the body-pose of a person.
   This is a key component to **Facemask Detection**.
   If you want to include this feature, you need to uncomment this section, and use a model that supports the Classifier.
-  Else you can delete or uncomment this section of the config file to save on CPU usage.
+  Otherwise, you can delete or uncomment this section of the config file to save on CPU usage.
   - `Device`: Specifies the device. The available values are *Jetson*, *EdgeTPU*, *Dummy*, *x86*, *x86-gpu*
   - `Name`: Name of the facemask classifier used.
   - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
