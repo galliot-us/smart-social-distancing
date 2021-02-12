@@ -61,3 +61,16 @@ class ContourRoI(BaseModel):
                 'contour_roi': [[88, 58], [90, 284], [279, 284], [281, 58]]
             }
         }
+
+
+class InOutBoundaries(BaseModel):
+    in_line: Tuple[Tuple[int, int], Tuple[int, int]]
+    out_line: Tuple[Tuple[int, int], Tuple[int, int]]
+
+    class Config:
+        schema_extra = {
+            'example': {
+                'in_line': [[5, 5], [5, 240]],
+                'out_line': [[245, 5], [245, 240]]
+            }
+        }

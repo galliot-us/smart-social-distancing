@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import re
+import json
 import numpy as np
 
 from fastapi import APIRouter, status
@@ -19,8 +20,9 @@ from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas, restart_processor,
     update_config, map_section_from_config, map_to_config_file_format, bad_request_serializer
 )
-from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel, ContourRoI
+from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel, ContourRoI, InOutBoundaries
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
+from libs.metrics.in_out import InOutMetric
 
 logger = logging.getLogger(__name__)
 
@@ -338,5 +340,49 @@ async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = 
         detail = f"There is no defined RoI for {camera_id}"
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
     os.remove(roi_file_path)
+    success = restart_processor() if reboot_processor else True
+    return handle_response(None, success, status.HTTP_204_NO_CONTENT)
+
+
+@cameras_router.get("/{camera_id}/in_out_boundaries")
+async def get_in_out_boundaries(camera_id: str):
+    """
+        Get the In/Out Boundaries
+    """
+    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
+    in_out_boundaries = InOutMetric.get_in_out_boundaries(in_out_file_path)
+    if in_out_boundaries is None:
+        error_detail = f"There is no defined In/Out Boundary for {camera_id}"
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_detail)
+    return InOutBoundaries(**dict(in_out_boundaries))
+
+
+@cameras_router.put("/{camera_id}/in_out_boundaries", status_code=status.HTTP_201_CREATED)
+async def add_or_replace_in_out_boundaries(camera_id: str, body: InOutBoundaries, reboot_processor: Optional[bool] = True):
+    """
+        Define the In/Out boundaries for a camera
+        A RoI is defined by two duples of [x,y] duples, that map to coordinates in the image.
+        in_line contains the In vector, whereas out_line the Out vector.
+    """
+    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
+    dir_path = Path(in_out_file_path).parents[0]
+    Path(dir_path).mkdir(parents=True, exist_ok=True)
+    in_out_boundaries = body.dict()
+    with open(in_out_file_path, "w") as outfile:
+        json.dump(in_out_boundaries, outfile)
+    restart_processor() if reboot_processor else True
+    return body
+
+
+@cameras_router.delete("/{camera_id}/in_out_boundaries")
+async def remove_in_out_boundaries(camera_id: str, reboot_processor: Optional[bool] = True):
+    """
+        Delete the defined In/Out boundaries for a camera.
+    """
+    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
+    if not os.path.exists(in_out_file_path):
+        detail = f"There is no defined In/Out Boundary for {camera_id}"
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+    os.remove(in_out_file_path)
     success = restart_processor() if reboot_processor else True
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)

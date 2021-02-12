@@ -19,7 +19,7 @@ class SocialDistancingMetric(BaseMetric):
                    "CriticalInfringement"]
 
     @classmethod
-    def procces_csv_row(cls, csv_row: Dict, objects_logs: Dict):
+    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
         row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
         detections = ast.literal_eval(csv_row["Detections"])
         row_hour = row_time.hour
@@ -172,7 +172,7 @@ class SocialDistancingMetric(BaseMetric):
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in lastest_entries:
-                cls.procces_csv_row(entry, objects_logs)
+                cls.process_csv_row(entry, objects_logs)
         return np.sum(cls.generate_hourly_metric_data(objects_logs), axis=0)
 
     @classmethod
