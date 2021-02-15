@@ -3,7 +3,6 @@ import humps
 from libs.config_engine import ConfigEngine
 
 
-# Functions to get values from config file (.ini) -- begin
 def get_config_file_json_strings(config_sample_path, decamelize=False):
     config_sample = ConfigEngine(config_sample_path)
     sections = config_sample.get_sections()
@@ -13,6 +12,9 @@ def get_config_file_json_strings(config_sample_path, decamelize=False):
         config_sample_json[section] = config_sample.get_section_dict(section)
 
     if decamelize:
+        """
+        Do not forget that "Source_1" becomes "source__1". 
+        """
         config_sample_json = humps.decamelize(config_sample_json)
 
     return config_sample_json
@@ -31,14 +33,12 @@ def json_string_to_json_multi_type_config_file(config_sample_json):
     return config_sample_json
 
 
-def get_config_file_json(config_sample_path):
-    config_sample_json = get_config_file_json_strings(config_sample_path, decamelize=True)
+def get_config_file_json(config_sample_path, decamelize=True):
+    config_sample_json = get_config_file_json_strings(config_sample_path, decamelize=decamelize)
     config_sample_json = json_string_to_json_multi_type_config_file(config_sample_json)
     return config_sample_json
-# Functions to get values from config file (.ini) -- end
 
 
-# Get App from config file -- begin
 def pascal_to_camel_case(pascal_case_string: str) -> str:
     if len(pascal_case_string) > 1 and pascal_case_string[1].isupper():
         # pascal_case_string starts with an acronym, returns without change
@@ -76,7 +76,13 @@ def get_app_from_config_file(config_sample_path):
     config_mapped_string = map_section_from_config("App", config_sample_json)
     config_mapped = section_string_to_section_multi_type(config_mapped_string)
     return config_mapped
-# Get App from config file -- end
+
+
+def get_section_from_config_file(section, config_sample_path):
+    config_sample_json = get_config_file_json_strings(config_sample_path)
+    config_mapped_string = map_section_from_config(section, config_sample_json)
+    config_mapped = section_string_to_section_multi_type(config_mapped_string)
+    return config_mapped
 
 
 def json_multi_type_to_json_string(json_dict):
@@ -121,7 +127,7 @@ def create_app_config(key_value_dict=None):
 def camel_case_to_snake_case_dict(dictionary):
     di = {}
     for key, value in dictionary.items():
-        camel_key = re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower()
+        camel_key = re.sub(r"(?<!^)(?=[A-Z])", "_", key).lower()
         di[camel_key] = value
 
     if "dashboardURL" in dictionary.keys():

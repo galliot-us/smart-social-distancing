@@ -1,13 +1,23 @@
+import os
+import cv2 as cv
 import numpy as np
+
+from pathlib import Path
+
+from ..utils.loggers import get_source_log_directory
 
 
 class ObjectsFilteringPostProcessor:
 
     def __init__(self, config, source: str, post_processor: str):
         self.config = config
+        self.source = source
         self.overlap_threshold = float(
             self.config.get_section_dict(post_processor)["NMSThreshold"]
         )
+        camera_id = config.get_section_dict(source)["Id"]
+        roi_file_path = self.get_roi_file_path(camera_id, config)
+        self.roi_contour = self.get_roi_contour(roi_file_path)
 
     @staticmethod
     def ignore_large_boxes(object_list):
@@ -34,9 +44,11 @@ class ObjectsFilteringPostProcessor:
         """
         omitting duplicated boxes by applying an auxilary non-maximum-suppression.
         params:
-        object_list: a list of dictionaries. each dictionary has attributes of a detected object such
-        "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
-        of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
+        object_list: a list of dictionaries. each dictionary has attributes of a detected object such "id",
+        "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box),
+        "bbox" (a tuple of the normalized (xmin,ymin,xmax,ymax) coordinate of the box),
+        "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and
+        "bboxReal" (a tuple of the (xmin,ymin,xmax,ymax) coordinate of the box)
 
         overlapThresh: threshold of minimum IoU of to detect two box as duplicated.
 
@@ -80,9 +92,63 @@ class ObjectsFilteringPostProcessor:
         updated_object_list = [j for i, j in enumerate(object_list) if i in pick]
         return updated_object_list
 
+    @staticmethod
+    def is_inside_roi(detected_object, roi_contour):
+        """
+        An object is inside the RoI if its middle bottom point lies inside it.
+        params:
+            detected_object: a dictionary, that has attributes of a detected object such as "id",
+            "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box),
+            "bbox" (a tuple of the normalized (xmin,ymin,xmax,ymax) coordinate of the box),
+            "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and
+            "bboxReal" (a tuple of the (xmin,ymin,xmax,ymax) coordinate of the box)
+
+            roi_contour: An array of duples that compose the contour of the RoI
+        returns:
+        True of False: Depending if the objects coodinates are inside the RoI
+        """
+        corners = detected_object["bboxReal"]
+        x1, x2 = int(corners[0]), int(corners[2])
+        y1, y2 = int(corners[1]), int(corners[3])
+        if cv.pointPolygonTest(roi_contour, (x1 + (x2-x1)/2, y2), False) >= 0:
+            return True
+        return False
+
+    @classmethod
+    def ignore_objects_outside_roi(cls, objects_list, roi_contour):
+
+        """
+        If a Region of Interest is defined, filer boxes which middle bottom point lies outside the RoI.
+        params:
+            object_list: a list of dictionaries. each dictionary has attributes of a detected object such as
+            "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
+            of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
+
+            roi_contour: An array of duples that compose the contour of the RoI
+        returns:
+        object_list: input object list with only the objets that fall under the Region of Interest.
+        """
+
+        return [obj for obj in objects_list if cls.is_inside_roi(obj, roi_contour)]
+
+    @staticmethod
+    def get_roi_file_path(camera_id, config):
+        """ Returns the path to the roi_contour file """
+        return f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi_contour.csv"
+
+    @staticmethod
+    def get_roi_contour(roi_file_path):
+        """ Given the path to the roi file it loads it and returns it """
+        if os.path.exists(roi_file_path) and Path(roi_file_path).is_file() and Path(roi_file_path).stat().st_size != 0:
+            return np.loadtxt(roi_file_path, delimiter=',', dtype=int)
+        else:
+            return None
+
     def filter_objects(self, objects_list):
         new_objects_list = self.ignore_large_boxes(objects_list)
         new_objects_list = self.non_max_suppression_fast(new_objects_list, self.overlap_threshold)
+        if self.roi_contour is not None:
+            new_objects_list = self.ignore_objects_outside_roi(new_objects_list, self.roi_contour)
         return new_objects_list
 
     def process(self, cv_image, objects_list, post_processing_data):

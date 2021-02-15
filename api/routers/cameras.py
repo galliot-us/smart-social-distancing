@@ -2,21 +2,25 @@ import base64
 import cv2 as cv
 import logging
 import os
+import shutil
 import re
+import numpy as np
 
 from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
 from typing import Dict, Optional
+from pathlib import Path
 
 from libs.utils.camera_calibration import (get_camera_calibration_path, compute_and_save_inv_homography_matrix,
                                            ConfigHomographyMatrix)
 
 from api.settings import Settings
 from api.utils import (
-    extract_config, get_config, handle_response, reestructure_areas,
+    extract_config, get_config, handle_response, reestructure_areas, restart_processor,
     update_config, map_section_from_config, map_to_config_file_format, bad_request_serializer
 )
-from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel
+from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel, ContourRoI
+from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
 
 logger = logging.getLogger(__name__)
 
@@ -172,7 +176,7 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
 
     if new_camera.id is None:
         ids = [camera["id"] for camera in cameras]
-        new_camera.id = get_first_unused_id(ids)
+        new_camera.id = str(get_first_unused_id(ids))
     elif new_camera.id in [camera["id"] for camera in cameras]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -183,7 +187,11 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
     success = update_config(config_dict, reboot_processor)
     if not success:
         return handle_response(camera_dict, success, status.HTTP_201_CREATED)
-    return next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_dict["Id"]), None)
+
+    camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), new_camera.id)
+    Path(camera_screenshot_directory).mkdir(parents=True, exist_ok=True)
+
+    return next((camera for camera in get_cameras() if camera["id"] == camera_dict["Id"]), None)
 
 
 @cameras_router.put("/{camera_id}", response_model=CameraDTO)
@@ -213,6 +221,11 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     config_dict.pop(f"Source_{index}")
     config_dict = reestructure_cameras((config_dict))
     success = update_config(config_dict, reboot_processor)
+
+    # Deletes the camera screenshots directory and all its content.
+    camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), camera_id)
+    shutil.rmtree(camera_screenshot_directory)
+
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 
 
@@ -285,4 +298,45 @@ async def enable_video_live_feed(camera_id: str, disable_other_cameras: Optional
             config_dict[camera_section]["LiveFeedEnabled"] = "False"
     config_dict[f"Source_{index}"]["LiveFeedEnabled"] = "True"
     success = update_config(config_dict, True)
+    return handle_response(None, success, status.HTTP_204_NO_CONTENT)
+
+
+@cameras_router.get("/{camera_id}/roi_contour")
+async def get_roi_contour(camera_id: str):
+    """
+        Get the contour of the RoI
+    """
+    roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
+    roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(roi_file_path)
+    if roi_contour is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"There is no defined RoI for {camera_id}")
+    return roi_contour.tolist()
+
+
+@cameras_router.put("/{camera_id}/roi_contour", status_code=status.HTTP_201_CREATED)
+async def add_or_replace_roi_contour(camera_id: str, body: ContourRoI, reboot_processor: Optional[bool] = True):
+    """
+        Define a RoI for a camera or replace its current one.
+        A RoI is defined by a vector of [x,y] duples, that map to coordinates in the image.
+    """
+    roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
+    dir_path = Path(roi_file_path).parents[0]
+    Path(dir_path).mkdir(parents=True, exist_ok=True)
+    roi_contour = np.array(body.contour_roi, dtype=int)
+    np.savetxt(roi_file_path, roi_contour, delimiter=',', fmt='%i')
+    restart_processor() if reboot_processor else True
+    return roi_contour.tolist()
+
+
+@cameras_router.delete("/{camera_id}/roi_contour")
+async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = True):
+    """
+        Delete the defined RoI for a camera.
+    """
+    roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
+    if not os.path.exists(roi_file_path):
+        detail = f"There is no defined RoI for {camera_id}"
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+    os.remove(roi_file_path)
+    success = restart_processor() if reboot_processor else True
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
