@@ -4,7 +4,7 @@ import os
 import shutil
 
 from libs.utils import visualization_utils
-
+from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
 
 class VideoLogger:
 
@@ -17,6 +17,7 @@ class VideoLogger:
         self.out_birdseye = None
         self.live_feed_enabled = self.config.get_boolean(source, "LiveFeedEnabled")
         self.track_hist = dict()
+        self.roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(self.camera_id, self.config)
 
     def start_logging(self, fps):
         if not self.live_feed_enabled:
@@ -93,6 +94,11 @@ class VideoLogger:
 
         birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
         class_id = int(self.config.get_section_dict('Detector')['ClassID'])
+
+        roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(self.roi_file_path)
+        if roi_contour is not None:
+            color = (41, 127, 255) # #ff7f29 (255, 127, 41)
+            visualization_utils.draw_contour(cv_image, roi_contour, color, "Region of Interest")
 
         output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
         category_index = {class_id: {

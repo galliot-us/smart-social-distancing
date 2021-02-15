@@ -485,7 +485,7 @@ def birds_eye_view(input_frame, boxes, is_violating):
     return input_frame
 
 
-def text_putter(input_frame, txt, origin, fontscale=0.75, color=(255, 0, 20), thickness=2):
+def text_putter(input_frame, txt, origin, normalized_origin=True, fontscale=0.75, thickness=2, font=cv.FONT_HERSHEY_SIMPLEX, color=(255, 0, 20)):
     """
     The function renders the specified text string in the image. This function does not return a
     value instead it modifies the input image.
@@ -499,8 +499,8 @@ def text_putter(input_frame, txt, origin, fontscale=0.75, color=(255, 0, 20), th
         thickness: Thickness of the lines used to draw a text.
     """
     resolution = input_frame.shape
-    origin = int(resolution[1] * origin[0]), int(resolution[0] * origin[1])
-    font = cv.FONT_HERSHEY_SIMPLEX
+    if normalized_origin:
+        origin = int(resolution[1] * origin[0]), int(resolution[0] * origin[1])
     cv.putText(input_frame, txt, origin, font, fontscale,
                color, thickness, cv.LINE_AA)
 
@@ -525,4 +525,19 @@ def draw_tracks(input_frame, track_history, radius=1, thickness=1):
         for i, centroid in enumerate(track[0]):
             cv.circle(input_frame, tuple(centroid), color=track[1][i], radius=radius, thickness=thickness)
 
+
+def draw_contour(input_frame, contour, color, text):
+    """
+    Draw a region defined by a set of points forming a contour.
+
+    Args:
+        input_frame: The source image, is an RGB image.
+        contour: Array of contour vertices
+        color: (b, g, r)
+    """
+    resolution = input_frame.shape
+    cv.polylines(input_frame, [contour], True, color, 1, cv.LINE_AA)
+    text_putter(input_frame, text, tuple(contour[0] - 5), normalized_origin=False, fontscale=0.5, thickness=0, font=cv.FONT_HERSHEY_PLAIN, color=color)
+    for point in contour:
+        cv.circle(input_frame, tuple(point), radius=2, color=color, thickness=-1)
 
