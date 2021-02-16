@@ -250,7 +250,9 @@ async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatri
     """
     Calibrates the camera <camera_id> receiving as input the coordinates of a square of size 3ft 3" by 3ft 3" (1m by 1m).
     """
-    dir_source = get_camera_from_id(camera_id)
+    dir_source = next((source for source in settings.config.get_video_sources() if source["id"] == camera_id), None)
+    if not dir_source:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
     dir_path = get_camera_calibration_path(settings.config, camera_id)
     compute_and_save_inv_homography_matrix(points=body, destination=dir_path)
     sections = settings.config.get_sections()

@@ -6,7 +6,7 @@ from typing import Dict, Iterator, List
 
 from .base import BaseMetric
 from constants import IN_OUT
-from libs.utils.loggers import get_source_log_directory
+from libs.utils.config import get_source_config_directory
 from pathlib import Path
 
 class InOutMetric(BaseMetric):
@@ -47,7 +47,7 @@ class InOutMetric(BaseMetric):
     @classmethod
     def get_in_out_file_path(cls, camera_id, config):
         """ Returns the path to the roi_contour file """
-        return f"{get_source_log_directory(config)}/{camera_id}/{IN_OUT}/{IN_OUT}.json"
+        return f"{get_source_config_directory(config)}/{camera_id}/{IN_OUT}/{IN_OUT}.json"
 
     @classmethod
     def get_in_out_boundaries(cls, in_out_file_path):

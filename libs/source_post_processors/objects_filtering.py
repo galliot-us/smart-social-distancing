@@ -4,7 +4,7 @@ import numpy as np
 
 from pathlib import Path
 
-from ..utils.loggers import get_source_log_directory
+from ..utils.config import get_source_config_directory
 
 
 class ObjectsFilteringPostProcessor:
@@ -134,7 +134,7 @@ class ObjectsFilteringPostProcessor:
     @staticmethod
     def get_roi_file_path(camera_id, config):
         """ Returns the path to the roi_contour file """
-        return f"{get_source_log_directory(config)}/{camera_id}/roi_filtering/roi_contour.csv"
+        return f"{get_source_config_directory(config)}/{camera_id}/roi_filtering/roi_contour.csv"
 
     @staticmethod
     def get_roi_contour(roi_file_path):
