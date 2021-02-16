@@ -514,7 +514,7 @@ def draw_tracks(input_frame, track_history, radius=1, thickness=1):
             cv.circle(input_frame, tuple(centroid), color=track[1][i], radius=radius, thickness=thickness)
 
 
-def draw_contour(input_frame, contour, color, text):
+def draw_contour(input_frame, contour, color):
     """
     Draw a region defined by a set of points forming a contour.
 
@@ -523,14 +523,7 @@ def draw_contour(input_frame, contour, color, text):
         contour: Array of contour vertices
         color: (b, g, r)
     """
-    resolution = input_frame.shape
     cv.polylines(input_frame, [contour], True, color, 1, cv.LINE_AA)
-    image = Image.fromarray(np.uint8(input_frame)).convert("RGB")
-    draw = ImageDraw.Draw(image)
-    top = min(contour, key=itemgetter(1))
-    font = get_draw_font()
-    draw_text(draw, text, top, color, font)
-    np.copyto(input_frame, np.array(image))
 
 def draw_text(draw, text, coordinate, color, font):
     text_width, text_height = font.getsize(text)

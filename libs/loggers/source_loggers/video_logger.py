@@ -98,7 +98,7 @@ class VideoLogger:
         roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(self.roi_file_path)
         if roi_contour is not None:
             color = (41, 127, 255) # #ff7f29 (255, 127, 41)
-            visualization_utils.draw_contour(cv_image, roi_contour, color, "Region of Interest")
+            visualization_utils.draw_contour(cv_image, roi_contour, color)
 
         output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)
         category_index = {class_id: {
