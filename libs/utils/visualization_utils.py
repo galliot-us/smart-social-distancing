@@ -26,7 +26,6 @@ import PIL.ImageColor as ImageColor
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
 import cv2 as cv
-from operator import itemgetter
 
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
