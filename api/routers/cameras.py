@@ -353,7 +353,10 @@ async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = 
 @cameras_router.get("/{camera_id}/in_out_boundaries")
 async def get_in_out_boundaries(camera_id: str):
     """
-        Get the In/Out Boundaries
+        Get the In/Out Boundaries for a camera.
+        Two coordinates `[x,y]` are given in duples `[A,B]`. These points form a **line**.
+        - If someone crosses the **line** while having **A** to their right, they are going in the `in` direction (entering).
+        - Crossing the **line** while having **A** to their left means they are going in the `out` direction (leaving).
     """
     _ = get_camera_from_id(camera_id)
     in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
@@ -367,9 +370,10 @@ async def get_in_out_boundaries(camera_id: str):
 @cameras_router.put("/{camera_id}/in_out_boundaries", status_code=status.HTTP_201_CREATED)
 async def add_or_replace_in_out_boundaries(camera_id: str, body: InOutBoundaries, reboot_processor: Optional[bool] = True):
     """
-        Define the In/Out boundaries for a camera
-        A RoI is defined by two duples of [x,y] duples, that map to coordinates in the image.
-        in_line contains the In vector, whereas out_line the Out vector.
+        Define the In/Out boundaries for a camera.
+        Two coordinates `[x,y]` are given in duples `[A,B]`. These points form a **line**.
+        - If someone crosses the **line** while having **A** to their right, they are going in the `in` direction (entering).
+        - Crossing the **line** while having **A** to their left means they are going in the `out` direction (leaving).
     """
     _ = get_camera_from_id(camera_id)
     in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
