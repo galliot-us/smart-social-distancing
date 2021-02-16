@@ -26,6 +26,7 @@ import PIL.ImageColor as ImageColor
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
 import cv2 as cv
+from operator import itemgetter
 
 _TITLE_LEFT_MARGIN = 10
 _TITLE_TOP_MARGIN = 10
@@ -132,10 +133,7 @@ def draw_bounding_box_on_image(
         width=thickness,
         fill=color,
     )
-    try:
-        font = ImageFont.truetype("arial.ttf", 24)
-    except IOError:
-        font = ImageFont.load_default()
+    font = get_draw_font()
 
     # If the total height of the display strings added to the top of the bounding
     # box exceeds the top of the image, stack the strings below the bounding box
@@ -150,21 +148,10 @@ def draw_bounding_box_on_image(
         text_bottom = bottom + total_display_str_height
     # Reverse list and print from bottom to top.
     for display_str in display_str_list[::-1]:
-        text_width, text_height = font.getsize(display_str)
+        coordinate = (left, text_bottom)
+        _, text_height = font.getsize(display_str)
         margin = np.ceil(0.05 * text_height)
-        draw.rectangle(
-            [
-                (left, text_bottom - text_height - 2 * margin),
-                (left + text_width, text_bottom),
-            ],
-            fill=color,
-        )
-        draw.text(
-            (left + margin, text_bottom - text_height),
-            display_str,
-            fill="black",
-            font=font,
-        )
+        draw = draw_text(draw, display_str, coordinate, color, font)
         text_bottom -= text_height - 2 * margin
 
 
@@ -485,7 +472,7 @@ def birds_eye_view(input_frame, boxes, is_violating):
     return input_frame
 
 
-def text_putter(input_frame, txt, origin, normalized_origin=True, fontscale=0.75, thickness=2, font=cv.FONT_HERSHEY_SIMPLEX, color=(255, 0, 20)):
+def text_putter(input_frame, txt, origin, normalized_origin=True, fontscale=0.75, thickness=2, color=(255, 0, 20)):
     """
     The function renders the specified text string in the image. This function does not return a
     value instead it modifies the input image.
@@ -499,6 +486,7 @@ def text_putter(input_frame, txt, origin, normalized_origin=True, fontscale=0.75
         thickness: Thickness of the lines used to draw a text.
     """
     resolution = input_frame.shape
+    font = cv.FONT_HERSHEY_SIMPLEX
     if normalized_origin:
         origin = int(resolution[1] * origin[0]), int(resolution[0] * origin[1])
     cv.putText(input_frame, txt, origin, font, fontscale,
@@ -537,7 +525,33 @@ def draw_contour(input_frame, contour, color, text):
     """
     resolution = input_frame.shape
     cv.polylines(input_frame, [contour], True, color, 1, cv.LINE_AA)
-    text_putter(input_frame, text, tuple(contour[0] - 5), normalized_origin=False, fontscale=0.5, thickness=0, font=cv.FONT_HERSHEY_PLAIN, color=color)
-    for point in contour:
-        cv.circle(input_frame, tuple(point), radius=2, color=color, thickness=-1)
+    image = Image.fromarray(np.uint8(input_frame)).convert("RGB")
+    draw = ImageDraw.Draw(image)
+    top = min(contour, key=itemgetter(1))
+    font = get_draw_font()
+    draw_text(draw, text, top, color, font)
+    np.copyto(input_frame, np.array(image))
 
+def draw_text(draw, text, coordinate, color, font):
+    text_width, text_height = font.getsize(text)
+    margin = np.ceil(0.05 * text_height)
+    draw.rectangle(
+        [
+            (coordinate[0], coordinate[1] - text_height - 2 * margin),
+            (coordinate[0] + text_width, coordinate[1]),
+        ],
+        fill=color,
+    )
+    draw.text(
+        (coordinate[0] + margin, coordinate[1] - text_height),
+        text,
+        fill="black",
+        font=font,
+    )
+    return draw
+
+def get_draw_font():
+    try:
+        return ImageFont.truetype("arial.ttf", 24)
+    except IOError:
+        return ImageFont.load_default()
