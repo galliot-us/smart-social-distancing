@@ -128,6 +128,12 @@ def get_camera_index(config_dict: Dict, camera_id: str) -> int:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
     return index
 
+def get_camera_from_id(camera_id: str, options=[]):
+    camera = next((camera for camera in get_cameras(options) if camera["id"] == camera_id), None)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
+    return camera
+
 
 @cameras_router.get("", response_model=CamerasListDTO)
 async def list_cameras(options: Optional[str] = ""):
@@ -144,10 +150,7 @@ async def get_camera(camera_id: str):
     """
     Returns the configuration related to the camera <camera_id>
     """
-    camera = next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_id), None)
-    if not camera:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
-    return camera
+    return get_camera_from_id(camera_id, options=["withImage"])
 
 
 def get_first_unused_id(cameras_ids):
@@ -236,6 +239,7 @@ async def get_camera_image(camera_id: str):
     """
     Gets the image related to the camera <camera_id>
     """
+    _ = get_camera_from_id(camera_id)
     return {
         "image": get_camera_default_image_string(camera_id)
     }
@@ -246,9 +250,7 @@ async def config_calibrated_distance(camera_id: str, body: ConfigHomographyMatri
     """
     Calibrates the camera <camera_id> receiving as input the coordinates of a square of size 3ft 3" by 3ft 3" (1m by 1m).
     """
-    dir_source = next((source for source in settings.config.get_video_sources() if source["id"] == camera_id), None)
-    if not dir_source:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
+    dir_source = get_camera_from_id(camera_id)
     dir_path = get_camera_calibration_path(settings.config, camera_id)
     compute_and_save_inv_homography_matrix(points=body, destination=dir_path)
     sections = settings.config.get_sections()
@@ -265,6 +267,7 @@ async def get_camera_calibration_image(camera_id: str):
     """
     Gets the image required to calibrate the camera <camera_id>
     """
+    _ = get_camera_from_id(camera_id)
     cv_image = get_current_image(camera_id)
     _, buffer = cv.imencode(".jpg", cv_image)
     encoded_string = base64.b64encode(buffer)
@@ -308,6 +311,7 @@ async def get_roi_contour(camera_id: str):
     """
         Get the contour of the RoI
     """
+    _ = get_camera_from_id(camera_id)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
     roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(roi_file_path)
     if roi_contour is None:
@@ -321,6 +325,7 @@ async def add_or_replace_roi_contour(camera_id: str, body: ContourRoI, reboot_pr
         Define a RoI for a camera or replace its current one.
         A RoI is defined by a vector of [x,y] duples, that map to coordinates in the image.
     """
+    _ = get_camera_from_id(camera_id)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
     dir_path = Path(roi_file_path).parents[0]
     Path(dir_path).mkdir(parents=True, exist_ok=True)
@@ -335,6 +340,7 @@ async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = 
     """
         Delete the defined RoI for a camera.
     """
+    _ = get_camera_from_id(camera_id)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
     if not os.path.exists(roi_file_path):
         detail = f"There is no defined RoI for {camera_id}"
@@ -349,6 +355,7 @@ async def get_in_out_boundaries(camera_id: str):
     """
         Get the In/Out Boundaries
     """
+    _ = get_camera_from_id(camera_id)
     in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
     in_out_boundaries = InOutMetric.get_in_out_boundaries(in_out_file_path)
     if in_out_boundaries is None:
@@ -364,6 +371,7 @@ async def add_or_replace_in_out_boundaries(camera_id: str, body: InOutBoundaries
         A RoI is defined by two duples of [x,y] duples, that map to coordinates in the image.
         in_line contains the In vector, whereas out_line the Out vector.
     """
+    _ = get_camera_from_id(camera_id)
     in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
     dir_path = Path(in_out_file_path).parents[0]
     Path(dir_path).mkdir(parents=True, exist_ok=True)
@@ -379,6 +387,7 @@ async def remove_in_out_boundaries(camera_id: str, reboot_processor: Optional[bo
     """
         Delete the defined In/Out boundaries for a camera.
     """
+    _ = get_camera_from_id(camera_id)
     in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
     if not os.path.exists(in_out_file_path):
         detail = f"There is no defined In/Out Boundary for {camera_id}"
