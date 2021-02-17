@@ -103,7 +103,7 @@ class ObjectsFilteringPostProcessor:
             "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and
             "bboxReal" (a tuple of the (xmin,ymin,xmax,ymax) coordinate of the box)
 
-            roi_contour: An array of duples that compose the contour of the RoI
+            roi_contour: An array of 2-tuples that compose the contour of the RoI
         returns:
         True of False: Depending if the objects coodinates are inside the RoI
         """
@@ -124,7 +124,7 @@ class ObjectsFilteringPostProcessor:
             "id", "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box) and "bbox" (a tuple
             of the normalized (xmin,ymin,xmax,ymax) coordinate of the box)
 
-            roi_contour: An array of duples that compose the contour of the RoI
+            roi_contour: An array of 2-tuples that compose the contour of the RoI
         returns:
         object_list: input object list with only the objets that fall under the Region of Interest.
         """
