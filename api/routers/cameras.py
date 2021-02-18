@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import re
+import json
 import numpy as np
 
 from fastapi import APIRouter, status
@@ -19,8 +20,9 @@ from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas, restart_processor,
     update_config, map_section_from_config, map_to_config_file_format, bad_request_serializer
 )
-from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel, ContourRoI
+from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel, ContourRoI, InOutBoundaries
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
+from libs.metrics.in_out import InOutMetric
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +129,17 @@ def get_camera_index(config_dict: Dict, camera_id: str) -> int:
     return index
 
 
+def retrieve_camera_from_id(camera_id: str, options=[]):
+    camera = next((camera for camera in get_cameras(options) if camera["id"] == camera_id), None)
+    if not camera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
+    return camera
+
+
+def validate_camera_existence(camera_id: str):
+    retrieve_camera_from_id(camera_id)
+
+
 @cameras_router.get("", response_model=CamerasListDTO)
 async def list_cameras(options: Optional[str] = ""):
     """
@@ -142,10 +155,7 @@ async def get_camera(camera_id: str):
     """
     Returns the configuration related to the camera <camera_id>
     """
-    camera = next((camera for camera in get_cameras(["withImage"]) if camera["id"] == camera_id), None)
-    if not camera:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The camera: {camera_id} does not exist")
-    return camera
+    return retrieve_camera_from_id(camera_id, options=["withImage"])
 
 
 def get_first_unused_id(cameras_ids):
@@ -234,6 +244,7 @@ async def get_camera_image(camera_id: str):
     """
     Gets the image related to the camera <camera_id>
     """
+    validate_camera_existence(camera_id)
     return {
         "image": get_camera_default_image_string(camera_id)
     }
@@ -263,6 +274,7 @@ async def get_camera_calibration_image(camera_id: str):
     """
     Gets the image required to calibrate the camera <camera_id>
     """
+    validate_camera_existence(camera_id)
     cv_image = get_current_image(camera_id)
     _, buffer = cv.imencode(".jpg", cv_image)
     encoded_string = base64.b64encode(buffer)
@@ -306,6 +318,7 @@ async def get_roi_contour(camera_id: str):
     """
         Get the contour of the RoI
     """
+    validate_camera_existence(camera_id)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
     roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(roi_file_path)
     if roi_contour is None:
@@ -317,8 +330,9 @@ async def get_roi_contour(camera_id: str):
 async def add_or_replace_roi_contour(camera_id: str, body: ContourRoI, reboot_processor: Optional[bool] = True):
     """
         Define a RoI for a camera or replace its current one.
-        A RoI is defined by a vector of [x,y] duples, that map to coordinates in the image.
+        A RoI is defined by a vector of [x,y] 2-tuples, that map to coordinates in the image.
     """
+    validate_camera_existence(camera_id)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
     dir_path = Path(roi_file_path).parents[0]
     Path(dir_path).mkdir(parents=True, exist_ok=True)
@@ -333,10 +347,62 @@ async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = 
     """
         Delete the defined RoI for a camera.
     """
+    validate_camera_existence(camera_id)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
     if not os.path.exists(roi_file_path):
         detail = f"There is no defined RoI for {camera_id}"
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
     os.remove(roi_file_path)
+    success = restart_processor() if reboot_processor else True
+    return handle_response(None, success, status.HTTP_204_NO_CONTENT)
+
+
+@cameras_router.get("/{camera_id}/in_out_boundaries")
+async def get_in_out_boundaries(camera_id: str):
+    """
+        Get the In/Out Boundaries for a camera.
+        Two coordinates `[x,y]` are given in 2-tuples `[A,B]`. These points form a **line**.
+        - If someone crosses the **line** while having **A** to their right, they are going in the `in` direction (entering).
+        - Crossing the **line** while having **A** to their left means they are going in the `out` direction (leaving).
+    """
+    validate_camera_existence(camera_id)
+    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
+    in_out_boundaries = InOutMetric.get_in_out_boundaries(in_out_file_path)
+    if in_out_boundaries is None:
+        error_detail = f"There is no defined In/Out Boundary for {camera_id}"
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_detail)
+    return InOutBoundaries(**dict(in_out_boundaries))
+
+
+@cameras_router.put("/{camera_id}/in_out_boundaries", status_code=status.HTTP_201_CREATED)
+async def add_or_replace_in_out_boundaries(camera_id: str, body: InOutBoundaries, reboot_processor: Optional[bool] = True):
+    """
+        Define the In/Out boundaries for a camera.
+        Two coordinates `[x,y]` are given in 2-tuples `[A,B]`. These points form a **line**.
+        - If someone crosses the **line** while having **A** to their right, they are going in the `in` direction (entering).
+        - Crossing the **line** while having **A** to their left means they are going in the `out` direction (leaving).
+    """
+    validate_camera_existence(camera_id)
+    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
+    dir_path = Path(in_out_file_path).parents[0]
+    Path(dir_path).mkdir(parents=True, exist_ok=True)
+    in_out_boundaries = body.dict()
+    with open(in_out_file_path, "w") as outfile:
+        json.dump(in_out_boundaries, outfile)
+    restart_processor() if reboot_processor else True
+    return body
+
+
+@cameras_router.delete("/{camera_id}/in_out_boundaries")
+async def remove_in_out_boundaries(camera_id: str, reboot_processor: Optional[bool] = True):
+    """
+        Delete the defined In/Out boundaries for a camera.
+    """
+    validate_camera_existence(camera_id)
+    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
+    if not os.path.exists(in_out_file_path):
+        detail = f"There is no defined In/Out Boundary for {camera_id}"
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+    os.remove(in_out_file_path)
     success = restart_processor() if reboot_processor else True
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
