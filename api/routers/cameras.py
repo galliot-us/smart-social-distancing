@@ -23,6 +23,7 @@ from api.utils import (
 from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel, ContourRoI, InOutBoundaries
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
 from libs.metrics.in_out import InOutMetric
+from libs.utils.utils import validate_file_exists_and_is_not_empty
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,12 @@ def map_camera(camera_name, config, options=[]):
     if "withImage" in options:
         image_string = get_camera_default_image_string(camera_id)
     camera_dict["image"] = image_string
+    calibration_file_path = get_camera_calibration_path(settings.config, camera_id)
+    camera_dict["has_been_calibrated"] = validate_file_exists_and_is_not_empty(calibration_file_path)
+    roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
+    camera_dict["has_defined_roi"] = validate_file_exists_and_is_not_empty(roi_file_path)
+    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
+    camera_dict["has_in_out_border"] = validate_file_exists_and_is_not_empty(in_out_file_path)
     return camera_dict
 
 
@@ -349,7 +356,7 @@ async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = 
     """
     validate_camera_existence(camera_id)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
-    if not os.path.exists(roi_file_path):
+    if not validate_file_exists_and_is_not_empty(roi_file_path):
         detail = f"There is no defined RoI for {camera_id}"
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
     os.remove(roi_file_path)
@@ -400,7 +407,7 @@ async def remove_in_out_boundaries(camera_id: str, reboot_processor: Optional[bo
     """
     validate_camera_existence(camera_id)
     in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
-    if not os.path.exists(in_out_file_path):
+    if not validate_file_exists_and_is_not_empty(in_out_file_path):
         detail = f"There is no defined In/Out Boundary for {camera_id}"
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
     os.remove(in_out_file_path)

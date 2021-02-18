@@ -13,6 +13,9 @@ class CameraDTO(EntityConfigDTO, NotificationConfig):
     image: Optional[str] = Field("", example='Base64 image')
     distMethod: Optional[str] = Field("", example='CenterPointsDistance')
     liveFeedEnabled: bool = Field(True, example=True)
+    hasBeenCalibrated: bool = Field(False, example=False)
+    hasDefinedRoi: bool = Field(False, example=False)
+    hasInOutBorder: bool = Field(False, example=False)
 
     @validator('videoPath')
     def video_must_be_valid(cls, video_uri):

@@ -7,6 +7,7 @@ from typing import Dict, Iterator, List
 from .base import BaseMetric
 from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
+from libs.utils.utils import validate_file_exists_and_is_not_empty
 from pathlib import Path
 
 class InOutMetric(BaseMetric):
@@ -52,9 +53,7 @@ class InOutMetric(BaseMetric):
     @classmethod
     def get_in_out_boundaries(cls, in_out_file_path):
         """ Given the path to the in-out file it loads it and returns it """
-        if os.path.exists(in_out_file_path)\
-           and Path(in_out_file_path).is_file()\
-           and Path(in_out_file_path).stat().st_size != 0:
+        if validate_file_exists_and_is_not_empty(in_out_file_path):
             with open(in_out_file_path) as json_file:
                 in_out_boundaries = json.load(json_file)
             return in_out_boundaries
