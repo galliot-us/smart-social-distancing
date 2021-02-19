@@ -21,6 +21,7 @@ class BaseTracker:
 
         self.next_track_id = 0  # ID of next object
         self.tracks = OrderedDict()
+        self.track_history = dict()
 
         self.max_lost = max_lost
         self.frame_count = 0
@@ -49,6 +50,7 @@ class BaseTracker:
                                                 class_id=class_id)
         for key, value in kwargs.items():
             self.tracks[self.next_track_id].info[key] = value
+        self.tracks[self.next_track_id].info["track_history"] = [tuple(centroid)]
 
         self.next_track_id += 1
 
@@ -65,6 +67,7 @@ class BaseTracker:
         -------
 
         """
+        del self.tracks[track_id].info["track_history"]
         del self.tracks[track_id]
 
     def _update_track(self, track_id, centroid, bbox, **kwargs):
@@ -73,6 +76,9 @@ class BaseTracker:
         self.tracks[track_id].lost = 0
         for key, value in kwargs.items():
             self.tracks[track_id].info[key] = value
+        self.tracks[track_id].info["track_history"].append(tuple(centroid))
+        if len(self.tracks[track_id].info["track_history"]) > 20:
+            self.tracks[track_id].info["track_history"].pop(0)
 
     def _get_tracks(self, tracks):
         """
