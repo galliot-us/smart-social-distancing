@@ -1,0 +1,8 @@
+services:
+  processor:
+    volumes:
+      - .:/repo
+    ports:
+      - 8300:8000
+    environment:
+      - TZ=./timezone.sh

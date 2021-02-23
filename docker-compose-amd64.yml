@@ -1,0 +1,7 @@
+services:
+  processor:
+    image: neuralet/smart-social-distancing:latest-amd64
+    privileged: true
+    build:
+        context: .
+        dockerfile: amd64-usbtpu.Dockerfile
