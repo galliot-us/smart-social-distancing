@@ -5,6 +5,7 @@ import pandas as pd
 from .face_mask_usage import FaceMaskUsageMetric
 from .occupancy import OccupancyMetric
 from .social_distancing import SocialDistancingMetric
+from .in_out import InOutMetric
 
 
 def compute_hourly_metrics(config):
@@ -23,6 +24,7 @@ def compute_live_metrics(config, live_interval):
     SocialDistancingMetric.compute_live_metrics(config, live_interval)
     FaceMaskUsageMetric.compute_live_metrics(config, live_interval)
     OccupancyMetric.compute_live_metrics(config, live_interval)
+    InOutMetric.compute_live_metrics(config, live_interval)
 
 
 def generate_heatmap(camera_id, from_date, to_date, report_type):
