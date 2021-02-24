@@ -54,7 +54,7 @@ class OccupancyMetric(BaseMetric):
         return round(mean(average_ocupancy), 2), max(max_occupancy), threshold
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):
+    def generate_live_csv_data(cls, config, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """

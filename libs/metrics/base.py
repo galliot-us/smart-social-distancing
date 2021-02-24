@@ -164,7 +164,7 @@ class BaseMetric:
                 writer.writerow(row)
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):
+    def generate_live_csv_data(cls, config, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
@@ -194,7 +194,7 @@ class BaseMetric:
                 return
             entity["base_directory"] = entity_directory
             entries_in_interval = int(live_interval * 60 / get_source_logging_interval(config))
-            live_data = cls.generate_live_csv_data(today_entity_csv, entity, entries_in_interval)
+            live_data = cls.generate_live_csv_data(config, today_entity_csv, entity, entries_in_interval)
             with open(live_report_csv, "a") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=headers)
                 if not report_file_exists:

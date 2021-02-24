@@ -4,6 +4,7 @@ import json
 import os
 import numpy as np
 
+from numpy import linalg as LA
 from collections import deque
 from datetime import date
 from typing import Dict, Iterator, List
@@ -14,28 +15,42 @@ from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
 from libs.utils.utils import validate_file_exists_and_is_not_empty
 
-
 class InOutMetric(BaseMetric):
 
     reports_folder = IN_OUT
     csv_headers = ["In", "Out"]
 
     @classmethod
-    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
-        row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
+    def process_path(cls, boundary_line, trajectory_path):
+        """
+        Verify if a trajectory goes over a boundary line
+        Args:
+            boundary_line: Set of two 2-tuples (x, Y)
+                Boundaries of the in/out line.
+                A
 
-        # csv_row
-        #
-        detections = ast.literal_eval(csv_row["Detections"])
-        row_hour = row_time.hour
-        if not objects_logs.get(row_hour):
-            objects_logs[row_hour] = {}
-        for d in detections:
-            # print(d["track_info"]["track_history"])
-            if not objects_logs[row_hour].get(d["tracking_id"]):
-                objects_logs[row_hour][d["tracking_id"]] = {"face_labels": []}
-            # Append social distancing violations
-            objects_logs[row_hour][d["tracking_id"]]["face_labels"].append(d.get("face_label", -1))
+            trajectory_path: List of N 2-tuples (x,y)
+            That represents the trajectory of an object.
+
+        Returns:
+            in, out) : tuple
+                 (1, 0) - if the object entered (in)
+                 (0, 1) - if the object left (out)
+                 (0, 0) - if the object didn't cross the boundary.
+        """
+        number_of_cuts = 5
+        if len(trajectory_path) < number_of_cuts:
+            number_of_cuts = len(trajectory_path)
+
+        intersections = [trajectory_path[int(i)] for i in np.linspace(0, len(trajectory_path) - 1, number_of_cuts)]
+        intersections = zip(intersections, intersections[1:])
+        in_out = (0, 0)
+
+        for intersection in intersections:
+            intersection_in_out = check_line_cross(boundary_line, intersection)
+            if intersection_in_out != (0, 0):
+                in_out = intersection_in_out
+        return in_out
 
     @classmethod
     def generate_hourly_metric_data(cls, objects_logs, entity):
@@ -46,10 +61,16 @@ class InOutMetric(BaseMetric):
         raise NotImplementedError("Operation not implemented")
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):
+    def generate_live_csv_data(cls, config, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
+
+        boundary_path = cls.get_in_out_file_path(entity["id"], config)
+        boundary_line = cls.get_in_out_boundaries(boundary_path)["in_out_boundary"]
+        if boundary_line is None:
+            raise Exception(f"Camera {entity[id]} does not have a defined in/out boundary")
+        people_in, people_out = 0, 0
         with open(today_entity_csv, "r") as log:
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
@@ -62,32 +83,19 @@ class InOutMetric(BaseMetric):
                     x1, x2 = int(corners[0]), int(corners[2])
                     y1, y2 = int(corners[1]), int(corners[3])
                     position = (x1 + (x2 - x1) / 2, y2)
-                    if not track_id in paths:
+                    if track_id not in paths:
                         paths[track_id] = [position]
                     else:
                         paths[track_id].append(position)
-            print(paths)
-            # unique_objects = [entry[], entry["Detections"] for entry in lastest_entries]
-            # for entry in lastest_entries:
-                # cls.process_csv_row(entry, objects_logs)
-        return 0
-        return np.sum(cls.generate_hourly_metric_data(objects_logs), axis=0)
-        occupancy_live = cls.generate_hourly_metric_data(objects_logs_merged, entity)[0].tolist()
-        occupancy_live.append(int(entity["occupancy_threshold"]))
-        daily_violations = 0
-        entity_directory = entity["base_directory"]
-        reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
-        file_path = os.path.join(reports_directory, "live.csv")
-        if os.path.exists(file_path):
-            with open(file_path, "r") as live_file:
-                lastest_entry = deque(csv.DictReader(live_file), 1)[0]
-                if datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S").date() == datetime.today().date():
-                    daily_violations = int(lastest_entry["Violations"])
-        if occupancy_live[1] > occupancy_live[2]:
-            # Max Occupancy detections > Occupancy threshold
-            daily_violations += 1
-        occupancy_live.append(daily_violations)
-        return occupancy_live
+            for track_id, path in paths.items():
+                new_in, new_out = cls.process_path(boundary_line, path)
+                people_in += new_in
+                people_out += new_out
+        print()
+        print(f"among {len(paths)} people, {people_in} entered, {people_out} left")
+        print()
+        raise Exception("")
+        return [people_in, people_out]
 
     @classmethod
     def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:
@@ -113,49 +121,68 @@ class InOutMetric(BaseMetric):
         else:
             return None
 
-# From https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py
+# https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py
+def check_line_cross(boundary_line, trajectory):
+    """
+    Args:
+        boundary_line: Set of two 2-tuples (x, Y)
+                Boundaries of the in/out line.
+                A
+        trajectory: vector ((x1, y1), (x2, y2))
 
-# Multiple lines cross check
-def checkLineCrosses(boundaryLines, objects):
-    for obj in objects:
-        traj = obj.trajectory
-        if len(traj) > 1:
-            p0 = traj[-2]
-            p1 = traj[-1]
-            for line in boundaryLines:
-                checkLineCross(line, [p0[0], p0[1], p1[0], p1[1]])
+    Returns:
+        (in, out) : tuple
+             (1, 0) - if the trajectory crossed the boundary entering (in)
+             (0, 1) - if the trajectory crossed the boundary leaving (out)
+             (0, 0) - if the trajectory didn't cross the boundary.
+    """
+    traj_p0 = (trajectory[0][0], trajectory[0][1])  # Trajectory of an object
+    traj_p1 = (trajectory[1][0], trajectory[1][1])
+    print(boundary_line)
+    b_line_p0 = (boundary_line[0][0], boundary_line[0][1])  # Boundary line
+    b_line_p1 = (boundary_line[1][0], boundary_line[1][1])
+    intersect = check_intersect(traj_p0, traj_p1, b_line_p0, b_line_p1)  # Check if intersect or not
+    if intersect == False:
+        return 0, 0
 
-# in: boundary_line = boundaryLine class object
-#     trajectory   = (x1, y1, x2, y2)
-def checkLineCross(boundary_line, trajectory):
-    traj_p0 = (trajectory[0], trajectory[1])  # Trajectory of an object
-    traj_p1 = (trajectory[2], trajectory[3])
-    bLine_p0 = (boundary_line.p0[0], boundary_line.p0[1])  # Boundary line
-    bLine_p1 = (boundary_line.p1[0], boundary_line.p1[1])
-    intersect = checkIntersect(traj_p0, traj_p1, bLine_p0, bLine_p1)  # Check if intersect or not
-    if intersect == True:
-        angle = calcVectorAngle(traj_p0, traj_p1, bLine_p0,
-                                bLine_p1)  # Calculate angle between trajectory and boundary line
-        if angle < 180:
-            boundary_line.count1 += 1
-        else:
-            boundary_line.count2 += 1
-        # cx, cy = calcIntersectPoint(traj_p0, traj_p1, bLine_p0, bLine_p1) # Calculate the intersect coordination
+    angle = calc_vector_angle(traj_p0, traj_p1, b_line_p0, b_line_p1)  # Calculate angle between trajectory and boundary line
+    if angle < 180:
+        return 1, 0
+    else:
+        return 0, 1
 
-# Check if line segments intersect - 線分同士が交差するかどうかチェック
-def checkIntersect(p1, p2, p3, p4):
+def check_intersect(p1, p2, p3, p4):
+    """
+    Check if the line p1-p2 intersects the line p3-p4
+    Args:
+        p1: (x,y)
+        p2: (x,y)
+        p3: (x,y)
+        p4: (x,y)
+
+    Returns:
+        boolean : True if intersection occurred
+    """
     tc1 = (p1[0] - p2[0]) * (p3[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p3[0])
     tc2 = (p1[0] - p2[0]) * (p4[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p4[0])
     td1 = (p3[0] - p4[0]) * (p1[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p1[0])
     td2 = (p3[0] - p4[0]) * (p2[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p2[0])
     return tc1 * tc2 < 0 and td1 * td2 < 0
 
-# point = (x,y)
-# line1(point1)-(point2), line2(point3)-(point4)
-# Calculate the angle made by two line segments - 線分同士が交差する角度を計算
-def calcVectorAngle(point1, point2, point3, point4):
-    u = np.array(line_vectorize(point1, point2))
-    v = np.array(line_vectorize(point3, point4))
+def calc_vector_angle(line1_p1, line1_p2, line2_p1, line2_p2):
+    """
+    Calculate the and return the angle made by two line segments line1(p1)-(p2), line2(p1)-(p2)
+    Args:
+        line1_p1: (x,y)
+        line1_p2: (x,y)
+        line2_p1: (x,y)
+        line2_p2: (x,y)
+
+    Returns:
+        angle : [0, 360)
+    """
+    u = np.array(line_vectorize(line1_p1, line1_p2))
+    v = np.array(line_vectorize(line2_p1, line2_p2))
     i = np.inner(u, v)
     n = LA.norm(u) * LA.norm(v)
     c = i / n
@@ -165,9 +192,15 @@ def calcVectorAngle(point1, point2, point3, point4):
     else:
         return 360 - a
 
-# line(point1)-(point2)
-# convert a line to a vector
 def line_vectorize(point1, point2):
+    """
+    Args:
+        point1: (x,y)
+        point2: (x,y)
+
+    Returns:
+        The vector of intersecting the points with a line line(point1)-(point2)
+    """
     a = point2[0] - point1[0]
     b = point2[1] - point1[1]
     return [a, b]
