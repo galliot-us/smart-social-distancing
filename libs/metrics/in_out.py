@@ -120,6 +120,7 @@ class InOutMetric(BaseMetric):
         else:
             return None
 
+# Auxiliary methods taken from:
 # https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py
 def check_line_cross(boundary_line, trajectory):
     """
