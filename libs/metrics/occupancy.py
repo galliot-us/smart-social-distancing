@@ -8,11 +8,12 @@ from statistics import mean
 from typing import Dict, Iterator, List
 
 from .base import BaseMetric
-
+from constants import OCCUPANCY
 
 class OccupancyMetric(BaseMetric):
 
-    reports_folder = "occupancy"
+    metric_name = OCCUPANCY
+    reports_folder = metric_name
     csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold"]
     entity = "area"
     live_csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold", "Violations"]

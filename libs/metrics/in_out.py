@@ -17,7 +17,8 @@ from libs.utils.utils import validate_file_exists_and_is_not_empty
 
 class InOutMetric(BaseMetric):
 
-    reports_folder = IN_OUT
+    metric_name = IN_OUT
+    reports_folder = metric_name
     csv_headers = ["In", "Out"]
 
     @classmethod
@@ -67,12 +68,13 @@ class InOutMetric(BaseMetric):
         """
 
         boundary_path = cls.get_in_out_file_path(entity["id"], config)
-        boundary_line = cls.get_in_out_boundaries(boundary_path)["in_out_boundary"]
+        boundary_line = cls.get_in_out_boundaries(boundary_path)
         if boundary_line is None:
-            raise Exception(f"Camera {entity[id]} does not have a defined in/out boundary")
+            raise Exception(f"Camera {entity['id']} does not have a defined in/out boundary")
+        else:
+            boundary_line = boundary_line["in_out_boundary"]
         people_in, people_out = 0, 0
         with open(today_entity_csv, "r") as log:
-            objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             detection_entries = [ast.literal_eval(entry["Detections"]) for entry in lastest_entries]
             paths = {}
@@ -91,10 +93,6 @@ class InOutMetric(BaseMetric):
                 new_in, new_out = cls.process_path(boundary_line, path)
                 people_in += new_in
                 people_out += new_out
-        print()
-        print(f"among {len(paths)} people, {people_in} entered, {people_out} left")
-        print()
-        raise Exception("")
         return [people_in, people_out]
 
     @classmethod
@@ -138,7 +136,6 @@ def check_line_cross(boundary_line, trajectory):
     """
     traj_p0 = (trajectory[0][0], trajectory[0][1])  # Trajectory of an object
     traj_p1 = (trajectory[1][0], trajectory[1][1])
-    print(boundary_line)
     b_line_p0 = (boundary_line[0][0], boundary_line[0][1])  # Boundary line
     b_line_p1 = (boundary_line[1][0], boundary_line[1][1])
     intersect = check_intersect(traj_p0, traj_p1, b_line_p0, b_line_p1)  # Check if intersect or not
@@ -146,9 +143,9 @@ def check_line_cross(boundary_line, trajectory):
         return 0, 0
 
     angle = calc_vector_angle(traj_p0, traj_p1, b_line_p0, b_line_p1)  # Calculate angle between trajectory and boundary line
-    if angle < 180:
+    if angle < 180: # in
         return 1, 0
-    else:
+    else: # out
         return 0, 1
 
 def check_intersect(p1, p2, p3, p4):

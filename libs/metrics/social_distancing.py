@@ -10,11 +10,13 @@ from typing import Dict, List, Iterator, Tuple
 from libs.utils.loggers import get_source_log_directory
 
 from .base import BaseMetric
+from constants import SOCIAL_DISTANCING
 
 
 class SocialDistancingMetric(BaseMetric):
 
-    reports_folder = "social-distancing"
+    metric_name = SOCIAL_DISTANCING
+    reports_folder = SOCIAL_DISTANCING
     csv_headers = ["DetectedObjects", "NoInfringement", "LowInfringement", "HighInfringement",
                    "CriticalInfringement"]
 

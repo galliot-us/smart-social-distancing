@@ -8,10 +8,12 @@ from datetime import datetime
 from typing import Dict, List, Iterator, Tuple
 
 from .base import BaseMetric
+from constants import FACEMASK_USAGE
 
 
 class FaceMaskUsageMetric(BaseMetric):
 
+    metric_name = FACEMASK_USAGE
     reports_folder = "face-mask-usage"
     csv_headers = ["NoFace", "FaceWithMask", "FaceWithoutMask"]
 
