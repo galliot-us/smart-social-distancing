@@ -26,9 +26,10 @@ class InOutMetric(BaseMetric):
         """
         Verify if a trajectory goes over a boundary line
         Args:
-            boundary_line: Set of two 2-tuples (x, Y)
+            Two coordinates [x,y] are in 2-tuples [A,B]
                 Boundaries of the in/out line.
-                A
+                If someone crosses the line while having A to their right, they are going in the in direction (entering)
+                Crossing the line while having A to their left means they are going in the out direction (leaving)
 
             trajectory_path: List of N 2-tuples (x,y)
             That represents the trajectory of an object.
@@ -123,9 +124,10 @@ class InOutMetric(BaseMetric):
 def check_line_cross(boundary_line, trajectory):
     """
     Args:
-        boundary_line: Set of two 2-tuples (x, Y)
+        boundary_line: Two coordinates [x,y] are in 2-tuples [A,B]
                 Boundaries of the in/out line.
-                A
+                If someone crosses the line while having A to their right, they are going in the in direction (entering)
+                Crossing the line while having A to their left means they are going in the out direction (leaving)
         trajectory: vector ((x1, y1), (x2, y2))
 
     Returns:
