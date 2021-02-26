@@ -12,8 +12,7 @@ from constants import OCCUPANCY
 
 class OccupancyMetric(BaseMetric):
 
-    metric_name = OCCUPANCY
-    reports_folder = metric_name
+    reports_folder = OCCUPANCY
     csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold"]
     entity = "area"
     live_csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold", "Violations"]
@@ -115,3 +114,7 @@ class OccupancyMetric(BaseMetric):
             report["MaxOccupancy"].append(max(week_data["MaxOccupancy"]))
             report["OccupancyThreshold"].append(max(week_data["OccupancyThreshold"]))
         return report
+
+    @classmethod
+    def can_execute(cls, config, entity):
+        return True

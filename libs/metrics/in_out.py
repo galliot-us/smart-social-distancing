@@ -17,8 +17,7 @@ from libs.utils.utils import validate_file_exists_and_is_not_empty
 
 class InOutMetric(BaseMetric):
 
-    metric_name = IN_OUT
-    reports_folder = metric_name
+    reports_folder = IN_OUT
     csv_headers = ["In", "Out"]
 
     @classmethod
@@ -44,14 +43,14 @@ class InOutMetric(BaseMetric):
         if len(trajectory_path) < number_of_cuts:
             number_of_cuts = len(trajectory_path)
 
-        intersections = [trajectory_path[int(i)] for i in np.linspace(0, len(trajectory_path) - 1, number_of_cuts)]
-        intersections = zip(intersections, intersections[1:])
+        trajectory_steps = [trajectory_path[int(i)] for i in np.linspace(0, len(trajectory_path) - 1, number_of_cuts)]
+        trajectory_steps = zip(trajectory_steps, trajectory_steps[1:])
         in_out = (0, 0)
 
-        for intersection in intersections:
-            intersection_in_out = check_line_cross(boundary_line, intersection)
-            if intersection_in_out != (0, 0):
-                in_out = intersection_in_out
+        for trajectory in trajectory_steps:
+            trajectory_in_out = check_line_cross(boundary_line, trajectory)
+            if trajectory_in_out != (0, 0):
+                in_out = trajectory_in_out
         return in_out
 
     @classmethod
@@ -119,6 +118,13 @@ class InOutMetric(BaseMetric):
             return in_out_boundaries
         else:
             return None
+
+    @classmethod
+    def can_execute(cls, config, entity):
+        boundary_line = cls.get_in_out_boundaries(cls.get_in_out_file_path(entity["id"], config))
+        if boundary_line is None:
+            return False
+        return True
 
 # Auxiliary methods taken from:
 # https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py

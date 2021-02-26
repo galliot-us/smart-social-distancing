@@ -15,7 +15,6 @@ from constants import SOCIAL_DISTANCING
 
 class SocialDistancingMetric(BaseMetric):
 
-    metric_name = SOCIAL_DISTANCING
     reports_folder = SOCIAL_DISTANCING
     csv_headers = ["DetectedObjects", "NoInfringement", "LowInfringement", "HighInfringement",
                    "CriticalInfringement"]
@@ -190,3 +189,7 @@ class SocialDistancingMetric(BaseMetric):
                         latest_social_distancing_results[index] = 0
                     latest_social_distancing_results[index] += int(item["DetectedObjects"]) - int(item["NoInfringement"])
         return [item for item in latest_social_distancing_results.values() if item is not None]
+
+    @classmethod
+    def can_execute(cls, config, entity):
+        return True

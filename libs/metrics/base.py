@@ -9,7 +9,6 @@ from datetime import date, datetime, timedelta, time
 from typing import Dict, List, Iterator
 
 from libs.utils.loggers import get_source_log_directory, get_area_log_directory, get_source_logging_interval
-from constants import IN_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -196,10 +195,8 @@ class BaseMetric:
                 return
             entity["base_directory"] = entity_directory
             entries_in_interval = int(live_interval * 60 / get_source_logging_interval(config))
-            if cls.metric_name == IN_OUT:
-                boundary_line = cls.get_in_out_boundaries(cls.get_in_out_file_path(entity["id"], config))
-                if boundary_line is None:
-                    return
+            if not cls.can_execute(config, entity):
+                return
             live_data = cls.generate_live_csv_data(config, today_entity_csv, entity, entries_in_interval)
             with open(live_report_csv, "a") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=headers)
@@ -344,3 +341,7 @@ class BaseMetric:
         if trend_live_values:
             report["Trend"] = cls.calculate_trend_value(trend_live_values)
         return report
+
+    @classmethod
+    def can_execute(cls, config, entity):
+        return False

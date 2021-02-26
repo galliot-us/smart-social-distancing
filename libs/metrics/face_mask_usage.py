@@ -13,7 +13,6 @@ from constants import FACEMASK_USAGE
 
 class FaceMaskUsageMetric(BaseMetric):
 
-    metric_name = FACEMASK_USAGE
     reports_folder = "face-mask-usage"
     csv_headers = ["NoFace", "FaceWithMask", "FaceWithoutMask"]
 
@@ -115,3 +114,7 @@ class FaceMaskUsageMetric(BaseMetric):
                         latest_facemask_results[index] = 0
                     latest_facemask_results[index] += int(item["FaceWithMask"])
         return [item for item in latest_facemask_results.values() if item is not None]
+
+    @classmethod
+    def can_execute(cls, config, entity):
+        return True
