@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import Dict, List, Iterator, Tuple
 
 from .base import BaseMetric
-from constants import FACEMASK_USAGE
 
 
 class FaceMaskUsageMetric(BaseMetric):

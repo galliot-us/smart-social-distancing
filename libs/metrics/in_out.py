@@ -19,9 +19,10 @@ class InOutMetric(BaseMetric):
 
     reports_folder = IN_OUT
     csv_headers = ["In", "Out"]
+    NUMBER_OF_PATH_SEGMENTS = 5
 
     @classmethod
-    def process_path(cls, boundary_line, trajectory_path):
+    def process_path(cls, boundary_line, trajectory_path, number_of_cuts=NUMBER_OF_PATH_SEGMENTS):
         """
         Verify if a trajectory goes over a boundary line
         Args:
@@ -39,7 +40,6 @@ class InOutMetric(BaseMetric):
                  (0, 1) - if the object left (out)
                  (0, 0) - if the object didn't cross the boundary.
         """
-        number_of_cuts = 5
         if len(trajectory_path) < number_of_cuts:
             number_of_cuts = len(trajectory_path)
 
@@ -66,7 +66,6 @@ class InOutMetric(BaseMetric):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
-
         boundary_path = cls.get_in_out_file_path(entity["id"], config)
         boundary_line = cls.get_in_out_boundaries(boundary_path)
         if boundary_line is None:
@@ -97,7 +96,18 @@ class InOutMetric(BaseMetric):
 
     @classmethod
     def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:
-        raise NotImplementedError("Operation not implemented")
+        latest_in_out_results = {}
+        for n in range(10):
+            latest_in_out_results[n] = None
+        for live_path in live_report_paths:
+            with open(live_path, "r") as live_file:
+                lastest_10_entries = deque(csv.DictReader(live_file), 10)
+                for index, item in enumerate(lastest_10_entries):
+                    if not latest_in_out_results[index]:
+                        latest_in_out_results[index] = 0
+                    latest_in_out_results[index] += int(item["DetectedObjects"]) - int(
+                        item["NoInfringement"])
+        return [item for item in latest_in_out_results.values() if item is not None]
 
     @classmethod
     def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,

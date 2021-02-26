@@ -26,7 +26,6 @@ def parse_date_range(dates):
 
 
 class BaseMetric:
-    metric_name = None
     processing_count_threshold = 3
     reports_folder = None
     csv_headers = []

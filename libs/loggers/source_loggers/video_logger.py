@@ -6,7 +6,6 @@ import logging
 
 from libs.utils import visualization_utils
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
-from libs.metrics.in_out import InOutMetric
 
 logger = logging.getLogger(__name__)
 
