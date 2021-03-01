@@ -33,6 +33,7 @@ def get_heatmap(camera_id: str,
             detail=bad_request_serializer("Invalid report_type", error_type="invalid config")
         )
 
+
 # Social Distancing Metrics
 @metrics_router.get("/social-distancing/live", response_model=SocialDistancingLive)
 def get_camera_distancing_live(cameras: str = ""):

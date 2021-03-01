@@ -5,7 +5,7 @@ import copy
 import numpy
 import shutil
 
-from api.tests.utils.common_functions import get_section_from_config_file, get_config_file_json
+from api.tests.utils.common_functions import get_section_from_config_file, get_config_file_json, create_a_camera
 
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
@@ -14,8 +14,6 @@ from api.tests.utils.fixtures_tests import config_rollback, camera_sample, rollb
 # TODO: Test stuffs related with the parameter reboot_processor.
 
 
-def create_a_camera(client, camera):
-    return client.post("/cameras", json=camera)
 
 
 def create_n_cameras(client, camera_base, number_of_cameras, enable=False):

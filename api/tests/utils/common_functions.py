@@ -135,3 +135,7 @@ def camel_case_to_snake_case_dict(dictionary):
         del di["dashboard_u_r_l"]
 
     return di
+
+
+def create_a_camera(client, camera):
+    return client.post("/cameras", json=camera)
