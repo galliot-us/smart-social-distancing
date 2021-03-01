@@ -103,11 +103,9 @@ class TestsGetCameraDistancingLive:
 
     # TODO: What is the trend attribute in the response?
 
-    def test_get_a_report_properly(self, config_rollback_create_cameras, reports_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
-        camera_id = camera["id"]
-        response = client.get(f"/metrics/cameras/social-distancing/live?cameras={camera_id}")
-        assert response.json() == {
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
             'time': '2021-02-19 13:37:58',
             'trend': 0.05,
             'detected_objects': 6,
@@ -115,15 +113,18 @@ class TestsGetCameraDistancingLive:
             'low_infringement': 0,
             'high_infringement': 1,
             'critical_infringement': 0
-        }
-
-    def test_get_a_report_two_valid_cameras(self, config_rollback_create_cameras, reports_simulation):
+        })]
+    )
+    def test_get_a_report_properly(self, config_rollback_create_cameras, reports_simulation, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
-        camera_id_1 = camera["id"]
-        camera_id_2 = camera_2["id"]
-        response = client.get(f"/metrics/cameras/social-distancing/live?cameras={camera_id_1},{camera_id_2}")
-        # TODO: Ask if it is good that values are only added.
-        assert response.json() == {
+        camera_id = camera["id"]
+        response = client.get(f"/metrics/cameras/{metric}/live?cameras={camera_id}")
+        assert response.json() == expected
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
             'time': '2021-02-19 13:37:58',
             'trend': 0.11,
             'detected_objects': 12,
@@ -131,14 +132,27 @@ class TestsGetCameraDistancingLive:
             'low_infringement': 0,
             'high_infringement': 2,
             'critical_infringement': 0
-        }
+        })]
+    )
+    def test_get_a_report_two_valid_cameras(self, config_rollback_create_cameras, reports_simulation, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera_id_1 = camera["id"]
+        camera_id_2 = camera_2["id"]
+        response = client.get(f"/metrics/cameras/{metric}/live?cameras={camera_id_1},{camera_id_2}")
+        # TODO: Ask if it is good that values are only added.
+        assert response.json() == expected
+        assert response.status_code == 200
 
-    def test_try_get_a_report_bad_id_camera(self, config_rollback_create_cameras, reports_simulation):
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {'detail': "Camera with id 'BAD_ID' does not exist"})]
+    )
+    def test_try_get_a_report_bad_id_camera(self, config_rollback_create_cameras, reports_simulation, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
 
-        response = client.get(f"/metrics/cameras/social-distancing/live?cameras=BAD_ID")
+        response = client.get(f"/metrics/cameras/{metric}/live?cameras=BAD_ID")
 
-        assert response.json() == {'detail': "Camera with id 'BAD_ID' does not exist"}
+        assert response.json() == expected
         assert response.status_code == 404
 
 
@@ -150,43 +164,60 @@ class TestsGetCameraDistancingHourlyReport:
     the social distancing infractions detected in the cameras .
     """
 
-    def test_get_an_hourly_report_properly(self, config_rollback_create_cameras, reports_simulation):
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
+            'detected_objects': [54, 30, 19, 37, 27, 39, 44, 25, 51, 31, 47, 39, 16, 26, 67, 29, 36, 17, 31, 32, 19, 38,
+                                 34, 50],
+            'no_infringement': [13, 5, 2, 18, 5, 11, 10, 6, 14, 6, 17, 18, 4, 8, 17, 11, 3, 6, 7, 4, 6, 10, 11, 18],
+            'low_infringement': [10, 14, 4, 19, 11, 15, 7, 7, 11, 2, 1, 3, 10, 10, 19, 7, 15, 5, 5, 16, 4, 12, 13, 17],
+            'high_infringement': [16, 2, 3, 0, 8, 1, 16, 11, 12, 6, 15, 0, 0, 1, 14, 7, 10, 2, 1, 9, 8, 13, 0, 15],
+            'critical_infringement': [15, 9, 10, 0, 3, 12, 11, 1, 14, 17, 14, 18, 2, 7, 17, 4, 8, 4, 18, 3, 1, 3, 10,
+                                      0],
+            'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]})]
+    )
+    def test_get_an_hourly_report_properly(self, config_rollback_create_cameras, reports_simulation, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
         camera_id = camera["id"]
-        response = client.get(f"/metrics/cameras/social-distancing/hourly?cameras={camera_id}&date=2021-02-25")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-25")
 
         assert response.status_code == 200
-        assert response.json()['detected_objects'] == [54, 30, 19, 37, 27, 39, 44, 25, 51, 31, 47, 39, 16, 26, 67, 29,
-                                                       36, 17, 31, 32, 19, 38, 34, 50]
-        assert response.json()['no_infringement'] == [13, 5, 2, 18, 5, 11, 10, 6, 14, 6, 17, 18, 4, 8, 17, 11, 3, 6, 7,
-                                                      4, 6, 10, 11, 18]
+        assert response.json() == expected
 
-        assert response.json()['low_infringement'] == [10, 14, 4, 19, 11, 15, 7, 7, 11, 2, 1, 3, 10, 10, 19, 7, 15, 5,
-                                                       5, 16, 4, 12, 13, 17]
-        assert response.json()['high_infringement'] == [16, 2, 3, 0, 8, 1, 16, 11, 12, 6, 15, 0, 0, 1, 14, 7, 10, 2, 1,
-                                                        9, 8, 13, 0, 15]
-        assert response.json()['critical_infringement'] == [15, 9, 10, 0, 3, 12, 11, 1, 14, 17, 14, 18, 2, 7, 17, 4, 8,
-                                                            4, 18, 3, 1, 3, 10, 0]
-
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
+            'detected_objects': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            'no_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            'low_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            'high_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            'critical_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]})]
+    )
     def test_get_an_hourly_report_properly_II_less_than_23_hours(self, config_rollback_create_cameras,
-                                                                 reports_simulation):
+                                                                 reports_simulation, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
         camera_id = camera["id"]
-        response = client.get(f"/metrics/cameras/social-distancing/hourly?cameras={camera_id}&date=2021-02-19")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-19")
 
         assert response.status_code == 200
-        assert response.json()['detected_objects'] == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                       0, 0, 0]
-        assert response.json()['no_infringement'] == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                      0, 0]
-        assert response.json()['low_infringement'] == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                       0, 0, 0]
-        assert response.json()['high_infringement'] == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                        0, 0, 0]
-        assert response.json()['critical_infringement'] == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                            0, 0, 0, 0, 0]
+        assert response.json() == expected
 
-    def test_get_hourly_report_two_dates(self, config_rollback_create_cameras, reports_simulation):
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
+            'detected_objects': [108, 60, 38, 74, 54, 78, 88, 50, 102, 62, 94, 78, 32, 52, 134, 58, 72, 34, 62, 64, 38,
+                                 76, 68, 100],
+            'no_infringement': [26, 10, 4, 36, 10, 22, 20, 12, 28, 12, 34, 36, 8, 16, 34, 22, 6, 12, 14, 8, 12, 20, 22,
+                                36],
+            'low_infringement': [20, 28, 8, 38, 22, 30, 14, 14, 22, 4, 2, 6, 20, 20, 38, 14, 30, 10, 10, 32, 8, 24, 26,
+                                 34],
+            'high_infringement': [32, 4, 6, 0, 16, 2, 32, 22, 24, 12, 30, 0, 0, 2, 28, 14, 20, 4, 2, 18, 16, 26, 0, 30],
+            'critical_infringement': [30, 18, 20, 0, 6, 24, 22, 2, 28, 34, 28, 36, 4, 14, 34, 8, 16, 8, 36, 6, 2, 6, 20,
+                                      0],
+            'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]})]
+    )
+    def test_get_hourly_report_two_dates(self, config_rollback_create_cameras, reports_simulation, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
         camera_id = camera["id"]
         camera_id_2 = camera["id"]
@@ -194,65 +225,68 @@ class TestsGetCameraDistancingHourlyReport:
                               f"-02-25")
 
         assert response.status_code == 200
-        assert response.json()['detected_objects'] == list(map(lambda x: x * 2, [54, 30, 19, 37, 27, 39, 44, 25, 51,
-                                                                                 31, 47, 39, 16, 26, 67, 29, 36, 17,
-                                                                                 31, 32, 19, 38, 34, 50]))
-        assert response.json()['no_infringement'] == list(map(lambda x: x * 2, [13, 5, 2, 18, 5, 11, 10, 6, 14, 6, 17,
-                                                                                18, 4, 8, 17, 11, 3, 6, 7, 4, 6, 10,
-                                                                                11, 18]))
+        assert response.json() == expected
 
-        assert response.json()['low_infringement'] == list(map(lambda x: x * 2, [10, 14, 4, 19, 11, 15, 7, 7, 11, 2, 1,
-                                                                                 3, 10, 10, 19, 7, 15, 5, 5, 16, 4,
-                                                                                 12, 13, 17]))
-        assert response.json()['high_infringement'] == list(map(lambda x: x * 2, [16, 2, 3, 0, 8, 1, 16, 11, 12, 6, 15,
-                                                                                  0, 0, 1, 14, 7, 10, 2, 1, 9, 8, 13,
-                                                                                  0, 15]))
-        assert response.json()['critical_infringement'] == list(map(lambda x: x * 2, [15, 9, 10, 0, 3, 12, 11, 1, 14,
-                                                                                      17, 14, 18, 2, 7, 17, 4, 8,
-                                                                                      4, 18, 3, 1, 3, 10, 0]))
-
-    def test_try_get_hourly_report_non_existent_id(self, config_rollback_create_cameras, reports_simulation):
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {'detail': "Camera with id 'BAD_ID' does not exist"})]
+    )
+    def test_try_get_hourly_report_non_existent_id(self, config_rollback_create_cameras, reports_simulation,
+                                                   metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
         camera_id = 'BAD_ID'
-        response = client.get(f"/metrics/cameras/social-distancing/hourly?cameras={camera_id}&date=2021-02-25")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-25")
 
         assert response.status_code == 404
-        assert response.json() == {'detail': "Camera with id 'BAD_ID' does not exist"}
+        assert response.json() == expected
 
-    def test_try_get_hourly_report_bad_date_format(self, config_rollback_create_cameras, reports_simulation):
+    @pytest.mark.parametrize(
+        "metric",
+        ["social-distancing"]
+    )
+    def test_try_get_hourly_report_bad_date_format(self, config_rollback_create_cameras, reports_simulation, metric):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
         camera_id = camera['id']
-        response = client.get(f"/metrics/cameras/social-distancing/hourly?cameras={camera_id}&date=WRONG_DATE")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=WRONG_DATE")
 
         assert response.status_code == 400
 
-    def test_try_get_hourly_report_non_existent_date(self, config_rollback_create_cameras, reports_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
-        camera_id = camera['id']
-        response = client.get(f"/metrics/cameras/social-distancing/hourly?cameras={camera_id}&date=2003-05-24")
-
-        assert response.status_code == 200
-        # TODO: ASK IF THIS BEHAVIOUR IS RIGHT
-        # Since no files with the specified date were found, no objects were added to the report.
-        assert response.json() == {
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
             'detected_objects': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             'no_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             'low_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             'high_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             'critical_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
-        }
+        })]
+    )
+    def test_try_get_hourly_report_non_existent_date(self, config_rollback_create_cameras, reports_simulation,
+                                                     metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera_id = camera['id']
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2003-05-24")
 
+        assert response.status_code == 200
+        # TODO: ASK IF THIS BEHAVIOUR IS RIGHT
+        # Since no files with the specified date were found, no objects were added to the report.
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {'detail': "Camera with id 'BAD_ID' does not exist"})]
+    )
     def test_try_get_hourly_report_two_dates_one_of_them_bad_id(self, config_rollback_create_cameras,
-                                                                reports_simulation):
+                                                                reports_simulation, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
         camera_id = camera["id"]
         camera_id_2 = 'BAD_ID'
-        response = client.get(f"/metrics/cameras/social-distancing/hourly?cameras={camera_id},{camera_id_2}&date=2021"
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id},{camera_id_2}&date=2021"
                               f"-02-25")
 
         assert response.status_code == 404
-        assert response.json() == {'detail': "Camera with id 'BAD_ID' does not exist"}
+        assert response.json() == expected
 
 
 # pytest -v api/tests/app/test_camera_metrics.py::TestsGetCameraDistancingDailyReport
@@ -263,30 +297,39 @@ class TestsGetCameraDistancingDailyReport:
     social distancing infractions detected in the cameras.
     """
 
-    def test_get_a_daily_report_properly(self, config_rollback_create_cameras, reports_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
-        camera_id = camera["id"]
-        response = client.get(
-            f"/metrics/cameras/social-distancing/daily?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-23")
-
-        assert response.json() == {
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
             'detected_objects': [0, 0, 148, 179], 'no_infringement': [0, 0, 136, 139],
             'low_infringement': [0, 0, 0, 19], 'high_infringement': [0, 0, 5, 17],
             'critical_infringement': [0, 0, 7, 4], 'dates': ['2020-09-20', '2020-09-21', '2020-09-22', '2020-09-23']
-        }
-        assert response.status_code == 200
-
-    def test_get_a_daily_report_properly_one_day(self, config_rollback_create_cameras, reports_simulation):
+        })]
+    )
+    def test_get_a_daily_report_properly(self, config_rollback_create_cameras, reports_simulation, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
         camera_id = camera["id"]
         response = client.get(
-            f"/metrics/cameras/social-distancing/daily?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-20")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-23")
 
-        assert response.json() == {
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [("social-distancing", {
             'detected_objects': [0], 'no_infringement': [0], 'low_infringement': [0], 'high_infringement': [0],
             'critical_infringement': [0], 'dates': ['2020-09-20']
-        }
+        })]
+    )
+    def test_get_a_daily_report_properly_one_day(self, config_rollback_create_cameras, reports_simulation,
+                                                 metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera_id = camera["id"]
+        response = client.get(
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-20")
+
         assert response.status_code == 200
+        assert response.json() == expected
 
     def test_get_a_daily_report_properly_two_cameras(self, config_rollback_create_cameras, reports_simulation):
         camera, camera_2, client, config_sample_path = config_rollback_create_cameras
