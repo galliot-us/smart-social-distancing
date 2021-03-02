@@ -9,7 +9,7 @@ from api.tests.utils.fixtures_tests import config_rollback_create_cameras, heatm
 
 
 # TODO: Some endpoint need to give a range of dates, try to send only one date.
-
+# TODO: Corregir los docstrings y los nombres de las primeras 
 
 # pytest -v api/tests/app/test_camera_metrics.py::TestsGetHeatmap
 class TestsGetHeatmap:

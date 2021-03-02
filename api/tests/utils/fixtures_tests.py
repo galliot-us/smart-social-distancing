@@ -175,26 +175,6 @@ def heatmap_simulation():
     shutil.rmtree(heatmap_directory)
 
 
-"""
-def create_reports(id_camera):
-    # Creates reports directory
-    reports_directory = os.path.join(os.getenv("SourceLogDirectory"), id_camera, "reports")
-    Path(reports_directory).mkdir(parents=True, exist_ok=True)
-    # Creates metric directories
-    face_mask_usage_directory = os.path.join(reports_directory, "face-mask-usage")
-    Path(face_mask_usage_directory).mkdir(parents=True, exist_ok=True)
-    social_distancing_directory = os.path.join(reports_directory, "social-distancing")
-    Path(social_distancing_directory).mkdir(parents=True, exist_ok=True)
-    # Copy live.csv files to corresponding to directories
-    face_mask_usage_original_path_live_file = "/repo/api/tests/data/reports_EXAMPLE/face-mask-usage/live.csv"
-    social_distancing_original_path_live_file = "/repo/api/tests/data/reports_EXAMPLE/social-distancing/live.csv"
-    destination_face_mask_usage = os.path.join(face_mask_usage_directory, "live.csv")
-    destination_social_distancing = os.path.join(social_distancing_directory, "live.csv")
-    shutil.copyfile(face_mask_usage_original_path_live_file, destination_face_mask_usage)
-    shutil.copyfile(social_distancing_original_path_live_file, destination_social_distancing)
-"""
-
-
 def copy_tree(src, dst, symlinks=False, ignore=None):
     for item in os.listdir(src):
         s = os.path.join(src, item)
