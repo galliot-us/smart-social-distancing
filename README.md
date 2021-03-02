@@ -453,6 +453,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
         - Average Social Distance time:
         - Average Anonymizer time:
   - `LogPerformanceMetricsDirectory`: When `LogPerformanceMetrics` is enabled, you can store the performance metrics into a CSV file setting the destination directory.
+  - `EntityConfigDirectory`: Defines the location where the configurations of entities (such as sources and areas) are located.
 
 - `[Api]`
   - `Host`: Configures the host IP of the processor's API (inside docker). We recommend don't change that value and keep it as *0.0.0.0*.

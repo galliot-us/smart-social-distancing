@@ -73,6 +73,7 @@ class TestsUpdateAppConfig:
         ({"weekly_global_report": 40}, "bool"),
         ({"heatmap_resolution": 40}, "string"),
         ({"heatmap_resolution": False}, "string"),
+        ({"entity_config_directory": False}, "string")
     ])
     def test_try_change_app_config_wrong_type_variable_all(self, config_rollback, key_value_dict,
                                                            correct_type):

@@ -45,7 +45,7 @@ class BaseMetric:
         return config.get_video_sources() if cls.entity == "source" else config.get_areas()
 
     @classmethod
-    def procces_csv_row(cls, csv_row, object_logs):
+    def process_csv_row(cls, csv_row, object_logs):
         """
         Extracts from the `csv_row` the required information to calculate the metric.
         The extracted information is populated into `object_logs`.
@@ -74,7 +74,7 @@ class BaseMetric:
             for row in reader:
                 row_time = datetime.strptime(row["Timestamp"], "%Y-%m-%d %H:%M:%S")
                 if time_from <= row_time < time_until:
-                    cls.procces_csv_row(row, objects_logs)
+                    cls.process_csv_row(row, objects_logs)
             return cls.generate_hourly_metric_data(objects_logs, entity)
 
     @classmethod

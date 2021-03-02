@@ -13,6 +13,9 @@ class CameraDTO(EntityConfigDTO, NotificationConfig):
     image: Optional[str] = Field("", example='Base64 image')
     distMethod: Optional[str] = Field("", example='CenterPointsDistance')
     liveFeedEnabled: bool = Field(True, example=True)
+    hasBeenCalibrated: bool = Field(False, example=False)
+    hasDefinedRoi: bool = Field(False, example=False)
+    hasInOutBorder: bool = Field(False, example=False)
 
     @validator('videoPath')
     def video_must_be_valid(cls, video_uri):
@@ -59,5 +62,16 @@ class ContourRoI(BaseModel):
         schema_extra = {
             'example': {
                 'contour_roi': [[88, 58], [90, 284], [279, 284], [281, 58]]
+            }
+        }
+
+
+class InOutBoundaries(BaseModel):
+    in_out_boundary: Tuple[Tuple[int, int], Tuple[int, int]]
+
+    class Config:
+        schema_extra = {
+            'example': {
+                'in_out_boundary': [[5, 5], [5, 240]],
             }
         }

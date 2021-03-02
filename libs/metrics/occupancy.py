@@ -18,7 +18,7 @@ class OccupancyMetric(BaseMetric):
     live_csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold", "Violations"]
 
     @classmethod
-    def procces_csv_row(cls, csv_row: Dict, objects_logs: Dict):
+    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
         row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
         row_hour = row_time.hour
         if not objects_logs.get(row_hour):
@@ -62,7 +62,7 @@ class OccupancyMetric(BaseMetric):
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in lastest_entries:
-                cls.procces_csv_row(entry, objects_logs)
+                cls.process_csv_row(entry, objects_logs)
             # Put the rows in the same hour
             objects_logs_merged = {
                 0: {"Occupancy": []}
