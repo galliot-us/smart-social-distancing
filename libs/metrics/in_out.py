@@ -177,19 +177,6 @@ class InOutMetric(BaseMetric):
             return False
         return True
 
-# TODO: Remove
-def generate_paths_from_object_logs(detection_entries):
-    paths = {}
-    for entry in detection_entries:
-        for detection in entry:
-            track_id = detection["tracking_id"]
-            bottom_middle_position = detection["bottom_middle_position"]
-            if track_id not in paths:
-                paths[track_id] = [bottom_middle_position]
-            else:
-                paths[track_id].append(bottom_middle_position)
-    return paths
-
 # Auxiliary methods taken from:
 # https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py
 def check_line_cross(boundary_line, trajectory):
