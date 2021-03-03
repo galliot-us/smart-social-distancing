@@ -3,6 +3,7 @@ import csv
 import json
 import os
 import numpy as np
+import logging
 
 from numpy import linalg as LA
 from collections import deque
@@ -15,11 +16,31 @@ from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
 from libs.utils.utils import validate_file_exists_and_is_not_empty
 
+logger = logging.getLogger(__name__)
+
+
 class InOutMetric(BaseMetric):
 
     reports_folder = IN_OUT
     csv_headers = ["In", "Out"]
-    NUMBER_OF_PATH_SEGMENTS = 5
+    NUMBER_OF_PATH_SEGMENTS = 7
+
+    @classmethod
+    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
+        row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
+        detections = ast.literal_eval(csv_row["Detections"])
+        row_hour = row_time.hour
+        if not objects_logs.get(row_hour):
+            objects_logs[row_hour] = {}
+        for d in detections:
+            if not objects_logs[row_hour].get(d["tracking_id"]):
+                objects_logs[row_hour][d["tracking_id"]] = {"path": []}
+            # Append bottom middle positions
+            corners = d["bbox_real"]
+            x1, x2 = int(corners[0]), int(corners[2])
+            y1, y2 = int(corners[1]), int(corners[3])
+            bottom_middle_position = (x1 + (x2 - x1) / 2, y2)
+            objects_logs[row_hour][d["tracking_id"]]["path"].append(bottom_middle_position)
 
     @classmethod
     def process_path(cls, boundary_line, trajectory_path, number_of_cuts=NUMBER_OF_PATH_SEGMENTS):
@@ -36,6 +57,7 @@ class InOutMetric(BaseMetric):
 
         Returns:
             in, out) : tuple
+                 (1, 1) - if the object entered and left an equal number of times.
                  (1, 0) - if the object entered (in)
                  (0, 1) - if the object left (out)
                  (0, 0) - if the object didn't cross the boundary.
@@ -45,53 +67,69 @@ class InOutMetric(BaseMetric):
 
         trajectory_steps = [trajectory_path[int(i)] for i in np.linspace(0, len(trajectory_path) - 1, number_of_cuts)]
         trajectory_steps = zip(trajectory_steps, trajectory_steps[1:])
-        in_out = (0, 0)
+        total_in, total_out = 0, 0
 
         for trajectory in trajectory_steps:
-            trajectory_in_out = check_line_cross(boundary_line, trajectory)
-            if trajectory_in_out != (0, 0):
-                in_out = trajectory_in_out
-        return in_out
+            path_in, path_out = check_line_cross(boundary_line, trajectory)
+            total_in += path_in
+            total_out += path_out
 
-    @classmethod
-    def generate_hourly_metric_data(cls, objects_logs, entity):
-        raise NotImplementedError("Operation not implemented")
+        # Normalize in_out:
+        if total_in > total_out:
+            total_in, total_out = 1, 0
+        elif total_in < total_out:
+            total_in, total_out = 0, 1
+        elif total_in > 1: # total_in == total_out
+            total_in, total_out = 1, 1
+        # else total_in == total_out = (0,0) or (1,1), number is already normalized.
+        return total_in, total_out
 
     @classmethod
     def generate_daily_csv_data(cls, yesterday_hourly_file):
-        raise NotImplementedError("Operation not implemented")
+        people_in, people_out = 0, 0
+        with open(yesterday_hourly_file, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                people_in += int(row["In"])
+                people_out += int(row["Out"])
+        return people_in, people_out
+
+    @classmethod
+    def generate_hourly_metric_data(cls, config, objects_logs, entity):
+        boundary_line = cls.retrieve_in_out_boundary(config, entity["id"])
+        summary = np.zeros((len(objects_logs), 2), dtype=np.long)
+        for index, hour in enumerate(sorted(objects_logs)):
+            hour_objects_detections = objects_logs[hour]
+            for track_id, data in hour_objects_detections.items():
+                path = data["path"]
+                new_in, new_out = cls.process_path(boundary_line, path)
+                summary[index] += (new_in, new_out)
+        return summary
 
     @classmethod
     def generate_live_csv_data(cls, config, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
-        boundary_path = cls.get_in_out_file_path(entity["id"], config)
-        boundary_line = cls.get_in_out_boundaries(boundary_path)
-        if boundary_line is None:
-            raise Exception(f"Camera {entity['id']} does not have a defined in/out boundary")
-        else:
-            boundary_line = boundary_line["in_out_boundary"]
         people_in, people_out = 0, 0
+        boundary_line = cls.retrieve_in_out_boundary(config, entity["id"])
         with open(today_entity_csv, "r") as log:
+            objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
-            detection_entries = [ast.literal_eval(entry["Detections"]) for entry in lastest_entries]
-            paths = {}
-            for entry in detection_entries:
-                for detection in entry:
-                    track_id = detection["tracking_id"]
-                    corners = detection["bbox_real"]
-                    x1, x2 = int(corners[0]), int(corners[2])
-                    y1, y2 = int(corners[1]), int(corners[3])
-                    position = (x1 + (x2 - x1) / 2, y2)
-                    if track_id not in paths:
-                        paths[track_id] = [position]
-                    else:
-                        paths[track_id].append(position)
-            for track_id, path in paths.items():
-                new_in, new_out = cls.process_path(boundary_line, path)
-                people_in += new_in
-                people_out += new_out
+            for entry in lastest_entries:
+                cls.process_csv_row(entry, objects_logs)
+        paths = {}
+        for hour in objects_logs:
+            for track_id, sub_path in objects_logs[hour].items():
+                if track_id not in paths:
+                    paths[track_id] = sub_path
+                else:
+                    paths[track_id].extend(sub_path)
+        for track_id, data in paths.items():
+            path = data["path"]
+            new_in, new_out = cls.process_path(boundary_line, path)
+            people_in += new_in
+            people_out += new_out
         return [people_in, people_out]
 
     @classmethod
@@ -105,14 +143,8 @@ class InOutMetric(BaseMetric):
                 for index, item in enumerate(lastest_10_entries):
                     if not latest_in_out_results[index]:
                         latest_in_out_results[index] = 0
-                    latest_in_out_results[index] += int(item["DetectedObjects"]) - int(
-                        item["NoInfringement"])
+                    latest_in_out_results[index] += int(item["In"]) + int(item["Out"])
         return [item for item in latest_in_out_results.values() if item is not None]
-
-    @classmethod
-    def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,
-                          from_date: date = None, to_date: date = None) -> Dict:
-        raise NotImplementedError("Operation not implemented")
 
     @classmethod
     def get_in_out_file_path(cls, camera_id, config):
@@ -120,7 +152,16 @@ class InOutMetric(BaseMetric):
         return f"{get_source_config_directory(config)}/{camera_id}/{IN_OUT}/{IN_OUT}.json"
 
     @classmethod
-    def get_in_out_boundaries(cls, in_out_file_path):
+    def retrieve_in_out_boundary(cls, config, camera_id):
+        boundary_path = cls.get_in_out_file_path(camera_id, config)
+        boundary_line = cls.read_in_out_boundaries(boundary_path)
+        if boundary_line is None:
+            raise Exception(f"Camera {camera_id} does not have a defined in/out boundary")
+        else:
+            return boundary_line["in_out_boundary"]
+
+    @classmethod
+    def read_in_out_boundaries(cls, in_out_file_path):
         """ Given the path to the in-out file it loads it and returns it """
         if validate_file_exists_and_is_not_empty(in_out_file_path):
             with open(in_out_file_path) as json_file:
@@ -131,10 +172,23 @@ class InOutMetric(BaseMetric):
 
     @classmethod
     def can_execute(cls, config, entity):
-        boundary_line = cls.get_in_out_boundaries(cls.get_in_out_file_path(entity["id"], config))
+        boundary_line = cls.read_in_out_boundaries(cls.get_in_out_file_path(entity["id"], config))
         if boundary_line is None:
             return False
         return True
+
+# TODO: Remove
+def generate_paths_from_object_logs(detection_entries):
+    paths = {}
+    for entry in detection_entries:
+        for detection in entry:
+            track_id = detection["tracking_id"]
+            bottom_middle_position = detection["bottom_middle_position"]
+            if track_id not in paths:
+                paths[track_id] = [bottom_middle_position]
+            else:
+                paths[track_id].append(bottom_middle_position)
+    return paths
 
 # Auxiliary methods taken from:
 # https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py

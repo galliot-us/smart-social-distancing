@@ -374,7 +374,7 @@ async def get_in_out_boundaries(camera_id: str):
     """
     validate_camera_existence(camera_id)
     in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
-    in_out_boundaries = InOutMetric.get_in_out_boundaries(in_out_file_path)
+    in_out_boundaries = InOutMetric.read_in_out_boundaries(in_out_file_path)
     if in_out_boundaries is None:
         error_detail = f"There is no defined In/Out Boundary for {camera_id}"
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=error_detail)

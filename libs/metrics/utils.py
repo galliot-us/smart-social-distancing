@@ -12,12 +12,14 @@ def compute_hourly_metrics(config):
     SocialDistancingMetric.compute_hourly_metrics(config)
     FaceMaskUsageMetric.compute_hourly_metrics(config)
     OccupancyMetric.compute_hourly_metrics(config)
+    InOutMetric.compute_hourly_metrics(config)
 
 
 def compute_daily_metrics(config):
     SocialDistancingMetric.compute_daily_metrics(config)
     FaceMaskUsageMetric.compute_daily_metrics(config)
     OccupancyMetric.compute_daily_metrics(config)
+    InOutMetric.compute_daily_metrics(config)
 
 
 def compute_live_metrics(config, live_interval):

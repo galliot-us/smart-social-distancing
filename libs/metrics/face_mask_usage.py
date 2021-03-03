@@ -29,7 +29,7 @@ class FaceMaskUsageMetric(BaseMetric):
             objects_logs[row_hour][d["tracking_id"]]["face_labels"].append(d.get("face_label", -1))
 
     @classmethod
-    def generate_hourly_metric_data(cls, objects_logs, entity=None):
+    def generate_hourly_metric_data(cls, config, objects_logs, entity=None):
         summary = np.zeros((len(objects_logs), 3), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
@@ -98,7 +98,7 @@ class FaceMaskUsageMetric(BaseMetric):
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in lastest_entries:
                 cls.process_csv_row(entry, objects_logs)
-        return np.sum(cls.generate_hourly_metric_data(objects_logs), axis=0)
+        return np.sum(cls.generate_hourly_metric_data(config, objects_logs), axis=0)
 
     @classmethod
     def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:

@@ -28,7 +28,7 @@ class OccupancyMetric(BaseMetric):
         objects_logs[row_hour]["Occupancy"].append(int(csv_row["Occupancy"]))
 
     @classmethod
-    def generate_hourly_metric_data(cls, objects_logs, entity):
+    def generate_hourly_metric_data(cls, config, objects_logs, entity):
         summary = np.zeros((len(objects_logs), 3), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             summary[index] = (
@@ -69,7 +69,7 @@ class OccupancyMetric(BaseMetric):
             }
             for hour in objects_logs:
                 objects_logs_merged[0]["Occupancy"].extend(objects_logs[hour]["Occupancy"])
-        occupancy_live = cls.generate_hourly_metric_data(objects_logs_merged, entity)[0].tolist()
+        occupancy_live = cls.generate_hourly_metric_data(config, objects_logs_merged, entity)[0].tolist()
         occupancy_live.append(int(entity["occupancy_threshold"]))
         daily_violations = 0
         entity_directory = entity["base_directory"]

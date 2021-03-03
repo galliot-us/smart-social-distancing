@@ -53,14 +53,14 @@ class BaseMetric:
         raise NotImplementedError
 
     @classmethod
-    def generate_hourly_metric_data(cls, object_logs, entity):
+    def generate_hourly_metric_data(cls, config, object_logs, entity):
         """
         Generates the hourly reports for the hours received in `object_logs`.
         """
         raise NotImplementedError
 
     @classmethod
-    def generate_hourly_csv_data(cls, entity: Dict, entity_file: str, time_from: datetime,
+    def generate_hourly_csv_data(cls, config, entity: Dict, entity_file: str, time_from: datetime,
                                  time_until: datetime):
         if not os.path.isfile(entity_file):
             entity_type = "Camera" if cls.entity else "Area"
@@ -75,7 +75,7 @@ class BaseMetric:
                 row_time = datetime.strptime(row["Timestamp"], "%Y-%m-%d %H:%M:%S")
                 if time_from <= row_time < time_until:
                     cls.process_csv_row(row, objects_logs)
-            return cls.generate_hourly_metric_data(objects_logs, entity)
+            return cls.generate_hourly_metric_data(config, objects_logs, entity)
 
     @classmethod
     def compute_hourly_metrics(cls, config):
@@ -85,6 +85,8 @@ class BaseMetric:
         entities = cls.get_entities(config)
         current_hour = datetime.now().hour
         for entity in entities:
+            if not cls.can_execute(config, entity):
+                continue
             entity_directory = os.path.join(base_directory, entity["id"])
             log_directory = None
             if cls.entity == "source":
@@ -114,7 +116,7 @@ class BaseMetric:
                 with open(daily_csv, "a", newline='') as csvfile:
                     writer = csv.DictWriter(csvfile, fieldnames=cls.csv_headers)
                     writer.writeheader()
-            csv_data = cls.generate_hourly_csv_data(entity, entity_csv, time_from, time_until)
+            csv_data = cls.generate_hourly_csv_data(config, entity, entity_csv, time_from, time_until)
             if csv_data is None:
                 entity_type = "Camera" if cls.entity else "Area"
                 logger.warn(f"Hourly report not generated! [{entity_type}: {entity['id']}]")
@@ -139,11 +141,13 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory(config)
         entities = cls.get_entities(config)
         for entity in entities:
+            if not cls.can_execute(config, entity):
+                continue
             entity_directory = os.path.join(base_directory, entity["id"])
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             # Create missing directories
             os.makedirs(reports_directory, exist_ok=True)
-            yesterday = str(date.today() - timedelta(days=1))
+            yesterday = str(date.today() - timedelta(days=0))
             hourly_csv = os.path.join(reports_directory, "report_" + yesterday + ".csv")
             report_csv = os.path.join(reports_directory, "report.csv")
             if not os.path.isfile(hourly_csv):
@@ -175,6 +179,8 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory(config)
         entities = cls.get_entities(config)
         for entity in entities:
+            if not cls.can_execute(config, entity):
+                continue
             entity_directory = os.path.join(base_directory, entity["id"])
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             # Create missing directories
@@ -194,8 +200,6 @@ class BaseMetric:
                 return
             entity["base_directory"] = entity_directory
             entries_in_interval = int(live_interval * 60 / get_source_logging_interval(config))
-            if not cls.can_execute(config, entity):
-                return
             live_data = cls.generate_live_csv_data(config, today_entity_csv, entity, entries_in_interval)
             with open(live_report_csv, "a") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=headers)
