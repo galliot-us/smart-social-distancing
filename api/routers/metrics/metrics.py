@@ -95,6 +95,8 @@ def get_live_metric(entity: str, entities_ids: str, metric: str):
 def get_hourly_metric(entity: str, entities_ids: str, metric: str, date: date):
     entities = get_entities(entity, entities_ids, metric)
     metric_class = get_metric_class(metric)
+    import pdb
+    pdb.set_trace()
     return metric_class.get_hourly_report(entities, date)
 
 
