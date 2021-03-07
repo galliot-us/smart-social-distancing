@@ -70,48 +70,6 @@ def config_rollback():
     yield client, config_sample_path_to_modify
     os.remove(config_sample_path_to_modify)
 
-"""
-def create_camera(client, example_camera):
-    camera_sample = copy.deepcopy(example_camera)
-    return client.post("/cameras", json=camera_sample)
-
-
-def delete_camera(client, camera_id):
-    client.delete(f'/cameras/{camera_id}')
-
-
-def config_rollback_create_cameras_base():
-    client, config_sample_path_to_modify = config_rollback_base()
-
-    response_camera_1 = create_camera(client, copy.deepcopy(camera_example))
-    response_camera_2 = create_camera(client, copy.deepcopy(camera_example_2))
-
-    return response_camera_1.json(), response_camera_2.json(), client, config_sample_path_to_modify
-
-
-@pytest.fixture
-def config_rollback_create_cameras():
-    camera, camera_2, client, config_sample_path = config_rollback_create_cameras_base()
-
-    yield camera, camera_2, client, config_sample_path
-
-    # Delete cameras
-    delete_camera(client, camera_example['id'])
-    delete_camera(client, camera_example_2['id'])
-
-    # We have to remove .ini file after every endpoint call
-    os.remove(config_sample_path)
-"""
-
-"""
-def create_area(client, example_area):
-    area_sample = copy.deepcopy(example_area)
-    return client.post("/areas", json=area_sample)
-
-
-def delete_area(client, camera_id):
-    client.delete(f'/areas/{camera_id}')
-"""
 
 @pytest.fixture
 def config_rollback_areas():
@@ -126,38 +84,6 @@ def config_rollback_cameras():
     yield camera_example, camera_example_2, client, config_sample_path_to_modify
     os.remove(config_sample_path_to_modify)
 
-"""
-@pytest.fixture
-def config_rollback_create_areas():
-    "" First we have to create cameras ""
-    client, config_sample_path_to_modify = config_rollback_base()
-
-    # Create several cameras
-    create_camera(client, copy.deepcopy(camera_example))
-    create_camera(client, copy.deepcopy(camera_example_2))
-    create_camera(client, copy.deepcopy(camera_example_3))
-    create_camera(client, copy.deepcopy(camera_example_4))
-
-    # Create areas
-    response_area_1 = create_area(client, area_example)
-    response_area_2 = create_area(client, area_example_2)
-
-    yield response_area_1.json(), response_area_2.json(), client, config_sample_path_to_modify
-    ""
-    # Delete areas
-    delete_area(client, area_example['id'])
-    delete_area(client, area_example_2['id'])
-
-    # Delete cameras
-    delete_camera(client, camera_example['id'])
-    delete_camera(client, camera_example_2['id'])
-    delete_camera(client, camera_example_3['id'])
-    delete_camera(client, camera_example_4['id'])
-    ""
-    # We have to remove .ini file after every endpoint call
-    os.remove(config_sample_path_to_modify)
-"""
-
 
 @pytest.fixture
 def app_config():
@@ -169,16 +95,6 @@ def app_config():
 def camera_sample():
     camera_sample = copy.deepcopy(camera_template)
     return camera_sample
-
-"""
-@pytest.fixture
-def rollback_screenshot_camera_folder():
-    yield None
-    # Deletes only the camera screenshots directory and all its content.
-    camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), str(camera_template["id"]))
-    if os.path.exists(camera_screenshot_directory):
-        shutil.rmtree(camera_screenshot_directory)
-"""
 
 
 @pytest.fixture
@@ -243,80 +159,3 @@ def heatmap_simulation():
     yield None
     # Deletes everything
     shutil.rmtree(heatmap_directory)
-
-"""
-def copy_tree(src, dst, symlinks=False, ignore=None):
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            shutil.copytree(s, d, symlinks, ignore)
-        else:
-            shutil.copy2(s, d)
-"""
-
-"""
-def create_reports(id_camera, optional=False):
-    if optional:
-        fromDirectory = "/repo/api/tests/data/reports_EXAMPLE_2/"
-    else:
-        fromDirectory = "/repo/api/tests/data/reports_EXAMPLE/"
-    reports_directory = os.path.join(os.getenv("SourceLogDirectory"), id_camera, "reports")
-    copy_tree(fromDirectory, reports_directory)
-"""
-
-"""
-def delete_reports(id_camera):
-    # Deletes everything
-    reports_directory = os.path.join(os.getenv("SourceLogDirectory"), id_camera, "reports")
-    shutil.rmtree(reports_directory)
-"""
-
-"""
-def create_report_occupancy(id_camera, optional=False):
-    if optional:
-        fromDirectory = "/repo/api/tests/data/reports_occupancy_EXAMPLE_2/"
-    else:
-        fromDirectory = "/repo/api/tests/data/reports_occupancy_EXAMPLE/"
-    reports_directory = os.path.join(os.getenv("AreaLogDirectory"), id_camera, "reports")
-    copy_tree(fromDirectory, reports_directory)
-"""
-
-"""
-def delete_report_occupancy(id_camera):
-    # Deletes everything
-    reports_directory = os.path.join(os.getenv("AreaLogDirectory"), id_camera, "reports")
-    shutil.rmtree(reports_directory)
-"""
-
-"""
-@pytest.fixture
-def reports_simulation():
-    create_reports(camera_example['id'])
-    create_reports(camera_example_2['id'])
-    yield None
-    delete_reports(camera_example['id'])
-    delete_reports(camera_example_2['id'])
-"""
-
-"""
-@pytest.fixture
-def reports_simulation_areas():
-    create_reports(camera_example['id'])
-    create_reports(camera_example_2['id'], optional=True)
-    create_reports(camera_example_3['id'])
-    create_reports(camera_example_4['id'])
-    create_report_occupancy(area_example['id'])
-    create_report_occupancy(area_example_2['id'], optional=True)
-    import pdb
-    pdb.set_trace()
-    yield None
-    ""
-    delete_reports(camera_example['id'])
-    delete_reports(camera_example_2['id'])
-    delete_reports(camera_example_3['id'])
-    delete_reports(camera_example_4['id'])
-    delete_report_occupancy(area_example['id'])
-    delete_report_occupancy(area_example_2['id'])
-    ""
-"""
