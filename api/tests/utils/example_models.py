@@ -1,3 +1,19 @@
+camera_template = {
+    "violation_threshold": 100,
+    "notify_every_minutes": 15,
+    "emails": "john@email.com,doe@email.com",
+    "enable_slack_notifications": False,
+    "daily_report": True,
+    "daily_report_time": "06:00",
+    "id": "20",
+    "name": "Kitchen",
+    "video_path": "/repo/data/softbio_vid.mp4",
+    "tags": "kitchen,living_room",
+    "dist_method": "CenterPointsDistance",
+    "live_feed_enabled": False
+}
+
+
 camera_example = {
     "violation_threshold": 100,
     "notify_every_minutes": 15,

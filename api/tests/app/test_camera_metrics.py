@@ -4,12 +4,12 @@ from freezegun import freeze_time
 import numpy as np
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
-from api.tests.utils.fixtures_tests import config_rollback_create_cameras, heatmap_simulation, config_rollback, \
-    reports_simulation
+from api.tests.utils.fixtures_tests import config_rollback_cameras, heatmap_simulation, config_rollback
 
 
 # TODO: Some endpoint need to give a range of dates, try to send only one date.
-# TODO: Corregir los docstrings y los nombres de las primeras 
+# TODO: Corregir los docstrings y los nombres de las primeras
+# TODO: los freeze ya no estan al pedo?
 
 # pytest -v api/tests/app/test_camera_metrics.py::TestsGetHeatmap
 class TestsGetHeatmap:
@@ -18,42 +18,43 @@ class TestsGetHeatmap:
     Returns a heatmap image displaying the violations/detections detected by the camera <camera_id>.
     """
 
-    def test_get_one_heatmap_properly(self, config_rollback_create_cameras, heatmap_simulation):
+    # pytest -v api/tests/app/test_camera_metrics.py::TestsGetHeatmap::test_get_one_heatmap_properly
+    def test_get_one_heatmap_properly(self, config_rollback_cameras, heatmap_simulation):
         # Make the request
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-19")
 
         # Get the heatmap
-        heatmap_path = f"/repo/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
+        heatmap_path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
         heatmap = np.load(heatmap_path).tolist()
 
         # Compare results
         assert response.status_code == 200
         assert response.json()["heatmap"] == heatmap
 
-    def test_try_get_two_heatmaps(self, config_rollback_create_cameras, heatmap_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_two_heatmaps(self, config_rollback_cameras, heatmap_simulation):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-20")
 
-        heatmap_path = f"/repo/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
+        heatmap_path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
         heatmap = np.load(heatmap_path).tolist()
 
         assert response.status_code == 200
         assert response.json()["heatmap"] == heatmap
         assert response.json()["not_found_dates"] == ["2020-09-20"]
 
-    def test_get_two_valid_heatmaps(self, config_rollback_create_cameras, heatmap_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_two_valid_heatmaps(self, config_rollback_cameras, heatmap_simulation):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-22")
 
-        heatmap_path_1 = f"/repo/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
-        heatmap_path_2 = f"/repo/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-22.npy"
+        heatmap_path_1 = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
+        heatmap_path_2 = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-22.npy"
         heatmap_1 = np.load(heatmap_path_1)
         heatmap_2 = np.load(heatmap_path_2)
         final_heatmap = np.add(heatmap_1, heatmap_2).tolist()
@@ -62,21 +63,21 @@ class TestsGetHeatmap:
         assert response.json()["not_found_dates"] == ['2020-09-20', '2020-09-21']
         assert response.json()['heatmap'] == final_heatmap
 
-    def test_get_one_heatmap_properly_detections(self, config_rollback_create_cameras, heatmap_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_one_heatmap_properly_detections(self, config_rollback_cameras, heatmap_simulation):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
             f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-19&report_type=detections")
 
-        heatmap_path = f"/repo/data/processor/static/data/sources/{camera_id}/heatmaps/detections_heatmap_2020-09-19.npy"
+        heatmap_path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/detections_heatmap_2020-09-19.npy"
         heatmap = np.load(heatmap_path).tolist()
 
         assert response.status_code == 200
         assert response.json()["heatmap"] == heatmap
 
-    def test_try_get_one_heatmap_bad_camera_id(self, config_rollback_create_cameras, heatmap_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_one_heatmap_bad_camera_id(self, config_rollback_cameras, heatmap_simulation):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = "wrong_id"
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-19")
@@ -84,8 +85,8 @@ class TestsGetHeatmap:
         assert response.status_code == 404
         assert response.json() == {'detail': "Camera with id 'wrong_id' does not exist"}
 
-    def test_try_get_one_heatmap_bad_report_type(self, config_rollback_create_cameras, heatmap_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_one_heatmap_bad_report_type(self, config_rollback_cameras, heatmap_simulation):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -94,28 +95,27 @@ class TestsGetHeatmap:
         assert response.status_code == 400
         assert response.json() == {'detail': [{'loc': [], 'msg': 'Invalid report_type', 'type': 'invalid config'}]}
 
-    def test_try_get_one_heatmap_bad_dates(self, config_rollback_create_cameras, heatmap_simulation):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_one_heatmap_bad_dates(self, config_rollback_cameras, heatmap_simulation):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=today&to_date=tomorrow")
 
         assert response.status_code == 400
-        assert response.json() == {'detail': [{'loc': ['query', 'from_date'], 'msg': 'invalid date format',
+        assert response.json() == {'detail': [{'loc': ['query', 'from_date'], 'msg': ''
+                                                                                     'invalid date format',
                                                'type': 'value_error.date'},
                                               {'loc': ['query', 'to_date'], 'msg': 'invalid date format',
                                                'type': 'value_error.date'}], 'body': None}
 
-    def test_try_get_one_heatmap_wrong_dates(self, config_rollback_create_cameras, heatmap_simulation):
-        # TODO: Ask if this behaviour is right. In addition, the returned heatmap is an null square matrix.
+    def test_try_get_one_heatmap_wrong_dates(self, config_rollback_cameras, heatmap_simulation):
         """from_date is after to_date"""
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-20&to_date=2020-09-19")
 
-        assert response.status_code == 200
-        assert response.json()['not_found_dates'] == []
+        assert response.status_code == 400
 
 
 # pytest -v api/tests/app/test_camera_metrics.py::TestsGetCameraDistancingLive
@@ -124,8 +124,6 @@ class TestsGetCameraDistancingLive:
     """
     Returns a report with live information about the social distancing infractions detected in the cameras.
     """
-
-    # TODO: What is the trend attribute in the response?
 
     @pytest.mark.parametrize(
         "metric,expected",
@@ -148,11 +146,12 @@ class TestsGetCameraDistancingLive:
             })
         ]
     )
-    def test_get_a_report_properly(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        # TODO: Why is that date selected
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_a_report_properly(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+
         response = client.get(f"/metrics/cameras/{metric}/live?cameras={camera_id}")
+
         assert response.json() == expected
         assert response.status_code == 200
 
@@ -160,31 +159,21 @@ class TestsGetCameraDistancingLive:
         "metric,expected",
         [
             ("social-distancing", {
-                'time': '2021-02-19 13:37:58',
-                'trend': 0.11,
-                'detected_objects': 12,
-                'no_infringement': 10,
-                'low_infringement': 0,
-                'high_infringement': 2,
-                'critical_infringement': 0
+                'time': '2021-02-19 13:37:58', 'trend': 0.72, 'detected_objects': 20, 'no_infringement': 9,
+                'low_infringement': 7, 'high_infringement': 2, 'critical_infringement': 3
             }),
             ("face-mask-detections", {
-                'time': '2021-02-19 13:37:58',
-                'trend': 0.0,
-                'no_face': 20,
-                'face_with_mask': 0,
-                'face_without_mask': 0
+                'time': '2021-02-19 13:37:58', 'trend': 0.52, 'no_face': 24, 'face_with_mask': 8, 'face_without_mask': 1
             })
         ]
     )
-    def test_get_a_report_two_valid_cameras(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_a_report_two_valid_cameras(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id_1 = camera["id"]
         camera_id_2 = camera_2["id"]
 
         response = client.get(f"/metrics/cameras/{metric}/live?cameras={camera_id_1},{camera_id_2}")
 
-        # TODO: Ask if it is good that values are only added.
         assert response.json() == expected
         assert response.status_code == 200
 
@@ -195,8 +184,8 @@ class TestsGetCameraDistancingLive:
             ("face-mask-detections", {'detail': "Camera with id 'BAD_ID' does not exist"})
         ]
     )
-    def test_try_get_a_report_bad_id_camera(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_report_bad_id_camera(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
 
         response = client.get(f"/metrics/cameras/{metric}/live?cameras=BAD_ID")
 
@@ -236,8 +225,8 @@ class TestsGetCameraDistancingHourlyReport:
             })
         ]
     )
-    def test_get_an_hourly_report_properly(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_an_hourly_report_properly(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-25")
@@ -264,9 +253,8 @@ class TestsGetCameraDistancingHourlyReport:
             })
         ]
     )
-    def test_get_an_hourly_report_properly_II_less_than_23_hours(self, config_rollback_create_cameras,
-                                                                 reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_an_hourly_report_properly_II_less_than_23_hours(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-19")
 
@@ -302,8 +290,8 @@ class TestsGetCameraDistancingHourlyReport:
             })
         ]
     )
-    def test_get_hourly_report_two_dates(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_hourly_report_two_dates(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         camera_id_2 = camera["id"]
 
@@ -320,9 +308,8 @@ class TestsGetCameraDistancingHourlyReport:
             ("face-mask-detections", {'detail': "Camera with id 'BAD_ID' does not exist"})
         ]
     )
-    def test_try_get_hourly_report_non_existent_id(self, config_rollback_create_cameras, reports_simulation,
-                                                   metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_hourly_report_non_existent_id(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = 'BAD_ID'
 
         response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-25")
@@ -334,8 +321,8 @@ class TestsGetCameraDistancingHourlyReport:
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
-    def test_try_get_hourly_report_bad_date_format(self, config_rollback_create_cameras, reports_simulation, metric):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_hourly_report_bad_date_format(self, config_rollback_cameras, metric):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera['id']
 
         response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=WRONG_DATE")
@@ -361,15 +348,13 @@ class TestsGetCameraDistancingHourlyReport:
             })
         ]
     )
-    def test_try_get_hourly_report_non_existent_date(self, config_rollback_create_cameras, reports_simulation,
-                                                     metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_hourly_report_non_existent_date(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera['id']
 
         response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2003-05-24")
 
         assert response.status_code == 200
-        # TODO: ASK IF THIS BEHAVIOUR IS RIGHT
         # Since no files with the specified date were found, no objects were added to the report.
         assert response.json() == expected
 
@@ -377,13 +362,11 @@ class TestsGetCameraDistancingHourlyReport:
         "metric,expected",
         [
             ("social-distancing", {'detail': "Camera with id 'BAD_ID' does not exist"}),
-            # TODO: is this behaviour right?
-            ("face_without_mask", {'detail': 'Not Found'})
+            ("face-mask-detections", {'detail': "Camera with id 'BAD_ID' does not exist"})
         ]
     )
-    def test_try_get_hourly_report_two_dates_one_of_them_bad_id(self, config_rollback_create_cameras,
-                                                                reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_hourly_report_two_dates_one_of_them_bad_id(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         camera_id_2 = 'BAD_ID'
 
@@ -415,8 +398,9 @@ class TestsGetCameraDistancingDailyReport:
                 'dates': ['2020-09-20', '2020-09-21', '2020-09-22', '2020-09-23']})
         ]
     )
-    def test_get_a_daily_report_properly(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    # pytest -v api/tests/app/test_camera_metrics.py::TestsGetCameraDistancingDailyReport::test_get_a_daily_report_properly
+    def test_get_a_daily_report_properly(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -436,9 +420,8 @@ class TestsGetCameraDistancingDailyReport:
                 'no_face': [0], 'face_with_mask': [0], 'face_without_mask': [0], 'dates': ['2020-09-20']})
         ]
     )
-    def test_get_a_daily_report_properly_one_day(self, config_rollback_create_cameras, reports_simulation,
-                                                 metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_a_daily_report_properly_one_day(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -451,20 +434,19 @@ class TestsGetCameraDistancingDailyReport:
         "metric,expected",
         [
             ("social-distancing", {
-                'detected_objects': [0, 0, 296, 358], 'no_infringement': [0, 0, 272, 278],
-                'low_infringement': [0, 0, 0, 38], 'high_infringement': [0, 0, 10, 34],
-                'critical_infringement': [0, 0, 14, 8],
-                'dates': ['2020-09-20', '2020-09-21', '2020-09-22', '2020-09-23']
+                'detected_objects': [104, 120, 161, 301], 'no_infringement': [5, 35, 143, 183],
+                'low_infringement': [57, 42, 2, 87], 'high_infringement': [42, 43, 9, 27],
+                'critical_infringement': [0, 0, 7, 4], 'dates': ['2020-09-20', '2020-09-21', '2020-09-22', '2020-09-23']
             }),
             ("face-mask-detections", {
-                'no_face': [0, 0, 36, 36], 'face_with_mask': [0, 0, 212, 270], 'face_without_mask': [0, 0, 52, 60],
+                'no_face': [85, 77, 114, 41], 'face_with_mask': [36, 76, 188, 170],
+                'face_without_mask': [23, 33, 39, 128],
                 'dates': ['2020-09-20', '2020-09-21', '2020-09-22', '2020-09-23']
             })
         ]
     )
-    def test_get_a_daily_report_properly_two_cameras(self, config_rollback_create_cameras, reports_simulation,
-                                                     metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_get_a_daily_report_properly_two_cameras(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         camera_id_2 = camera_2["id"]
 
@@ -472,8 +454,6 @@ class TestsGetCameraDistancingDailyReport:
             f"/metrics/cameras/{metric}/daily?cameras={camera_id},{camera_id_2}&from_date=2020-09-20&to_date"
             f"=2020-09-23")
 
-        # In our example, both cameras have the same report.csv file, so the result is the same
-        # as one camera, but duplicated
         assert response.status_code == 200
         assert response.json() == expected
 
@@ -484,8 +464,8 @@ class TestsGetCameraDistancingDailyReport:
             ("face-mask-detections", {'detail': "Camera with id 'BAD_ID' does not exist"})
         ]
     )
-    def test_try_get_a_daily_report_bad_id(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_daily_report_bad_id(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = 'BAD_ID'
 
         response = client.get(
@@ -498,8 +478,8 @@ class TestsGetCameraDistancingDailyReport:
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
-    def test_try_get_a_daily_report_bad_dates(self, config_rollback_create_cameras, reports_simulation, metric):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_daily_report_bad_dates(self, config_rollback_cameras, metric):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -527,15 +507,13 @@ class TestsGetCameraDistancingDailyReport:
             })
         ]
     )
-    def test_try_get_a_daily_report_no_reports_for_dates(self, config_rollback_create_cameras, reports_simulation,
-                                                         metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_daily_report_no_reports_for_dates(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
             f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=2003-05-18&to_date=2003-05-28")
 
-        # TODO: Ask if this behaviour is right
         assert response.status_code == 200
         assert response.json() == expected
 
@@ -543,11 +521,10 @@ class TestsGetCameraDistancingDailyReport:
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
-    def test_try_get_a_daily_report_wrong_dates(self, config_rollback_create_cameras, reports_simulation,
-                                                metric):
+    def test_try_get_a_daily_report_wrong_dates(self, config_rollback_cameras, metric):
         """from_date doesn't come before to_date"""
 
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -575,6 +552,9 @@ class TestsGetCameraDistancingWeeklyReport:
     Taking Sunday as the end of week
     """
 
+    # TODO: los que no se les este agregando la fecha y tengan el weekspan vacio, esta mal. Deberian tener las
+    #  ultimas 4 semanas
+
     @pytest.mark.parametrize(
         "metric,expected",
         [
@@ -592,13 +572,13 @@ class TestsGetCameraDistancingWeeklyReport:
             })
         ]
     )
-    def test_get_a_weekly_report_properly(self, config_rollback_create_cameras, reports_simulation, metric, expected):
+    def test_get_a_weekly_report_properly(self, config_rollback_cameras, metric, expected):
         """
         Given date range spans two weeks.
         Week 1: 2020-9-14 2020-9-20
         Week 2: 2020-9-21 2020-9-27
         """
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -621,13 +601,13 @@ class TestsGetCameraDistancingWeeklyReport:
             })
         ]
     )
-    def test_get_a_weekly_report_properly_II(self, config_rollback_create_cameras, reports_simulation, metric,
+    def test_get_a_weekly_report_properly_II(self, config_rollback_cameras, metric,
                                              expected):
         """
         Given date range spans only one whole week.
         Week 1: 2020-9-21 2020-9-27
         """
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -655,12 +635,12 @@ class TestsGetCameraDistancingWeeklyReport:
         ]
     )
     @freeze_time("2020-09-30")
-    def test_get_a_weekly_report_properly_weeks_value(self, config_rollback_create_cameras, reports_simulation,
+    def test_get_a_weekly_report_properly_weeks_value(self, config_rollback_cameras,
                                                       metric, expected):
         """
         Here we mock datetime.date.today() to a more convenient date set in @freeze_time("2020-09-30")
         """
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -679,18 +659,16 @@ class TestsGetCameraDistancingWeeklyReport:
             ("face-mask-detections", {'no_face': [], 'face_with_mask': [], 'face_without_mask': [], 'weeks': []})
         ]
     )
-    def test_get_a_weekly_report_no_dates_or_week_values(self, config_rollback_create_cameras, reports_simulation,
-                                                         metric, expected):
+    def test_get_a_weekly_report_no_dates_or_week_values(self, config_rollback_cameras, metric, expected):
         """
         Here we mock datetime.date.today() to a more convenient date set in @freeze_time("2020-09-30")
         """
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
             f"/metrics/cameras/{metric}/weekly?cameras={camera_id}")
 
-        # TODO: Ask if this behaviour is right.
         assert response.status_code == 200
         assert response.json() == expected
 
@@ -699,12 +677,11 @@ class TestsGetCameraDistancingWeeklyReport:
         ["social-distancing", "face-mask-detections"]
     )
     @freeze_time("2020-09-30")
-    def test_try_get_a_weekly_report_properly_weeks_value_wrong(self, config_rollback_create_cameras,
-                                                                reports_simulation, metric):
+    def test_try_get_a_weekly_report_properly_weeks_value_wrong(self, config_rollback_cameras, metric):
         """
         Here we mock datetime.date.today() to a more convenient date set in @freeze_time("2020-09-30")
         """
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -731,13 +708,12 @@ class TestsGetCameraDistancingWeeklyReport:
         ]
     )
     @freeze_time("2020-09-30")
-    def test_get_a_weekly_report_properly_weeks_value_and_dates(self, config_rollback_create_cameras,
-                                                                reports_simulation, metric, expected):
+    def test_get_a_weekly_report_properly_weeks_value_and_dates(self, config_rollback_cameras, metric, expected):
         """
         Here we mock datetime.date.today() to a more convenient date set in @freeze_time("2012-01-01")
         In addition, query string weeks is given, but also from_date and to_date. So dates should be ignored.
         """
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -754,8 +730,8 @@ class TestsGetCameraDistancingWeeklyReport:
             ("face-mask-detections", {'detail': "Camera with id 'BAD_ID' does not exist"})
         ]
     )
-    def test_try_get_a_weekly_report_bad_id(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_weekly_report_bad_id(self, config_rollback_cameras, metric, expected):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = 'BAD_ID'
 
         response = client.get(
@@ -776,14 +752,20 @@ class TestsGetCameraDistancingWeeklyReport:
             })
         ]
     )
-    def test_get_a_weekly_report_no_query_string(self, config_rollback_create_cameras, reports_simulation,
+    def test_get_a_weekly_report_no_query_string(self, config_rollback_cameras,
                                                  metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        """
+        If no camera is provided, it will search all IDs for each existing camera.
+        Moreover, since weeks and dates are not provided, default values will be used, and the range of dates will be:
+        from 4 weeks ago to today.
+        Consequently, the endpoint will look for data from the last 4 weeks for each camera, and because our mocked data
+        does not provide such data, the endpoint will return empty arrays.
+        """
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
 
         response = client.get(
             f"/metrics/cameras/{metric}/weekly")
 
-        # TODO: IF THIS BEHAVIOUR IS RIGHT
         assert response.status_code == 200
         assert response.json() == expected
 
@@ -791,8 +773,8 @@ class TestsGetCameraDistancingWeeklyReport:
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
-    def test_try_get_a_weekly_report_bad_dates_format(self, config_rollback_create_cameras, reports_simulation, metric):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_weekly_report_bad_dates_format(self, config_rollback_cameras, metric):
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -818,15 +800,14 @@ class TestsGetCameraDistancingWeeklyReport:
             })
         ]
     )
-    def test_try_get_a_weekly_report_non_existent_dates(self, config_rollback_create_cameras, reports_simulation,
+    def test_try_get_a_weekly_report_non_existent_dates(self, config_rollback_cameras,
                                                         metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
             f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2012-04-12&to_date=2012-05-18")
 
-        # TODO: IF THIS BEHAVIOUR IS RIGHT
         assert response.status_code == 200
         assert response.json() == expected
 
@@ -834,10 +815,10 @@ class TestsGetCameraDistancingWeeklyReport:
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
-    def test_try_get_a_weekly_report_invalid_range_of_dates(self, config_rollback_create_cameras, reports_simulation,
+    def test_try_get_a_weekly_report_invalid_range_of_dates(self, config_rollback_cameras,
                                                             metric):
         """from_date is after to_date"""
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
         response = client.get(
@@ -849,28 +830,30 @@ class TestsGetCameraDistancingWeeklyReport:
         "metric,expected",
         [
             ("social-distancing", {
-                'detected_objects': [0, 654], 'no_infringement': [0, 550],
-                'low_infringement': [0, 38],
-                'high_infringement': [0, 44], 'critical_infringement': [0, 22],
+                'detected_objects': [104, 582], 'no_infringement': [5, 361], 'low_infringement': [57, 131],
+                'high_infringement': [42, 79], 'critical_infringement': [0, 11],
                 'weeks': ['2020-09-20 2020-09-20', '2020-09-21 2020-09-23']
             }),
             ("face-mask-detections", {
-                'no_face': [0, 72], 'face_with_mask': [0, 482], 'face_without_mask': [0, 112],
+                'no_face': [85, 232], 'face_with_mask': [36, 434], 'face_without_mask': [23, 200],
                 'weeks': ['2020-09-20 2020-09-20', '2020-09-21 2020-09-23']
             })
         ]
     )
-    def test_try_get_a_weekly_report_no_id(self, config_rollback_create_cameras, reports_simulation, metric, expected):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_weekly_report_no_id(self, config_rollback_cameras, metric, expected):
+        """
+        If no camera is provided, it will search all IDs for each existing camera.
+        No problem because we are mocking the date and we have the control over every existent camera. Unit is not
+        broke.
+        Our existing cameras are the ones that appeared in the config file of 'config_rollback_cameras' -> the ones
+        from 'config-x86-openvino_MAIN' -> the ones with ids 49, 50 (cameras with ids 51 and 52 appear in another
+        config file, so will not play here)
+        """
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
 
         response = client.get(
             f"/metrics/cameras/{metric}/weekly?from_date=2020-09-20&to_date=2020-09-23")
 
-        # Todo: Ask for this behaviour. Apparently first it looks for every ID that has a report.
-        #  We can check this putting a breakpoint and checking <entities> in get_weekly_metric().
-        #  Finally, the results in response corresponds to the addition of the given weeks
-        #  (2020-09-25&to_date=2020-09-18) * 2 (one for each camera, the only cameras that have reports are
-        #  the ones that we create in reports_simulation fixture)
         assert response.status_code == 200
         assert response.json() == expected
 
@@ -878,26 +861,24 @@ class TestsGetCameraDistancingWeeklyReport:
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
-    def test_try_get_a_weekly_report_only_from_date(self, config_rollback_create_cameras, reports_simulation, metric):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_weekly_report_only_from_date(self, config_rollback_cameras, metric):
+        # TODO: Ver lo de validate_date, validate_format
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         with pytest.raises(TypeError):
-            response = client.get(
-                f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2020-09-20")
+            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2020-09-20")
 
-        # TODO: Exception raised.
-        #  TypeError: '>' not supported between instances of 'str' and 'datetime.date'
+        # assert response.status_code == 400
 
     @pytest.mark.parametrize(
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
-    def test_try_get_a_weekly_report_only_to_date(self, config_rollback_create_cameras, reports_simulation, metric):
-        camera, camera_2, client, config_sample_path = config_rollback_create_cameras
+    def test_try_get_a_weekly_report_only_to_date(self, config_rollback_cameras, metric):
+        # TODO: Ver lo de validate_date, validate_format
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         with pytest.raises(TypeError):
-            response = client.get(
-                f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&to_date=2020-09-20")
+            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&to_date=2020-09-20")
 
-        # TODO: Exception raised.
-        #  TypeError: '>' not supported between instances of 'str' and 'datetime.date'
+        # assert response.status_code == 400

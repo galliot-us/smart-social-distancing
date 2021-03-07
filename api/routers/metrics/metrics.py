@@ -1,4 +1,5 @@
 import os
+import re
 
 from datetime import date
 from fastapi import HTTPException, status
@@ -45,6 +46,34 @@ def validate_area_existence(area_id: str):
     dir_path = os.path.join(os.getenv("AreaLogDirectory"), area_id, "occupancy_log")
     if not os.path.exists(dir_path):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Area with id '{area_id}' does not exist")
+
+
+def validate_format(from_date, to_date):
+    """
+    TODO:
+        Cuando no se pasa ninguna date, se toma los valores por defecto, pero en realidad el no entra al elif de
+        generate_weekly_report_data (porque no cumple isinstance(la fecha, date) ). Entonces queda las weekspan vacia,
+        cuando deberia quedar las ultimas 4 semanas.
+        El validate_date lo pasa xq se estan comparando 2 strings. Ahora, como deberia ser el procedimiento cuando
+        se ingresas una fecha y la otra no?
+    """
+    pattern = re.compile("^(\d\d\d\d)-(\d\d)-(\d\d)$")
+
+    if isinstance(from_date, str):
+        pass
+
+    """if (isinstance(from_date, date) or pattern.match(from_date)) and (isinstance(to_date, date) or pattern.match(to_date)):
+        
+        return True, 
+    else:"""
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=bad_request_serializer(
+            "Invalid type of dates",
+            error_type="from_date or to_date has a no valid format, must be 'YYYY-MM-DD'. ",
+            loc=["query", "from_date or to_date"]
+        )
+    )
 
 
 def validate_dates(from_date: date, to_date: date):
@@ -95,8 +124,6 @@ def get_live_metric(entity: str, entities_ids: str, metric: str):
 def get_hourly_metric(entity: str, entities_ids: str, metric: str, date: date):
     entities = get_entities(entity, entities_ids, metric)
     metric_class = get_metric_class(metric)
-    import pdb
-    pdb.set_trace()
     return metric_class.get_hourly_report(entities, date)
 
 

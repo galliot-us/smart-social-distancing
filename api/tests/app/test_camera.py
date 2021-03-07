@@ -5,15 +5,14 @@ import copy
 import numpy
 import shutil
 
-from api.tests.utils.common_functions import get_section_from_config_file, get_config_file_json, create_a_camera
+from api.tests.utils.common_functions import get_config_file_json, create_a_camera
 
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
-from api.tests.utils.fixtures_tests import config_rollback, camera_sample, rollback_screenshot_camera_folder, h_inverse_matrix, pts_destination, rollback_homography_matrix_folder
+from api.tests.utils.fixtures_tests import config_rollback, camera_sample, rollback_camera_template, h_inverse_matrix,\
+    pts_destination, rollback_homography_matrix_folder
 
 # TODO: Test stuffs related with the parameter reboot_processor.
-
-
 
 
 def create_n_cameras(client, camera_base, number_of_cameras, enable=False):
@@ -83,7 +82,8 @@ class TestsListCameras:
 class TestsCreateCamera:
     """Create Camera, POST /cameras"""
 
-    def test_create_one_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    # pytest -v api/tests/app/test_camera.py::TestsCreateCamera::test_create_one_camera_properly
+    def test_create_one_camera_properly(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
 
         response = client.post("/cameras", json=camera_sample)
@@ -93,7 +93,7 @@ class TestsCreateCamera:
             if key is not "image":
                 assert response.json()[key] == camera_sample[key]
 
-    def test_try_create_camera_twice(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_try_create_camera_twice(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
 
         response_1 = client.post("/cameras", json=camera_sample)
@@ -106,14 +106,14 @@ class TestsCreateCamera:
                                                                                                     'camera'}]}
 
     def test_create_same_camera_twice_different_ids(self, config_rollback, camera_sample,
-                                                    rollback_screenshot_camera_folder):
+                                                    rollback_camera_template):
         client, config_sample_path = config_rollback
 
         body = camera_sample
 
         response_1 = client.post("/cameras", json=body)
 
-        body["id"] = 54
+        body["id"] = 21
         response_2 = client.post("/cameras", json=body)
 
         assert response_1.status_code == 201
@@ -127,7 +127,7 @@ class TestsCreateCamera:
 
         assert response.status_code == 400
 
-    def test_create_a_camera_function(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_create_a_camera_function(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
 
         response = create_a_camera(client, camera_sample)
@@ -139,7 +139,7 @@ class TestsCreateCamera:
 class TestsGetCamera:
     """ Get Camera, GET /cameras/{camera_id} """
 
-    def test_get_one_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_get_one_camera_properly(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
 
         create_a_camera(client, camera_sample)
@@ -165,7 +165,7 @@ class TestsGetCamera:
 class TestsEditCamera:
     """ Edit Camera, PUT /cameras/{camera_id} """
 
-    def test_edit_a_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_edit_a_camera_properly(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -193,7 +193,7 @@ class TestsEditCamera:
             if key != "image":
                 assert response.json()[key] == body[key]
 
-    def test_try_edit_a_camera_non_existent_id(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_try_edit_a_camera_non_existent_id(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -219,7 +219,7 @@ class TestsEditCamera:
         assert response.status_code == 404
         assert response.json() == {"detail": f"The camera: {camera_id} does not exist"}
 
-    def test_try_edit_camera_wrong_video_path(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_try_edit_camera_wrong_video_path(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -245,7 +245,8 @@ class TestsEditCamera:
         assert response.status_code == 400
         assert response.json()["detail"][0]["msg"] == "Failed to load video. The video URI is not valid"
 
-    def test_edit_same_camera_twice(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    # pytest -v api/tests/app/test_camera.py::TestsEditCamera::test_edit_same_camera_twice
+    def test_edit_same_camera_twice(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -290,7 +291,7 @@ class TestsEditCamera:
             if key != "image":
                 assert response.json()[key] == body_2[key]
 
-    def test_try_edit_camera_empty_json(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_try_edit_camera_empty_json(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -311,7 +312,7 @@ class TestsEditCamera:
                                                                                 "type": "value_error.missing"}],
                                    "body": {}}
 
-    def test_edit_camera_empty_string_fields(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_edit_camera_empty_string_fields(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -346,7 +347,7 @@ class TestsEditCamera:
 class TestsDeleteCamera:
     """ Delete Camera, DELETE /cameras/{camera_id} """
 
-    def test_delete_a_camera_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_delete_a_camera_properly(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -356,7 +357,7 @@ class TestsDeleteCamera:
 
         assert response.status_code == 204
 
-    def test_try_delete_a_camera_twice(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_try_delete_a_camera_twice(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -386,7 +387,7 @@ class TestsDeleteCamera:
 
         assert response.status_code == 404
 
-    def test_delete_a_camera_int_id(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_delete_a_camera_int_id(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -409,7 +410,7 @@ def get_string_bytes_from_image(camera_id):
 class TestsGetCameraImage:
     """ Get Camera Image, GET /cameras/{camera_id}/image """
 
-    def test_get_camera_image_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_get_camera_image_properly(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -430,7 +431,7 @@ class TestsGetCameraImage:
 
 
 def get_h_inverse(camera_id):
-    path = f"/repo/data/processor/static/data/sources/{camera_id}/homography_matrix/h_inverse.txt"
+    path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/homography_matrix/h_inverse.txt"
 
     with open(path, "r") as file:
         h_inverse = file.read()
@@ -443,7 +444,7 @@ class TestsConfigCalibratedDistance:
     """ Config Calibrated Distance, POST /cameras/{camera_id}/homography_matrix """
 
     # pytest -v api/tests/app/test_camera.py::TestsConfigCalibratedDistance::test_set_coordinates_properly
-    def test_set_coordinates_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder, h_inverse_matrix, pts_destination, rollback_homography_matrix_folder):
+    def test_set_coordinates_properly(self, config_rollback, camera_sample, rollback_camera_template, h_inverse_matrix, pts_destination, rollback_homography_matrix_folder):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -455,7 +456,7 @@ class TestsConfigCalibratedDistance:
         assert get_h_inverse(camera_id) == h_inverse_matrix["h_inverse.txt"]
 
     # pytest -v api/tests/app/test_camera.py::TestsConfigCalibratedDistance::test_try_set_coordinates_0_arrays
-    def test_try_set_coordinates_0_arrays(self, config_rollback, camera_sample, rollback_screenshot_camera_folder, rollback_homography_matrix_folder):
+    def test_try_set_coordinates_0_arrays(self, config_rollback, camera_sample, rollback_camera_template, rollback_homography_matrix_folder):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -496,7 +497,7 @@ class TestsConfigCalibratedDistance:
         assert response.json() == {"detail": f"The camera: {camera_id} does not exist"}
 
     def test_try_set_coordinates_empty_request_body(self, config_rollback, camera_sample,
-                                                    rollback_screenshot_camera_folder):
+                                                    rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -509,7 +510,7 @@ class TestsConfigCalibratedDistance:
                                                "type": "value_error.missing"}], "body": {}}
 
     def test_try_set_coordinates_bad_request_body(self, config_rollback, camera_sample,
-                                                  rollback_screenshot_camera_folder):
+                                                  rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -529,7 +530,7 @@ class TestsGetCameraCalibrationImage:
     """ Get Camera Calibration Image, GET /cameras/{camera_id}/calibration_image """
 
     def test_get_camera_calibration_image_properly(self, config_rollback, camera_sample,
-                                                   rollback_screenshot_camera_folder):
+                                                   rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -553,7 +554,7 @@ class TestsGetVideoLiveFeedEnabled:
     """ Get Camera Calibration Image, GET /cameras/{camera_id}/video_live_feed_enabled """
 
     def test_get_camera_calibration_image_properly(self, config_rollback, camera_sample,
-                                                   rollback_screenshot_camera_folder):
+                                                   rollback_camera_template):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -583,12 +584,15 @@ def rollback_screenshot_cameras_list(cameras_list):
         camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), str(camera.json()["id"]))
         if os.path.exists(camera_screenshot_directory):
             shutil.rmtree(camera_screenshot_directory)
+        camera_directory = os.path.join(os.environ.get("SourceLogDirectory"), str(camera.json()["id"]))
+        if os.path.exists(camera_directory):
+            shutil.rmtree(camera_directory)
 
 
 class TestsEnableVideoLiveFeed:
     """ Enable Video Live Feed, PUT /cameras/{camera_id}/enable_video_live_feed """
 
-    def test_enable_video_live_feed_properly(self, config_rollback, camera_sample, rollback_screenshot_camera_folder):
+    def test_enable_video_live_feed_properly(self, config_rollback, camera_sample, rollback_camera_template):
         client, config_sample_path = config_rollback
         camera_sample["live_feed_enabled"] = False
         create_a_camera(client, camera_sample)

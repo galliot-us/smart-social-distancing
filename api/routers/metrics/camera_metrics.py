@@ -11,7 +11,7 @@ from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING
 from libs.metrics.utils import generate_heatmap
 
 from .metrics import (validate_camera_existence, get_live_metric, get_hourly_metric, get_daily_metric,
-                      get_weekly_metric)
+                      get_weekly_metric, validate_dates)
 
 metrics_router = APIRouter()
 
@@ -25,6 +25,7 @@ def get_heatmap(camera_id: str,
     Returns a heatmap image displaying the violations/detections detected by the camera <camera_id>
     """
     validate_camera_existence(camera_id)
+    validate_dates(from_date, to_date)
     if report_type in ["violations", "detections"]:
         return generate_heatmap(camera_id, from_date, to_date, report_type)
     else:

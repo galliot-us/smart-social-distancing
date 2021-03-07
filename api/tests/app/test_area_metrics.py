@@ -1,15 +1,10 @@
-import datetime
 import pytest
-from freezegun import freeze_time
-import numpy as np
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
-from api.tests.utils.fixtures_tests import reports_simulation_areas, config_rollback_create_areas
+from api.tests.utils.fixtures_tests import config_rollback_areas
 
 
 # TODO: avisar que en: GET /metrics/cameras/social-distancing/live, el texto del costado esta mal.
-
-# TODO: El trend ni puta idea que es.
 
 
 # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsLive
@@ -19,7 +14,6 @@ class TestsGetMetricsLive:
     """ Get Area Distancing Live Report, GET /metrics/cameras/social-distancing/live """
     """ Get Camera Face Mask Detections Live, GET /metrics/cameras/face-mask-detections/live """
 
-    # TODO: Ask if this behaviour is right. This one, probably yes, it sums every report from the cameras in the area.
     @pytest.mark.parametrize(
         "metric,expected",
         [
@@ -36,10 +30,8 @@ class TestsGetMetricsLive:
             })
         ]
     )
-    # TODO: Aca lo de las areas de distintas fechas de las camaras tambien vale.
-    #  Ademas, si vamos al .csv de live en social-distancing, vamos a ver que hay disitntas fechas y sin embargo se toma la ulitma linea. Lo mismo con face-mask.
-    def test_get_a_report_properly(self, config_rollback_create_areas, reports_simulation_areas, metric, expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_get_a_report_properly(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
         response = client.get(f"/metrics/areas/{metric}/live?areas={area_id}")
@@ -47,57 +39,56 @@ class TestsGetMetricsLive:
         assert response.status_code == 200
         assert response.json() == expected
 
-    # TODO: Ask if this behaviour is right. As no area was given, it took all areas. And sums every report.
-    #  we have to mock this, in order to have the same result in every computer.
-    #  I believe we should mock get_entities(), but do not waste effort if the behaviour is wrong.
     @pytest.mark.parametrize(
         "metric,expected",
         [
             ("occupancy", {
-                'time': '2020-12-16 20:26:48', 'trend': -44.13, 'average_occupancy': 360, 'max_occupancy': 364,
-                'occupancy_threshold': 580, 'violations': 380
+                'time': '2020-12-16 20:26:48', 'trend': -40.6, 'average_occupancy': 278, 'max_occupancy': 374,
+                'occupancy_threshold': 280, 'violations': 120
             }),
-            ("social-distancing", {}),
-            ("face-mask-detections", {})
+            ("social-distancing", {
+                'time': '2021-02-19 13:37:58', 'trend': 0.82, 'detected_objects': 32, 'no_infringement': 19,
+                'low_infringement': 7, 'high_infringement': 4, 'critical_infringement': 3
+            }),
+            ("face-mask-detections", {
+                'time': '2021-02-19 13:37:58', 'trend': 0.52, 'no_face': 44, 'face_with_mask': 8, 'face_without_mask': 1
+            })
         ]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsLive::test_try_get_a_report_no_areas
-    def test_try_get_a_report_no_areas(self, config_rollback_create_areas, reports_simulation_areas, metric, expected):
-        """
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_no_areas(self, config_rollback_areas, metric, expected):
+        """ If an area is not provided, it will search all reports for every existent area. """
+        area, area_2, client, config_sample_path = config_rollback_areas
 
         response = client.get(f"/metrics/areas/{metric}/live?areas=")
 
-        import pdb
-        pdb.set_trace()
-        assert response.status_code == 400
+        assert response.status_code == 200
         assert response.json() == expected
-        """
-        pass
 
-    # TODO: Ask if this behaviour is right. As no area was given, it took all areas. And sums every report.
-    #  we have to mock this, in order to have the same result in every computer.
-    #  I believe we should mock get_entities(), but do not waste effort if the behaviour is wrong.
     @pytest.mark.parametrize(
         "metric,expected",
         [
-            ("occupancy", {}),
-            ("social-distancing", {}),
-            ("face-mask-detections", {})
+            ("occupancy", {
+                'time': '2020-12-16 20:26:48', 'trend': -40.6, 'average_occupancy': 278, 'max_occupancy': 374,
+                'occupancy_threshold': 280, 'violations': 120
+            }),
+            ("social-distancing", {
+                'time': '2021-02-19 13:37:58', 'trend': 0.82, 'detected_objects': 32, 'no_infringement': 19,
+                'low_infringement': 7, 'high_infringement': 4, 'critical_infringement': 3
+            }),
+            ("face-mask-detections", {
+                'time': '2021-02-19 13:37:58', 'trend': 0.52, 'no_face': 44, 'face_with_mask': 8, 'face_without_mask': 1
+            })
         ]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsLive::test_try_get_a_report_no_query_string
-    def test_try_get_a_report_no_query_string(self, config_rollback_create_areas, reports_simulation_areas, metric,
+    def test_try_get_a_report_no_query_string(self, config_rollback_areas, metric,
                                               expected):
-        """
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+        """ If an area is not provided, it will search all reports for every existent area. """
+        area, area_2, client, config_sample_path = config_rollback_areas
 
         response = client.get(f"/metrics/areas/{metric}/live")
-        import pdb
-        pdb.set_trace()
-        assert response.status_code == 400
+
+        assert response.status_code == 200
         assert response.json() == expected
-        """
 
     @pytest.mark.parametrize(
         "metric,expected",
@@ -107,9 +98,8 @@ class TestsGetMetricsLive:
             ("face-mask-detections", {'detail': "Area with id 'BAD_ID' does not exist"})
         ]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsLive::test_try_get_a_report_bad_id
-    def test_try_get_a_report_bad_id(self, config_rollback_create_areas, reports_simulation_areas, metric, expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_bad_id(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = 'BAD_ID'
 
         response = client.get(f"/metrics/areas/{metric}/live?areas={area_id}")
@@ -133,11 +123,9 @@ class TestsGetMetricsLive:
             })
         ]
     )
-    # TODO: Aca lo de las areas de distintas fechas tambien vale.
-    #  Sucede tambine lo de que los live no coinciden las fechas, y se toma el ultimo renglon igual.
-    def test_get_a_report_properly_two_areas(self, config_rollback_create_areas, reports_simulation_areas, metric,
+    def test_get_a_report_properly_two_areas(self, config_rollback_areas, metric,
                                              expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id_1 = area['id']
         area_id_2 = area_2['id']
 
@@ -154,9 +142,8 @@ class TestsGetMetricsLive:
             ("face-mask-detections", {'detail': "Area with id 'non_existent_id' does not exist"})
         ]
     )
-    def test_try_get_a_report_for_two_areas_one_non_existent_id(self, config_rollback_create_areas,
-                                                                reports_simulation_areas, metric, expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_for_two_areas_one_non_existent_id(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id_1 = area['id']
         area_id_2 = 'non_existent_id'
 
@@ -208,9 +195,9 @@ class TestsGetMetricsHourly:
             })
         ]
     )
-    def test_get_a_report_properly(self, config_rollback_create_areas, reports_simulation_areas, metric, date,
+    def test_get_a_report_properly(self, config_rollback_areas, metric, date,
                                    expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
         response = client.get(f"/metrics/areas/{metric}/hourly?areas={area_id}&date={date}")
@@ -222,8 +209,7 @@ class TestsGetMetricsHourly:
         "metric,expected",
         [
             ("occupancy", {
-                'occupancy_threshold': [300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 0, 0,
-                                        0, 0, 0, 0, 0, 0, 0],
+                'occupancy_threshold': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                 'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -246,19 +232,15 @@ class TestsGetMetricsHourly:
             })
         ]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_no_query_string
-    @freeze_time("2008-10-30")
-    def test_try_get_a_report_no_query_string(self, config_rollback_create_areas, reports_simulation_areas, metric,
-                                              expected):
-        """ Here we mock date.today() because when we do not send date as a query
-        string, date.today() is used instead. We have to make sure that the mocked date does not have reports for the
-        used areas."""
+    def test_try_get_a_report_no_query_string(self, config_rollback_areas, metric, expected):
+        """ It is important to highlight that 'config_rollback_areas' provides every report So, when we send
+        the request '/metrics/areas/{metric}/hourly' default values will be loaded. As a result, the endpoint
+        will look for a report for today. But, there is no report for today among provided reports.
+        """
 
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+        area, area_2, client, config_sample_path = config_rollback_areas
 
         response = client.get(f"/metrics/areas/{metric}/hourly")
-        # TODO: AYUDA, date.today() se mockea, pero no se guarda en date.
-        #  Cambiar date a date_now o algo asi, y mostrar.
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -267,37 +249,44 @@ class TestsGetMetricsHourly:
         "metric,date,expected",
         [
             ("occupancy", "2020-09-25", {
-                'occupancy_threshold': [300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 0, 0,
-                                        0, 0, 0, 0, 0, 0, 0],
-                'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'occupancy_threshold': [140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140,
+                                        140, 140, 140, 140, 140, 140, 140, 140],
+                'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 35.0, 60.0, 85.0, 111.0, 80.0, 60.0,
+                                      125.0, 40.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 40.0, 60.0, 96.0, 120.0, 90.0, 71.0, 140.0,
+                                  58.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                 'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
             }),
             ("social-distancing", "2021-02-25", {
-                'detected_objects': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                'no_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                'low_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                'high_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                'critical_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'detected_objects': [288, 231, 155, 260, 150, 218, 199, 197, 277, 198, 233, 244, 167, 166, 330, 207,
+                                     257, 51, 93, 96, 57, 114, 102, 150],
+                'no_infringement': [63, 68, 27, 118, 48, 80, 33, 71, 91, 30, 122, 105, 76, 36, 113, 49, 78, 18, 21, 12,
+                                    18, 30, 33, 54],
+                'low_infringement': [66, 86, 53, 132, 34, 88, 56, 52, 107, 73, 24, 68, 44, 66, 123, 58, 119, 15, 15, 48,
+                                     12, 36, 39, 51],
+                'high_infringement': [108, 47, 45, 10, 59, 14, 77, 71, 37, 44, 45, 17, 41, 38, 43, 88, 35, 6, 3, 27, 24,
+                                      39, 0, 45],
+                'critical_infringement': [51, 30, 30, 0, 9, 36, 33, 3, 42, 51, 42, 54, 6, 26, 51, 12, 25, 12, 54, 9, 3,
+                                          9, 30, 0],
                 'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
             }),
             ("face-mask-detections", "2021-02-25", {
-                'no_face': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                'face_with_mask': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                'face_without_mask': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'no_face': [31, 54, 159, 83, 87, 8, 59, 52, 155, 84, 58, 94, 85, 39, 18, 6, 15, 6, 0, 0, 24, 9, 3, 6],
+                'face_with_mask': [33, 46, 42, 76, 80, 90, 141, 104, 127, 38, 68, 72, 93, 139, 12, 6, 0, 3, 12, 3, 27,
+                                   15, 3, 12],
+                'face_without_mask': [91, 79, 105, 92, 129, 112, 100, 80, 143, 104, 84, 80, 126, 65, 3, 0, 21, 15, 9, 9,
+                                      9, 24, 18, 15],
                 'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
             })
         ]
     )
     # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_empty_area
-    # TODO: Ask if this behaviour is right. As no area was given, it took all areas. And sums every report.
-    #  we have to mock this, in order to have the same result in every computer.
-    #  I believe we should mock get_entities(), but do not waste effort if the behaviour is wrong.
-    def test_try_get_a_report_empty_area(self, config_rollback_create_areas, reports_simulation_areas, metric, date,
+    def test_try_get_a_report_empty_area(self, config_rollback_areas, metric, date,
                                          expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+        """ If an area is not provided, it will search all reports for every existent area. """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+
         response = client.get(f"/metrics/areas/{metric}/hourly?areas=&date={date}")
 
         assert response.status_code == 200
@@ -307,9 +296,8 @@ class TestsGetMetricsHourly:
         "metric",
         ["occupancy", "social-distancing", "face-mask-detections"]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_several_dates
-    def test_try_get_a_report_several_dates(self, config_rollback_create_areas, reports_simulation_areas, metric):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_several_dates(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
         date_1 = "2021-03-01"
         date_2 = "2021-03-02"
@@ -321,19 +309,38 @@ class TestsGetMetricsHourly:
     @pytest.mark.parametrize(
         "metric,expected",
         [
-            ("occupancy", {}),
-            ("social-distancing", {}),
-            ("face-mask-detections", {})
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                      0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'no_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'high_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'face_with_mask': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'face_without_mask': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            })
         ]
     )
-    def test_try_get_a_report_no_date_on_query_string(self, config_rollback_create_areas, reports_simulation_areas,
-                                                      metric, expected):
-        """ areas will be every area, and we will hace same problem as above (any quuery string).
-
-        # TODO: AYUDA, date.today() se mockea, pero no se guarda en date.
-        #  Cambiar date a date_now o algo asi, y mostrar.
+    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_no_date_on_query_string
+    def test_try_get_a_report_no_date_on_query_string(self, config_rollback_areas, metric, expected):
+        """ It is important to highlight that 'config_rollback_areas' provides every report So, when we send
+        the request '/metrics/areas/{metric}/hourly' without date, default date will be loaded. As a result, the
+        endpoint will look for a report for today. But, there is no report for today among provided reports.
         """
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
         response = client.get(f"/metrics/areas/{metric}/hourly?areas={area_id}")
@@ -342,40 +349,25 @@ class TestsGetMetricsHourly:
         assert response.json() == expected
 
     @pytest.mark.parametrize(
-        "metric,expected",
-        [
-            ("occupancy", {}),
-            ("social-distancing", {}),
-            ("face-mask-detections", {})
-        ]
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
     )
-    def test_try_get_a_report_empty_date(self, config_rollback_create_areas, reports_simulation_areas, metric,
-                                         expected):
-        """ areas will be every area, and we will hace same problem as above (any quuery string).
+    def test_try_get_a_report_empty_date(self, config_rollback_areas, metric):
+        """ Invalid date format """
 
-        # TODO: AYUDA, date.today() se mockea, pero no se guarda en date.
-        #  Cambiar date a date_now o algo asi, y mostrar.
-        """
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
-        response = client.get(f"/metrics/areas/{metric}/hourly?area={area_id}&date=")
+        response = client.get(f"/metrics/areas/{metric}/hourly?areas={area_id}&date=")
 
-        assert response.status_code == 200
-        assert response.json() == expected
+        assert response.status_code == 400
 
     @pytest.mark.parametrize(
-        "metric,expected",
-        [
-            ("occupancy", {}),
-            ("social-distancing", {}),
-            ("face-mask-detections", {})
-        ]
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_bad_format_date
-    def test_try_get_a_report_bad_format_date(self, config_rollback_create_areas, reports_simulation_areas, metric,
-                                              expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_bad_format_date(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
         date = "BAD_DATE"
 
@@ -410,9 +402,8 @@ class TestsGetMetricsHourly:
             })
         ]
     )
-    def test_try_get_a_report_non_existent_date(self, config_rollback_create_areas, reports_simulation_areas, metric,
-                                                expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_non_existent_date(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
         date = "2009-03-01"  # No data for this date
 
@@ -429,10 +420,8 @@ class TestsGetMetricsHourly:
             ("face-mask-detections", "2021-02-25", {'detail': "Area with id 'BAD_ID' does not exist"})
         ]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_bad_id
-    def test_try_get_a_report_bad_id(self, config_rollback_create_areas, reports_simulation_areas, metric, date,
-                                     expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_bad_id(self, config_rollback_areas, metric, date, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = 'BAD_ID'
 
         response = client.get(f"/metrics/areas/{metric}/hourly?areas={area_id}&date={date}")
@@ -475,9 +464,8 @@ class TestsGetMetricsHourly:
             })
         ]
     )
-    def test_get_a_report_several_ids(self, config_rollback_create_areas, reports_simulation_areas, metric, date,
-                                      expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_get_a_report_several_ids(self, config_rollback_areas, metric, date, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
         area_id_2 = area_2['id']
 
@@ -494,10 +482,8 @@ class TestsGetMetricsHourly:
             ("face-mask-detections", "2021-02-25", {'detail': "Area with id 'BAD_ID' does not exist"})
         ]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_several_ids_one_bad_id
-    def test_try_get_a_report_several_ids_one_bad_id(self, config_rollback_create_areas, reports_simulation_areas,
-                                                     metric, date, expected):
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_several_ids_one_bad_id(self, config_rollback_areas, metric, date, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
         area_id_2 = "BAD_ID"
 
@@ -507,20 +493,38 @@ class TestsGetMetricsHourly:
         assert response.json() == expected
 
     @pytest.mark.parametrize(
-        "metric,expected",
+        "metric,date,expected",
         [
-            ("occupancy", {}),
-            ("social-distancing", {}),
-            ("face-mask-detections", {})
+            ("occupancy", "2020-09-11", {
+                'occupancy_threshold': [140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140, 140,
+                                        140, 140, 140, 140, 140, 140, 140, 140],
+                'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 40.0, 52.0, 125.0, 150.0, 86.0, 95.0,
+                                      130.0, 143.0, 92.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 43.0, 63.0, 135.0, 153.0, 90.0, 101.0, 145.0,
+                                  150.0, 97.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            }),
+            ("social-distancing", "2021-02-16", {
+                'detected_objects': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 180, 42, 0, 0, 0, 0, 0, 0],
+                'no_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 120, 27, 0, 0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0],
+                'high_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 51, 15, 0, 0, 0, 0, 0, 0],
+                'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            }),
+            ("face-mask-detections", "2021-02-16", {
+                'no_face': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 207, 81, 0, 0, 0, 0, 0, 0],
+                'face_with_mask': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'face_without_mask': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                'hours': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+            })
         ]
     )
-    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsHourly::test_try_get_a_report_several_ids_one_no_report_for_given_date
-    def test_try_get_a_report_several_ids_one_no_report_for_given_date(self, metric, expected):
-        # Ver que pasa cuando normalmente una sola no tiene fecha
-        area, area_2, client, config_sample_path = config_rollback_create_areas
+    def test_try_get_a_report_several_ids_one_no_report_for_given_date(self, config_rollback_areas, metric, date,
+                                                                       expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
-        area_id_2 = 43  # Hay que crear una id valida, pero que no tenga fecha
-        date = "2021-03-01"
+        area_id_2 = area_2['id']
 
         response = client.get(f"/metrics/areas/{metric}/hourly?areas={area_id},{area_id_2}&date={date}")
 
@@ -535,9 +539,9 @@ class TestsGetMetricsDaily:
     """ Get Area Distancing Daily Report, GET /metrics/cameras/social-distancing/daily """
     """ Get Camera Face Mask Detections Daily Report, GET /metrics/cameras/face-mask-detections/daily """
 
-    def test_create_area(self, config_rollback_create_areas, reports_simulation):
-        area, area_2, client, config_sample_path_to_modify = config_rollback_create_areas
-
+    def test_create_area(self, config_rollback_areas):
+        area, area_2, client, config_sample_path_to_modify = config_rollback_areas
+        pass
         # La info sale de los distintos reports.csv, de las camaras si la metric es FACEMASK o SOCIALDISTANCING, y de areas si es OCCUPANCY.
         # Un area tiene camaras, si es FACEMASK o SOCIALDISTANCING, se va a buscar a los reportes de las camaras.
         # response = client.get(f"/metrics/areas/social-distancing/daily?areas={area_id}&from_date=2020-09-06&to_date=2020-09-09")

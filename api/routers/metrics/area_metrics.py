@@ -19,6 +19,10 @@ def get_area_occupancy_live(areas: str = ""):
     """
     return get_live_metric(AREAS, areas, OCCUPANCY)
 
+# TODO: revisar si esto funciona, en ese caso cambiar todos.
+def get_day():
+    return date.today().isoformat()
+
 
 @metrics_router.get("/occupancy/hourly", response_model=OccupancyHourly)
 def get_area_occupancy_hourly_report(areas: str = "", date: date = Query(date.today().isoformat())):
