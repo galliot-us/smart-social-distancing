@@ -1,10 +1,13 @@
 import datetime
+import os
 import pytest
 from freezegun import freeze_time
 import numpy as np
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
 from api.tests.utils.fixtures_tests import config_rollback_cameras, heatmap_simulation, config_rollback
+
+HEATMAP_PATH_PREFIX = "/repo/api/tests/data/mocked_data/data/processor/static/data/sources/"
 
 
 # TODO: Some endpoint need to give a range of dates, try to send only one date.
@@ -27,7 +30,7 @@ class TestsGetHeatmap:
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-19")
 
         # Get the heatmap
-        heatmap_path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
+        heatmap_path = os.path.join(HEATMAP_PATH_PREFIX, camera_id, "heatmaps", "violations_heatmap_2020-09-19.npy")
         heatmap = np.load(heatmap_path).tolist()
 
         # Compare results
@@ -40,7 +43,7 @@ class TestsGetHeatmap:
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-20")
 
-        heatmap_path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
+        heatmap_path = os.path.join(HEATMAP_PATH_PREFIX, camera_id, "heatmaps", "violations_heatmap_2020-09-19.npy")
         heatmap = np.load(heatmap_path).tolist()
 
         assert response.status_code == 200
@@ -53,8 +56,8 @@ class TestsGetHeatmap:
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-22")
 
-        heatmap_path_1 = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-19.npy"
-        heatmap_path_2 = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/violations_heatmap_2020-09-22.npy"
+        heatmap_path_1 = os.path.join(HEATMAP_PATH_PREFIX, camera_id, "heatmaps", "violations_heatmap_2020-09-19.npy")
+        heatmap_path_2 = os.path.join(HEATMAP_PATH_PREFIX, camera_id, "heatmaps", "violations_heatmap_2020-09-22.npy")
         heatmap_1 = np.load(heatmap_path_1)
         heatmap_2 = np.load(heatmap_path_2)
         final_heatmap = np.add(heatmap_1, heatmap_2).tolist()
@@ -70,7 +73,7 @@ class TestsGetHeatmap:
         response = client.get(
             f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-19&report_type=detections")
 
-        heatmap_path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/heatmaps/detections_heatmap_2020-09-19.npy"
+        heatmap_path = os.path.join(HEATMAP_PATH_PREFIX, camera_id, "heatmaps", "detections_heatmap_2020-09-19.npy")
         heatmap = np.load(heatmap_path).tolist()
 
         assert response.status_code == 200
@@ -228,8 +231,9 @@ class TestsGetCameraDistancingHourlyReport:
     def test_get_an_hourly_report_properly(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        date = "2021-02-25"
 
-        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-25")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date={date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -256,7 +260,9 @@ class TestsGetCameraDistancingHourlyReport:
     def test_get_an_hourly_report_properly_II_less_than_23_hours(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
-        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-19")
+        date = "2021-02-19"
+
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date={date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -294,9 +300,9 @@ class TestsGetCameraDistancingHourlyReport:
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         camera_id_2 = camera["id"]
+        date = "2021-02-25"
 
-        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id},{camera_id_2}&date=2021"
-                              f"-02-25")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id},{camera_id_2}&date={date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -311,8 +317,9 @@ class TestsGetCameraDistancingHourlyReport:
     def test_try_get_hourly_report_non_existent_id(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = 'BAD_ID'
+        date = "2021-02-25"
 
-        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2021-02-25")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date={date}")
 
         assert response.status_code == 404
         assert response.json() == expected
@@ -324,8 +331,9 @@ class TestsGetCameraDistancingHourlyReport:
     def test_try_get_hourly_report_bad_date_format(self, config_rollback_cameras, metric):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera['id']
+        date = "WRONG_DATE"
 
-        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=WRONG_DATE")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date={date}")
 
         assert response.status_code == 400
 
@@ -351,8 +359,9 @@ class TestsGetCameraDistancingHourlyReport:
     def test_try_get_hourly_report_non_existent_date(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera['id']
+        date = "2003-05-24"
 
-        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date=2003-05-24")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id}&date={date}")
 
         assert response.status_code == 200
         # Since no files with the specified date were found, no objects were added to the report.
@@ -369,9 +378,9 @@ class TestsGetCameraDistancingHourlyReport:
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         camera_id_2 = 'BAD_ID'
+        date = "2021-02-25"
 
-        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id},{camera_id_2}&date=2021"
-                              f"-02-25")
+        response = client.get(f"/metrics/cameras/{metric}/hourly?cameras={camera_id},{camera_id_2}&date={date}")
 
         assert response.status_code == 404
         assert response.json() == expected
@@ -398,13 +407,14 @@ class TestsGetCameraDistancingDailyReport:
                 'dates': ['2020-09-20', '2020-09-21', '2020-09-22', '2020-09-23']})
         ]
     )
-    # pytest -v api/tests/app/test_camera_metrics.py::TestsGetCameraDistancingDailyReport::test_get_a_daily_report_properly
     def test_get_a_daily_report_properly(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        to_date = "2020-09-23"
+        from_date = "2020-09-20"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-23")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -423,9 +433,10 @@ class TestsGetCameraDistancingDailyReport:
     def test_get_a_daily_report_properly_one_day(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        date = "2020-09-20"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-20")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date={date}&to_date={date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -449,10 +460,11 @@ class TestsGetCameraDistancingDailyReport:
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         camera_id_2 = camera_2["id"]
+        to_date = "2020-09-23"
+        from_date = "2020-09-20"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/daily?cameras={camera_id},{camera_id_2}&from_date=2020-09-20&to_date"
-            f"=2020-09-23")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id},{camera_id_2}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -481,9 +493,11 @@ class TestsGetCameraDistancingDailyReport:
     def test_try_get_a_daily_report_bad_dates(self, config_rollback_cameras, metric):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "BAD_DATE"
+        to_date = "BAD_DATE"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=BAD_DATE&to_date=BAD_DATE")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 400
 
@@ -510,9 +524,11 @@ class TestsGetCameraDistancingDailyReport:
     def test_try_get_a_daily_report_no_reports_for_dates(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "2003-05-18"
+        to_date = "2003-05-28"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=2003-05-18&to_date=2003-05-28")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -526,9 +542,11 @@ class TestsGetCameraDistancingDailyReport:
 
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "2020-09-20"
+        to_date = "2020-09-10"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-10")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 400
 
@@ -580,9 +598,11 @@ class TestsGetCameraDistancingWeeklyReport:
         """
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "2020-09-20"
+        to_date = "2020-09-23"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-23")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -609,9 +629,11 @@ class TestsGetCameraDistancingWeeklyReport:
         """
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "2020-09-21"
+        to_date = "2020-09-27"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2020-09-21&to_date=2020-09-27")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -642,9 +664,10 @@ class TestsGetCameraDistancingWeeklyReport:
         """
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        weeks = 4
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks=4")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks={weeks}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -683,9 +706,10 @@ class TestsGetCameraDistancingWeeklyReport:
         """
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        weeks = "WRONG"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks=WRONG")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks={weeks}")
 
         assert response.status_code == 400
 
@@ -715,10 +739,12 @@ class TestsGetCameraDistancingWeeklyReport:
         """
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        weeks = 4
+        from_date = "2020-09-21"
+        to_date = "2020-09-27"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks=4&from_date=2020-09-21&to_date=2020"
-            f"-09-27")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks={weeks}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -733,9 +759,11 @@ class TestsGetCameraDistancingWeeklyReport:
     def test_try_get_a_weekly_report_bad_id(self, config_rollback_cameras, metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = 'BAD_ID'
+        from_date = "2020-09-20"
+        to_date = "2020-09-23"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2020-09-20&to_date=2020-09-23")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 404
         assert response.json() == expected
@@ -776,9 +804,12 @@ class TestsGetCameraDistancingWeeklyReport:
     def test_try_get_a_weekly_report_bad_dates_format(self, config_rollback_cameras, metric):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "BAD_DATE"
+        to_date = "BAD_DATE"
+
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=BAD_DATE&to_date=BAD_DATE")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 400
 
@@ -804,9 +835,11 @@ class TestsGetCameraDistancingWeeklyReport:
                                                         metric, expected):
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "2012-04-12"
+        to_date = "2012-05-18"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2012-04-12&to_date=2012-05-18")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -820,9 +853,11 @@ class TestsGetCameraDistancingWeeklyReport:
         """from_date is after to_date"""
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "2020-09-25"
+        to_date = "2020-09-18"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2020-09-25&to_date=2020-09-18")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 400
 
@@ -850,9 +885,11 @@ class TestsGetCameraDistancingWeeklyReport:
         config file, so will not play here)
         """
         camera, camera_2, client, config_sample_path = config_rollback_cameras
+        from_date = "2020-09-20"
+        to_date = "2020-09-23"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?from_date=2020-09-20&to_date=2020-09-23")
+            f"/metrics/cameras/{metric}/weekly?from_date={from_date}&to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -865,8 +902,10 @@ class TestsGetCameraDistancingWeeklyReport:
         # TODO: Ver lo de validate_date, validate_format
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        from_date = "2020-09-20"
+
         with pytest.raises(TypeError):
-            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date=2020-09-20")
+            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}")
 
         # assert response.status_code == 400
 
@@ -878,7 +917,9 @@ class TestsGetCameraDistancingWeeklyReport:
         # TODO: Ver lo de validate_date, validate_format
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
+        to_date = "2020-09-20"
+
         with pytest.raises(TypeError):
-            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&to_date=2020-09-20")
+            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&to_date={to_date}")
 
         # assert response.status_code == 400
