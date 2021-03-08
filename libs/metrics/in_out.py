@@ -16,8 +16,6 @@ from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
 from libs.utils.utils import validate_file_exists_and_is_not_empty
 
-logger = logging.getLogger(__name__)
-
 
 class InOutMetric(BaseMetric):
 
@@ -56,7 +54,7 @@ class InOutMetric(BaseMetric):
             That represents the trajectory of an object.
 
         Returns:
-            in, out) : tuple
+            (in, out) : tuple
                  (1, 1) - if the object entered and left an equal number of times.
                  (1, 0) - if the object entered (in)
                  (0, 1) - if the object left (out)

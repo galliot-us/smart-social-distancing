@@ -114,7 +114,3 @@ class OccupancyMetric(BaseMetric):
             report["MaxOccupancy"].append(max(week_data["MaxOccupancy"]))
             report["OccupancyThreshold"].append(max(week_data["OccupancyThreshold"]))
         return report
-
-    @classmethod
-    def can_execute(cls, config, entity):
-        return True

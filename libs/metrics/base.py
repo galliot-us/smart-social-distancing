@@ -347,4 +347,4 @@ class BaseMetric:
 
     @classmethod
     def can_execute(cls, config, entity):
-        return False
+        return True
