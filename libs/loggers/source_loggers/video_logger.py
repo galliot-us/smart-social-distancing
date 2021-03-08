@@ -7,7 +7,6 @@ import logging
 from libs.utils import visualization_utils
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
 
-logger = logging.getLogger(__name__)
 
 class VideoLogger:
 
