@@ -4,7 +4,7 @@ config="$1"
 # check if video file exists, if not download it
 line=$(cat $config | grep VideoPath)
 videoPath="$(cut -d'=' -f2 <<<"$line" | xargs)"
-if [ ! -f "$videoPath" ]; then
+if [ ! -f "$videoPath" ] && [ "$videoPath" = "/repo/data/softbio_vid.mp4" ]; then
     echo "video file at $videoPath not exists, downloading..."
     sh '/repo/download_sample_video.sh'
 fi

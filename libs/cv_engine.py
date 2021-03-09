@@ -179,13 +179,17 @@ class CvEngine:
                     "FPS": str(fps_time)
                 }
                 for section in LOG_SECTIONS:
-                    if isinstance(self.log_detail[section], list):
-                        section_time = mean(self.log_detail[section])
-                        logger.info(f"Average {section} time: {section_time}")
-                        csv_info[section] = str(section_time)
+                    detail = self.log_detail[section]
+                    if isinstance(detail, list):
+                        if detail != []:
+                            section_time = mean(detail)
+                            logger.info(f"Average {section} time: {section_time}")
+                            csv_info[section] = str(section_time)
+                        else:
+                            csv_info[section] = 0
                     else:
                         logger.info(f"{section}:")
-                        for key, value in self.log_detail[section].items():
+                        for key, value in detail.items():
                             key_time = mean(value)
                             logger.info(f"  - Average {key} time: {key_time}")
                             csv_info[key] = str(key_time)
