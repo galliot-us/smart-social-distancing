@@ -2,11 +2,9 @@ import cv2 as cv
 import numpy as np
 import os
 import shutil
-import logging
 
 from libs.utils import visualization_utils
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
-
 
 class VideoLogger:
 

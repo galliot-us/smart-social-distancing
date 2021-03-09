@@ -73,14 +73,7 @@ class InOutMetric(BaseMetric):
             total_out += path_out
 
         # Normalize in_out:
-        if total_in > total_out:
-            total_in, total_out = 1, 0
-        elif total_in < total_out:
-            total_in, total_out = 0, 1
-        elif total_in > 1: # total_in == total_out
-            total_in, total_out = 1, 1
-        # else total_in == total_out = (0,0) or (1,1), number is already normalized.
-        return total_in, total_out
+        return (int(total_in >= total_out and total_in > 0), int(total_out >= total_in and total_out > 0))
 
     @classmethod
     def generate_daily_csv_data(cls, yesterday_hourly_file):
