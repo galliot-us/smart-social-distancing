@@ -197,3 +197,45 @@ class OccupancyWeekly(WeeklyReport, Occupancy):
                 "max_occupancy": [0, 4920, 6701, 0],
             }]
         }
+
+class InOut(SnakeModel):
+    In: List[int]
+    Out: List[int]
+
+
+class InOutLive(LiveReport):
+    In: int
+    Out: int
+
+
+class InOutHourly(HourlyReports, InOut):
+    class Config:
+        schema_extra = {
+            "example": [{
+                "hours": list(range(0, 23)),
+                "in": [0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 0, 7, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                "out": [0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 1, 2, 1, 2, 5, 3, 3, 2, 2, 1, 0, 0, 0, 0],
+            }]
+        }
+
+
+class InOutDaily(DailyReport, FaceMask):
+    class Config:
+        schema_extra = {
+            "example": [{
+                "dates": ["2020-08-15", "2020-08-16", "2020-08-17", "2020-08-18"],
+                "in": [4, 23, 50, 0],
+                "out": [4, 23, 50, 0],
+            }]
+        }
+
+
+class InOutWeekly(WeeklyReport, FaceMask):
+    class Config:
+        schema_extra = {
+            "example": [{
+                "weeks": ["2020-07-03 2020-07-05", "2020-07-06 2020-07-12", "2020-07-13 2020-07-19", "2020-07-20 2020-07-26"],
+                "in": [40, 420, 300, 0],
+                "out": [40, 420, 300, 0],
+            }]
+        }
