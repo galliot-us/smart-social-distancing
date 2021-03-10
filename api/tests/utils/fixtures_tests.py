@@ -14,14 +14,14 @@ from .example_models import camera_template, camera_example, camera_example_2, c
     area_example, area_example_2
 
 
-def config_rollback_base(option="MAIN"):
+def config_rollback_base(option="JUST_CAMERAS"):
     original_path = ""
     if option == "EMPTY":
         """
         Empty template with no camera or area.
         """
         original_path = "/repo/api/tests/data/config-x86-openvino_EMPTY.ini"
-    elif option == "MAIN":
+    elif option == "JUST_CAMERAS":
         """
         Here there are charged only 2 cameras:
             camera_example (ID: 49)
@@ -80,7 +80,7 @@ def config_rollback_areas():
 
 @pytest.fixture
 def config_rollback_cameras():
-    client, config_sample_path_to_modify = config_rollback_base()
+    client, config_sample_path_to_modify = config_rollback_base(option="JUST_CAMERAS")
     yield camera_example, camera_example_2, client, config_sample_path_to_modify
     os.remove(config_sample_path_to_modify)
 

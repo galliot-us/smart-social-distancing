@@ -1,4 +1,3 @@
-import datetime
 import os
 import pytest
 from freezegun import freeze_time
@@ -10,10 +9,6 @@ from api.tests.utils.fixtures_tests import config_rollback_cameras, heatmap_simu
 HEATMAP_PATH_PREFIX = "/repo/api/tests/data/mocked_data/data/processor/static/data/sources/"
 
 
-# TODO: Some endpoint need to give a range of dates, try to send only one date.
-# TODO: Corregir los docstrings y los nombres de las primeras
-# TODO: los freeze ya no estan al pedo?
-
 # pytest -v api/tests/app/test_camera_metrics.py::TestsGetHeatmap
 class TestsGetHeatmap:
     """ Get Heatmap, GET /metrics/cameras/{camera_id}/heatmap """
@@ -21,7 +16,6 @@ class TestsGetHeatmap:
     Returns a heatmap image displaying the violations/detections detected by the camera <camera_id>.
     """
 
-    # pytest -v api/tests/app/test_camera_metrics.py::TestsGetHeatmap::test_get_one_heatmap_properly
     def test_get_one_heatmap_properly(self, config_rollback_cameras, heatmap_simulation):
         # Make the request
         camera, camera_2, client, config_sample_path = config_rollback_cameras
@@ -93,7 +87,8 @@ class TestsGetHeatmap:
         camera_id = camera["id"]
 
         response = client.get(
-            f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-19&report_type=non_existent_report_type")
+            f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-19&to_date=2020-09-19&report_type"
+            f"=non_existent_report_type")
 
         assert response.status_code == 400
         assert response.json() == {'detail': [{'loc': [], 'msg': 'Invalid report_type', 'type': 'invalid config'}]}
@@ -117,6 +112,36 @@ class TestsGetHeatmap:
         camera_id = camera["id"]
 
         response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date=2020-09-20&to_date=2020-09-19")
+
+        assert response.status_code == 400
+
+    def test_try_get_one_heatmap_only_from_date(self, config_rollback_cameras, heatmap_simulation):
+        """ Note that here as we do not send to_date, default value will take place, and to_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "2021-01-10" - "today".
+        """
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
+        camera_id = camera["id"]
+        from_date = "2021-01-10"
+
+        response = client.get(f"/metrics/cameras/{camera_id}/heatmap?from_date={from_date}")
+
+        assert response.status_code == 200
+
+    def test_try_get_one_heatmap_only_to_date(self, config_rollback_cameras, heatmap_simulation):
+        """ Note that here as we do not send from_date, default value will take place, and from_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "2020-09-20" and this date range is probably wrong because from_date will be later than to_date.
+        """
+
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
+        camera_id = camera["id"]
+        to_date = "2020-09-20"
+
+        response = client.get(f"/metrics/cameras/{camera_id}/heatmap?to_date={to_date}")
 
         assert response.status_code == 400
 
@@ -464,7 +489,8 @@ class TestsGetCameraDistancingDailyReport:
         from_date = "2020-09-20"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/daily?cameras={camera_id},{camera_id_2}&from_date={from_date}&to_date={to_date}")
+            f"/metrics/cameras/{metric}/daily?cameras={camera_id},{camera_id_2}&from_date={from_date}&to_date={to_date}"
+        )
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -550,6 +576,45 @@ class TestsGetCameraDistancingDailyReport:
 
         assert response.status_code == 400
 
+    @pytest.mark.parametrize(
+        "metric",
+        ["social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_only_from_date(self, config_rollback_cameras, metric):
+        """ Note that here as we do not send to_date, default value will take place, and to_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "2021-01-10" - "today".
+        """
+
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
+        camera_id = camera["id"]
+        from_date = "2021-01-10"
+
+        response = client.get(f"/metrics/cameras/{metric}/daily?cameras={camera_id}&from_date={from_date}")
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_only_to_date(self, config_rollback_cameras, metric):
+        """ Note that here as we do not send from_date, default value will take place, and from_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=3)" - "2020-09-20" and
+        this date range is probably wrong because from_date will be later than to_date.
+        """
+
+        camera, camera_2, client, config_sample_path = config_rollback_cameras
+        camera_id = camera["id"]
+        to_date = "2020-09-20"
+
+        response = client.get(f"/metrics/cameras/{metric}/daily?cameras={camera_id}&to_date={to_date}")
+
+        assert response.status_code == 400
+
 
 # pytest -v api/tests/app/test_camera_metrics.py::TestsGetCameraDistancingWeeklyReport
 class TestsGetCameraDistancingWeeklyReport:
@@ -569,9 +634,6 @@ class TestsGetCameraDistancingWeeklyReport:
     Report spans from from_Date to to_date.
     Taking Sunday as the end of week
     """
-
-    # TODO: los que no se les este agregando la fecha y tengan el weekspan vacio, esta mal. Deberian tener las
-    #  ultimas 4 semanas
 
     @pytest.mark.parametrize(
         "metric,expected",
@@ -676,16 +738,24 @@ class TestsGetCameraDistancingWeeklyReport:
         "metric,expected",
         [
             ("social-distancing", {
-                'detected_objects': [], 'no_infringement': [], 'low_infringement': [], 'high_infringement': [],
-                'critical_infringement': [], 'weeks': []
+                'detected_objects': [0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0]
             }),
-            ("face-mask-detections", {'no_face': [], 'face_with_mask': [], 'face_without_mask': [], 'weeks': []})
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0, 0]
+            })
         ]
     )
     def test_get_a_weekly_report_no_dates_or_week_values(self, config_rollback_cameras, metric, expected):
         """
-        Here we mock datetime.date.today() to a more convenient date set in @freeze_time("2020-09-30")
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "date.today()" and this date range (4 weeks ago from today) should never have values for any
+        camera in order to pass the test. Moreover, we do not assert response.json()["weeks"] because will change
+        depending on the date.
         """
+
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
 
@@ -693,7 +763,8 @@ class TestsGetCameraDistancingWeeklyReport:
             f"/metrics/cameras/{metric}/weekly?cameras={camera_id}")
 
         assert response.status_code == 200
-        assert response.json() == expected
+        for key in expected:
+            assert response.json()[key] == expected[key]
 
     @pytest.mark.parametrize(
         "metric",
@@ -744,7 +815,8 @@ class TestsGetCameraDistancingWeeklyReport:
         to_date = "2020-09-27"
 
         response = client.get(
-            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks={weeks}&from_date={from_date}&to_date={to_date}")
+            f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&weeks={weeks}&from_date={from_date}&"
+            f"to_date={to_date}")
 
         assert response.status_code == 200
         assert response.json() == expected
@@ -772,11 +844,12 @@ class TestsGetCameraDistancingWeeklyReport:
         "metric,expected",
         [
             ("social-distancing", {
-                'detected_objects': [], 'no_infringement': [], 'low_infringement': [], 'high_infringement': [],
-                'critical_infringement': [], 'weeks': []
+                'detected_objects': [0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0]
             }),
             ("face-mask-detections", {
-                'no_face': [], 'face_with_mask': [], 'face_without_mask': [], 'weeks': []
+                'no_face': [0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0, 0]
             })
         ]
     )
@@ -784,18 +857,22 @@ class TestsGetCameraDistancingWeeklyReport:
                                                  metric, expected):
         """
         If no camera is provided, it will search all IDs for each existing camera.
-        Moreover, since weeks and dates are not provided, default values will be used, and the range of dates will be:
-        from 4 weeks ago to today.
-        Consequently, the endpoint will look for data from the last 4 weeks for each camera, and because our mocked data
-        does not provide such data, the endpoint will return empty arrays.
+
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "date.today()" and this date range (4 weeks ago from today) should never have values for any
+        camera in order to pass the test. Moreover, we do not assert response.json()["weeks"] because will change
+        depending on the date.
         """
+
         camera, camera_2, client, config_sample_path = config_rollback_cameras
 
         response = client.get(
             f"/metrics/cameras/{metric}/weekly")
 
         assert response.status_code == 200
-        assert response.json() == expected
+        for key in expected:
+            assert response.json()[key] == expected[key]
 
     @pytest.mark.parametrize(
         "metric",
@@ -806,7 +883,6 @@ class TestsGetCameraDistancingWeeklyReport:
         camera_id = camera["id"]
         from_date = "BAD_DATE"
         to_date = "BAD_DATE"
-
 
         response = client.get(
             f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}&to_date={to_date}")
@@ -899,27 +975,38 @@ class TestsGetCameraDistancingWeeklyReport:
         ["social-distancing", "face-mask-detections"]
     )
     def test_try_get_a_weekly_report_only_from_date(self, config_rollback_cameras, metric):
-        # TODO: Ver lo de validate_date, validate_format
+        """
+        Note that here as we do not send to_date, default value will take place, and to_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "2021-01-10" - "today".
+        """
+
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
-        from_date = "2020-09-20"
+        from_date = "2021-01-10"
 
-        with pytest.raises(TypeError):
-            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}")
+        response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&from_date={from_date}")
 
-        # assert response.status_code == 400
+        assert response.status_code == 200
 
     @pytest.mark.parametrize(
         "metric",
         ["social-distancing", "face-mask-detections"]
     )
     def test_try_get_a_weekly_report_only_to_date(self, config_rollback_cameras, metric):
-        # TODO: Ver lo de validate_date, validate_format
+        """
+        Note that here as we do not send from_date, default value will take place, and from_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "2020-09-20" and this date range is probably wrong because from_date will be later than to_date.
+        """
+
         camera, camera_2, client, config_sample_path = config_rollback_cameras
         camera_id = camera["id"]
         to_date = "2020-09-20"
 
-        with pytest.raises(TypeError):
-            response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&to_date={to_date}")
+        response = client.get(f"/metrics/cameras/{metric}/weekly?cameras={camera_id}&to_date={to_date}")
 
-        # assert response.status_code == 400
+        assert response.status_code == 400

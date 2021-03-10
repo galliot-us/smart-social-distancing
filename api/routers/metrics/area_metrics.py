@@ -19,13 +19,9 @@ def get_area_occupancy_live(areas: str = ""):
     """
     return get_live_metric(AREAS, areas, OCCUPANCY)
 
-# TODO: revisar si esto funciona, en ese caso cambiar todos.
-def get_day():
-    return date.today().isoformat()
-
 
 @metrics_router.get("/occupancy/hourly", response_model=OccupancyHourly)
-def get_area_occupancy_hourly_report(areas: str = "", date: date = Query(date.today().isoformat())):
+def get_area_occupancy_hourly_report(areas: str = "", date: date = Query(date.today())):
     """
     Returns a hourly report (for the date specified) with information about the occupancy in
     the areas <areas>.
@@ -35,8 +31,8 @@ def get_area_occupancy_hourly_report(areas: str = "", date: date = Query(date.to
 
 @metrics_router.get("/occupancy/daily", response_model=OccupancyDaily)
 def get_area_occupancy_daily_report(areas: str = "",
-                                    from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
-                                    to_date: date = Query(date.today().isoformat())):
+                                    from_date: date = Query((date.today() - timedelta(days=3))),
+                                    to_date: date = Query(date.today())):
     """
     Returns a daily report (for the date range specified) with information about the occupancy in
     the areas <areas>.
@@ -48,8 +44,8 @@ def get_area_occupancy_daily_report(areas: str = "",
 def get_area_occupancy_weekly_report(
         areas: str = "",
         weeks: int = Query(0),
-        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-        to_date: date = Query(date.today().isoformat())):
+        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4))),
+        to_date: date = Query(date.today())):
     """
     Returns a weekly report (for the date range specified) with information about the occupancy in
     the areas <areas>.
@@ -68,7 +64,7 @@ def get_area_occupancy_weekly_report(
 
 # Social Distancing Metrics
 @metrics_router.get("/social-distancing/live", response_model=SocialDistancingLive)
-def get_camera_face_mask_detections_live(areas: str = ""):
+def get_area_social_distancing_live(areas: str = ""):
     """
     Returns a report with live information about the social distancing infractions
     detected in the areas <areas>.
@@ -77,7 +73,7 @@ def get_camera_face_mask_detections_live(areas: str = ""):
 
 
 @metrics_router.get("/social-distancing/hourly", response_model=SocialDistancingHourly)
-def get_area_distancing_hourly_report(areas: str = "", date: date = Query(date.today().isoformat())):
+def get_area_distancing_hourly_report(areas: str = "", date: date = Query(date.today())):
     """
     Returns a hourly report (for the date specified) with information about the social distancing infractions
     detected in the areas <areas>.
@@ -87,8 +83,8 @@ def get_area_distancing_hourly_report(areas: str = "", date: date = Query(date.t
 
 @metrics_router.get("/social-distancing/daily", response_model=SocialDistancingDaily)
 def get_area_distancing_daily_report(areas: str = "",
-                                     from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
-                                     to_date: date = Query(date.today().isoformat())):
+                                     from_date: date = Query((date.today() - timedelta(days=3))),
+                                     to_date: date = Query(date.today())):
     """
     Returns a daily report (for the date range specified) with information about the social distancing infractions
     detected in the areas <areas>.
@@ -100,8 +96,8 @@ def get_area_distancing_daily_report(areas: str = "",
 def get_area_distancing_weekly_report(
         areas: str = "",
         weeks: int = Query(0),
-        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-        to_date: date = Query(date.today().isoformat())):
+        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4))),
+        to_date: date = Query(date.today())):
     """
     Returns a weekly report (for the date range specified) with information about the social distancing
     infractions detected in the areas <areas>.
@@ -128,7 +124,7 @@ def get_area_face_mask_detections_live(areas: str = ""):
 
 
 @metrics_router.get("/face-mask-detections/hourly", response_model=FaceMaskHourly)
-def get_area_face_mask_detections_hourly_report(areas: str = "", date: date = Query(date.today().isoformat())):
+def get_area_face_mask_detections_hourly_report(areas: str = "", date: date = Query(date.today())):
     """
     Returns a hourly report (for the date specified) with information about the facemasks detected in
     the cameras <cameras>.
@@ -138,8 +134,8 @@ def get_area_face_mask_detections_hourly_report(areas: str = "", date: date = Qu
 
 @metrics_router.get("/face-mask-detections/daily", response_model=FaceMaskDaily)
 def get_area_face_mask_detections_daily_report(areas: str = "",
-                                               from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
-                                               to_date: date = Query(date.today().isoformat())):
+                                               from_date: date = Query((date.today() - timedelta(days=3))),
+                                               to_date: date = Query(date.today())):
     """
     Returns a daily report (for the date range specified) with information about the facemasks detected in
     the cameras <cameras>.
@@ -151,8 +147,8 @@ def get_area_face_mask_detections_daily_report(areas: str = "",
 def get_area_face_mask_detections_weekly_report(
         areas: str = "",
         weeks: int = Query(0),
-        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-        to_date: date = Query(date.today().isoformat())):
+        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4))),
+        to_date: date = Query(date.today())):
     """
     Returns a weekly report (for the date range specified) with information about the facemasks detected in
     the cameras <cameras>.

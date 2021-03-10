@@ -431,7 +431,8 @@ class TestsGetCameraImage:
 
 
 def get_h_inverse(camera_id):
-    path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/homography_matrix/h_inverse.txt"
+    path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/homography_matrix" \
+           f"/h_inverse.txt"
 
     with open(path, "r") as file:
         h_inverse = file.read()
@@ -444,7 +445,8 @@ class TestsConfigCalibratedDistance:
     """ Config Calibrated Distance, POST /cameras/{camera_id}/homography_matrix """
 
     # pytest -v api/tests/app/test_camera.py::TestsConfigCalibratedDistance::test_set_coordinates_properly
-    def test_set_coordinates_properly(self, config_rollback, camera_sample, rollback_camera_template, h_inverse_matrix, pts_destination, rollback_homography_matrix_folder):
+    def test_set_coordinates_properly(self, config_rollback, camera_sample, rollback_camera_template, h_inverse_matrix,
+                                      pts_destination, rollback_homography_matrix_folder):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 
@@ -456,7 +458,8 @@ class TestsConfigCalibratedDistance:
         assert get_h_inverse(camera_id) == h_inverse_matrix["h_inverse.txt"]
 
     # pytest -v api/tests/app/test_camera.py::TestsConfigCalibratedDistance::test_try_set_coordinates_0_arrays
-    def test_try_set_coordinates_0_arrays(self, config_rollback, camera_sample, rollback_camera_template, rollback_homography_matrix_folder):
+    def test_try_set_coordinates_0_arrays(self, config_rollback, camera_sample, rollback_camera_template,
+                                          rollback_homography_matrix_folder):
         client, config_sample_path = config_rollback
         create_a_camera(client, camera_sample)
 

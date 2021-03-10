@@ -1,10 +1,8 @@
 import pytest
+from freezegun import freeze_time
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
 from api.tests.utils.fixtures_tests import config_rollback_areas
-
-
-# TODO: avisar que en: GET /metrics/cameras/social-distancing/live, el texto del costado esta mal.
 
 
 # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsLive
@@ -539,9 +537,1471 @@ class TestsGetMetricsDaily:
     """ Get Area Distancing Daily Report, GET /metrics/cameras/social-distancing/daily """
     """ Get Camera Face Mask Detections Daily Report, GET /metrics/cameras/face-mask-detections/daily """
 
-    def test_create_area(self, config_rollback_areas):
-        area, area_2, client, config_sample_path_to_modify = config_rollback_areas
-        pass
-        # La info sale de los distintos reports.csv, de las camaras si la metric es FACEMASK o SOCIALDISTANCING, y de areas si es OCCUPANCY.
-        # Un area tiene camaras, si es FACEMASK o SOCIALDISTANCING, se va a buscar a los reportes de las camaras.
-        # response = client.get(f"/metrics/areas/social-distancing/daily?areas={area_id}&from_date=2020-09-06&to_date=2020-09-09")
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [140, 140, 140], 'average_occupancy': [0.0, 83.0, 78.0],
+                'max_occupancy': [0.0, 156.0, 163.0], 'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            }),
+            ("social-distancing", {
+                'detected_objects': [120, 161, 301], 'no_infringement': [35, 143, 183], 'low_infringement': [42, 2, 87],
+                'high_infringement': [43, 9, 27], 'critical_infringement': [0, 7, 4],
+                'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            }),
+            ("face-mask-detections", {
+                'no_face': [77, 114, 41], 'face_with_mask': [76, 188, 170], 'face_without_mask': [33, 39, 128],
+                'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            })
+        ]
+    )
+    def test_get_a_daily_report_properly(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2020-09-21"
+        to_date = "2020-09-23"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0]
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0], 'low_infringement': [0, 0, 0, 0],
+                'high_infringement': [0, 0, 0, 0], 'critical_infringement': [0, 0, 0, 0]
+            }
+             ),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0]
+            })
+        ]
+    )
+    def test_try_get_a_daily_report_no_querystring(self, config_rollback_areas, metric, expected):
+        """
+        If no camera is provided, it will search all IDs for each existing camera.
+
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "date.today()" and this date range (4 weeks ago from today) should never have values for any
+        camera in order to pass the test. Moreover, we do not assert response.json()["weeks"] because will change
+        depending on the date.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+
+        response = client.get(f"/metrics/areas/{metric}/daily")
+
+        assert response.status_code == 200
+        for key in expected:
+            assert response.json()[key] == expected[key]
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0]
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0], 'low_infringement': [0, 0, 0, 0],
+                'high_infringement': [0, 0, 0, 0], 'critical_infringement': [0, 0, 0, 0]
+            }
+             ),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0]
+            })
+        ]
+    )
+    def test_get_a_daily_report_only_id(self, config_rollback_areas, metric, expected):
+        """
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=3)" - "date.today()"
+        and this date range (4 weeks ago from today) should never have values for any camera in order to pass the
+        test. Moreover, we do not assert response.json()["weeks"] because will change depending on the date.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}")
+
+        assert response.status_code == 200
+        for key in expected:
+            assert response.json()[key] == expected[key]
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_get_a_daily_report_only_from_date(self, config_rollback_areas, metric):
+        """
+        Note that here as we do not send to_date, default value will take place, and to_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "2021-01-10" - "today".
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2021-01-10"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?from_date={from_date}")
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_get_a_daily_report_only_to_date(self, config_rollback_areas, metric):
+        """ Note that here as we do not send from_date, default value will take place, and from_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=3)" - "2020-09-20" and
+        this date range is probably wrong because from_date will be later than to_date.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        to_date = "2021-01-10"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [290, 290, 290], 'average_occupancy': [16.0, 155.0, 79.0],
+                'max_occupancy': [21.0, 243.0, 183.0], 'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            }),
+            ("social-distancing", {
+                'detected_objects': [120, 457, 659], 'no_infringement': [35, 415, 461],
+                'low_infringement': [42, 2, 125], 'high_infringement': [43, 19, 61],
+                'critical_infringement': [0, 21, 12], 'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            }),
+            ("face-mask-detections", {
+                'no_face': [77, 150, 77], 'face_with_mask': [76, 400, 440], 'face_without_mask': [33, 91, 188],
+                'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            })
+        ]
+    )
+    def test_get_a_daily_report_no_areas_valid_range_of_dates(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2020-09-21"
+        to_date = "2020-09-23"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("social-distancing", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("face-mask-detections", {'detail': "Area with id 'BAD_ID' does not exist"})
+        ]
+    )
+    def test_try_get_a_daily_report_bad_id(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = "BAD_ID"
+        from_date = "2020-09-21"
+        to_date = "2020-09-23"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 404
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [290, 290, 290], 'average_occupancy': [16.0, 155.0, 79.0],
+                'max_occupancy': [21.0, 243.0, 183.0], 'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            }),
+            ("social-distancing", {
+                'detected_objects': [120, 457, 659], 'no_infringement': [35, 415, 461],
+                'low_infringement': [42, 2, 125], 'high_infringement': [43, 19, 61],
+                'critical_infringement': [0, 21, 12], 'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            }),
+            ("face-mask-detections", {
+                'no_face': [77, 150, 77], 'face_with_mask': [76, 400, 440], 'face_without_mask': [33, 91, 188],
+                'dates': ['2020-09-21', '2020-09-22', '2020-09-23']
+            })
+        ]
+    )
+    def test_get_a_daily_report_two_areas(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "2020-09-21"
+        to_date = "2020-09-23"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/daily?areas={area_id},{area_id_2}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("social-distancing", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("face-mask-detections", {'detail': "Area with id 'BAD_ID' does not exist"})
+        ]
+    )
+    def test_try_get_a_daily_report_two_areas_one_bad_id(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        area_id_2 = "BAD_ID"
+        from_date = "2020-09-21"
+        to_date = "2020-09-23"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/daily?areas={area_id},{area_id_2}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 404
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_bad_format_both_dates(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "BAD_FORMAT"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_bad_format_from_date(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "BAD_FORMAT"
+        to_date = "2020-09-23"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_bad_format_to_date(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2020-09-23"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_from_date_is_after_to_date(self, config_rollback_areas, metric):
+        """ Invalid range of dates, from_date doesn't come before to_date """
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2020-09-23"
+        to_date = "2020-09-20"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0], 'dates': ['2008-05-15', '2008-05-16', '2008-05-17']
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0], 'no_infringement': [0, 0, 0], 'low_infringement': [0, 0, 0],
+                'high_infringement': [0, 0, 0], 'critical_infringement': [0, 0, 0],
+                'dates': ['2008-05-15', '2008-05-16', '2008-05-17']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0], 'face_with_mask': [0, 0, 0], 'face_without_mask': [0, 0, 0],
+                'dates': ['2008-05-15', '2008-05-16', '2008-05-17']
+            })
+        ]
+    )
+    def test_get_a_daily_report_properly_but_no_data_for_given_dates(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2008-05-15"
+        to_date = "2008-05-17"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,from_date,to_date,expected",
+        [
+            ("occupancy", "2020-09-28", "2020-10-01", {
+                'occupancy_threshold': [140, 140, 140, 140], 'average_occupancy': [0.0, 83.0, 78.0, 74.0],
+                'max_occupancy': [0.0, 156.0, 163.0, 140.0],
+                'dates': ['2020-09-28', '2020-09-29', '2020-09-30', '2020-10-01']
+            }),
+            ("social-distancing", "2020-10-04", "2020-10-06", {
+                'detected_objects': [127, 168, 66], 'no_infringement': [44, 65, 9], 'low_infringement': [33, 50, 8],
+                'high_infringement': [50, 37, 37], 'critical_infringement': [0, 16, 12],
+                'dates': ['2020-10-04', '2020-10-05', '2020-10-06']
+            }),
+            ("face-mask-detections", "2020-10-05", "2020-10-08", {
+                'no_face': [11, 131, 119, 108], 'face_with_mask': [77, 64, 28, 87],
+                'face_without_mask': [82, 123, 68, 30],
+                'dates': ['2020-10-05', '2020-10-06', '2020-10-07', '2020-10-08']
+            })
+        ]
+    )
+    def test_get_a_daily_report_properly_but_data_for_only_one_of_given_areas(self, config_rollback_areas, metric,
+                                                                              from_date, to_date, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        area_id_2 = area_2["id"]
+
+        response = client.get(
+            f"/metrics/areas/{metric}/daily?areas={area_id},{area_id_2}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_bad_format_to_date(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2020-09-21"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_daily_report_bad_format_from_date(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "BAD_FORMAT"
+        to_date = "2020-09-21"
+
+        response = client.get(f"/metrics/areas/{metric}/daily?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+
+# pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsWeekly
+class TestsGetMetricsWeekly:
+    """ WEEKLY """
+    """ Get Area Occupancy Weekly Report, GET /metrics/cameras/occupancy/weekly """
+    """ Get Area Distancing Weekly Report, GET /metrics/cameras/social-distancing/weekly """
+    """ Get Camera Face Mask Detections Weekly Report, GET /metrics/cameras/face-mask-detections/weekly """
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [140, 140, 140, 140, 140], 'average_occupancy': [0.0, 49.71, 53.0, 53.0, 0.0],
+                'max_occupancy': [0.0, 163.0, 163.0, 163.0, 0.0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+
+            }),
+            ("social-distancing", {
+                'detected_objects': [20, 1662, 1358, 1426, 94], 'no_infringement': [4, 891, 772, 765, 33],
+                'low_infringement': [14, 362, 365, 328, 59], 'high_infringement': [2, 392, 190, 292, 2],
+                'critical_infringement': [0, 19, 30, 40, 0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            }),
+            ("face-mask-detections", {
+                'no_face': [14, 549, 650, 401, 122], 'face_with_mask': [88, 1023, 920, 855, 91],
+                'face_without_mask': [31, 522, 537, 567, 29],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            })
+        ]
+    )
+    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsWeekly::test_get_a_weekly_report_properly
+    def test_get_a_weekly_report_properly(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0]
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0]
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0, 0]
+            })
+        ]
+    )
+    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsWeekly::test_get_a_weekly_report_no_querystring
+    def test_get_a_weekly_report_no_querystring(self, config_rollback_areas, metric, expected):
+        """
+        If no area is provided, it will look for every existing area..
+
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "date.today()" and this date range (4 weeks ago from today) should never have values for any
+        camera in order to pass the test. Moreover, we do not assert response.json()["weeks"] because will change
+        depending on the date.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+
+        response = client.get(f"/metrics/areas/{metric}/weekly")
+
+        assert response.status_code == 200
+        for key in expected:
+            assert response.json()[key] == expected[key]
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 140, 140, 140, 140], 'average_occupancy': [0.0, 41.86, 49.71, 53.0, 53.0],
+                'max_occupancy': [0.0, 156.0, 163.0, 163.0, 163.0],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("social-distancing", {
+                'detected_objects': [121, 1282, 1511, 1390, 1533], 'no_infringement': [38, 679, 848, 769, 825],
+                'low_infringement': [22, 329, 315, 372, 393], 'high_infringement': [53, 237, 331, 218, 274],
+                'critical_infringement': [8, 36, 19, 30, 40],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 472, 456, 728, 455], 'face_with_mask': [0, 753, 1090, 927, 820],
+                'face_without_mask': [0, 578, 553, 447, 550],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            })
+        ]
+    )
+    @freeze_time("2020-09-30")
+    # pytest -v api/tests/app/test_area_metrics.py::TestsGetMetricsWeekly::test_get_a_weekly_report_properly_weeks
+    def test_get_a_weekly_report_properly_weeks(self, config_rollback_areas, metric, expected):
+        """ Remember that time was mocked to 2020-09-30. """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        weeks = 5
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&weeks={weeks}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 140, 140, 140, 140], 'average_occupancy': [0.0, 41.86, 49.71, 53.0, 53.0],
+                'max_occupancy': [0.0, 156.0, 163.0, 163.0, 163.0],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("social-distancing", {
+                'detected_objects': [121, 1282, 1511, 1390, 1533], 'no_infringement': [38, 679, 848, 769, 825],
+                'low_infringement': [22, 329, 315, 372, 393], 'high_infringement': [53, 237, 331, 218, 274],
+                'critical_infringement': [8, 36, 19, 30, 40],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 472, 456, 728, 455], 'face_with_mask': [0, 753, 1090, 927, 820],
+                'face_without_mask': [0, 578, 553, 447, 550],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            })
+        ]
+    )
+    @freeze_time("2020-09-30")
+    def test_get_a_weekly_report_properly_weeks_and_valid_ranges_of_dates(self, config_rollback_areas, metric,
+                                                                          expected):
+        """
+        Remember that time was mocked to 2020-09-30.
+        In addition, note that from_date and to_date should be ignored accordingly with the description.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        weeks = 5
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/weekly?areas={area_id}&weeks={weeks}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_bad_format_weeks(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        weeks = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&weeks={weeks}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_bad_format_weeks_and_valid_range_of_dates(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        weeks = "BAD_FORMAT"
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/weekly?areas={area_id}&weeks={weeks}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_from_date_after_to_date(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2020-09-17"
+        to_date = "2020-09-15"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            })
+        ]
+    )
+    @freeze_time("2007-04-12")
+    def test_get_a_weekly_report_no_data_for_input_weeks(self, config_rollback_areas, metric,
+                                                         expected):
+        """
+        Remember that time was mocked to 2007-04-12.
+        Note that there is no data for given input.
+
+        Remember that whether <weeks> is used: returned response will separate weeks in range taking a number of
+        weeks ago, considering the week ended yesterday. While when we use from_date and to_date: returned response
+        will separate weeks in range considering the week starts on Monday
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        weeks = 5
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&weeks={weeks}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0, 0],
+                'face_without_mask': [0, 0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            })
+        ]
+    )
+    def test_get_a_weekly_report_no_data_for_input_range_of_dates(self, config_rollback_areas, metric, expected):
+        """
+        Remember that whether <weeks> is used: Separate weeks in range taking a number of weeks ago, considering the
+        week ended yesterday. While when we use from_date and to_date: Separate weeks in range considering the week
+        starts on Monday
+        """
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2007-03-08"
+        to_date = "2007-04-11"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_only_from_date(self, config_rollback_areas, metric):
+        """
+        Note that here as we do not send to_date, default value will take place, and to_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "2021-01-10" - "today".
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2021-01-10"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}")
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_only_to_date(self, config_rollback_areas, metric):
+        """
+        Note that here as we do not send from_date, default value will take place, and from_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "2020-09-20" and this date range is probably wrong because from_date will be later than to_date.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        to_date = "2020-09-20"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_one_date_bad_format_I(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2007-03-08"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_one_date_bad_format_II(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "BAD_FORMAT"
+        to_date = "2007-03-08"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_both_dates_bad_format(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area["id"]
+        from_date = "2007-03-08"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    # NO AREA
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [140, 290, 290, 290, 140], 'average_occupancy': [0.0, 63.43, 95.71, 87.57, 0.0],
+                'max_occupancy': [0.0, 192.0, 235.0, 243.0, 0.0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            }),
+            ("social-distancing", {
+                'detected_objects': [20, 3170, 2786, 2854, 94], 'no_infringement': [4, 2135, 1882, 1875, 33],
+                'low_infringement': [14, 480, 511, 474, 59], 'high_infringement': [2, 504, 300, 402, 2],
+                'critical_infringement': [0, 57, 90, 100, 0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            }),
+            ("face-mask-detections", {
+                'no_face': [14, 719, 862, 571, 122], 'face_with_mask': [88, 2061, 1810, 1893, 91],
+                'face_without_mask': [31, 864, 897, 909, 29],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            })
+        ]
+    )
+    def test_get_a_weekly_report_properly_no_area(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 140, 290, 290, 290], 'average_occupancy': [0.0, 41.86, 78.86, 92.86, 75.0],
+                'max_occupancy': [0.0, 156.0, 235.0, 243.0, 225.0],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("social-distancing", {
+                'detected_objects': [121, 2352, 3019, 2818, 2961], 'no_infringement': [38, 1511, 2092, 1879, 1935],
+                'low_infringement': [22, 437, 433, 518, 539], 'high_infringement': [53, 313, 443, 328, 384],
+                'critical_infringement': [8, 88, 57, 90, 100],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 648, 626, 940, 625], 'face_with_mask': [0, 1373, 2128, 1817, 1858],
+                'face_without_mask': [0, 878, 895, 807, 892],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            })
+        ]
+    )
+    @freeze_time("2020-09-30")
+    def test_get_a_weekly_report_properly_weeks_no_area(self, config_rollback_areas, metric, expected):
+        """ Remember that time was mocked to 2020-09-30. """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        weeks = 5
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?&weeks={weeks}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 140, 290, 290, 290], 'average_occupancy': [0.0, 41.86, 78.86, 92.86, 75.0],
+                'max_occupancy': [0.0, 156.0, 235.0, 243.0, 225.0],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("social-distancing", {
+                'detected_objects': [121, 2352, 3019, 2818, 2961], 'no_infringement': [38, 1511, 2092, 1879, 1935],
+                'low_infringement': [22, 437, 433, 518, 539], 'high_infringement': [53, 313, 443, 328, 384],
+                'critical_infringement': [8, 88, 57, 90, 100],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 648, 626, 940, 625], 'face_with_mask': [0, 1373, 2128, 1817, 1858],
+                'face_without_mask': [0, 878, 895, 807, 892],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            })
+        ]
+    )
+    @freeze_time("2020-09-30")
+    def test_get_a_weekly_report_properly_weeks_and_valid_ranges_of_dates_no_area(self, config_rollback_areas, metric,
+                                                                                  expected):
+        """
+        Remember that time was mocked to 2020-09-30.
+        In addition, note that from_date and to_date should be ignored accordingly with the description.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        weeks = 5
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/weekly?&weeks={weeks}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_bad_format_weeks_no_area(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        weeks = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?weeks={weeks}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_bad_format_weeks_and_valid_range_of_dates_no_area(self, config_rollback_areas,
+                                                                                       metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        weeks = "BAD_FORMAT"
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/weekly?weeks={weeks}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_from_date_after_to_date_no_area(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2020-09-17"
+        to_date = "2020-09-15"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            })
+        ]
+    )
+    @freeze_time("2007-04-12")
+    def test_get_a_weekly_report_no_data_for_input_weeks_no_area(self, config_rollback_areas, metric,
+                                                                 expected):
+        """
+        Remember that time was mocked to 2007-04-12.
+        Note that there is no data for given input.
+
+        Remember that whether <weeks> is used: returned response will separate weeks in range taking a number of
+        weeks ago, considering the week ended yesterday. While when we use from_date and to_date: returned response
+        will separate weeks in range considering the week starts on Monday
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        weeks = 5
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?weeks={weeks}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0, 0],
+                'face_without_mask': [0, 0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            })
+        ]
+    )
+    def test_get_a_weekly_report_no_data_for_input_range_of_dates_no_area(self, config_rollback_areas, metric,
+                                                                          expected):
+        """
+        Remember that whether <weeks> is used: Separate weeks in range taking a number of weeks ago, considering the
+        week ended yesterday. While when we use from_date and to_date: Separate weeks in range considering the week
+        starts on Monday
+        """
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2007-03-08"
+        to_date = "2007-04-11"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_only_from_date_no_area(self, config_rollback_areas, metric):
+        """
+        Note that here as we do not send to_date, default value will take place, and to_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "2021-01-10" - "today".
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2021-01-10"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?from_date={from_date}")
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_only_to_date_no_area(self, config_rollback_areas, metric):
+        """
+        Note that here as we do not send from_date, default value will take place, and from_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "2020-09-20" and this date range is probably wrong because from_date will be later than to_date.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        to_date = "2020-09-20"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_one_date_bad_format_I_no_area(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2007-03-08"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_one_date_bad_format_II_no_area(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "BAD_FORMAT"
+        to_date = "2007-03-08"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_both_dates_bad_format_no_area(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        from_date = "2007-03-08"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    # SEVERAL AREAS
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [140, 290, 290, 290, 140],
+                'average_occupancy': [0.0, 63.43, 95.71, 87.57, 0.0],
+                'max_occupancy': [0.0, 192.0, 235.0, 243.0, 0.0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            }),
+            ("social-distancing", {
+                'detected_objects': [20, 3170, 2786, 2854, 94], 'no_infringement': [4, 2135, 1882, 1875, 33],
+                'low_infringement': [14, 480, 511, 474, 59], 'high_infringement': [2, 504, 300, 402, 2],
+                'critical_infringement': [0, 57, 90, 100, 0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            }),
+            ("face-mask-detections", {
+                'no_face': [14, 719, 862, 571, 122], 'face_with_mask': [88, 2061, 1810, 1893, 91],
+                'face_without_mask': [31, 864, 897, 909, 29],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            })
+        ]
+    )
+    def test_get_a_weekly_report_properly_two_areas(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&from_date={from_date}"
+                              f"&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 140, 290, 290, 290],
+                'average_occupancy': [0.0, 41.86, 78.86, 92.86, 75.0],
+                'max_occupancy': [0.0, 156.0, 235.0, 243.0, 225.0],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("social-distancing", {
+                'detected_objects': [121, 2352, 3019, 2818, 2961], 'no_infringement': [38, 1511, 2092, 1879, 1935],
+                'low_infringement': [22, 437, 433, 518, 539], 'high_infringement': [53, 313, 443, 328, 384],
+                'critical_infringement': [8, 88, 57, 90, 100],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 648, 626, 940, 625], 'face_with_mask': [0, 1373, 2128, 1817, 1858],
+                'face_without_mask': [0, 878, 895, 807, 892],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            })
+        ]
+    )
+    @freeze_time("2020-09-30")
+    def test_get_a_weekly_report_properly_weeks_two_areas(self, config_rollback_areas, metric, expected):
+        """ Remember that time was mocked to 2020-09-30. """
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        weeks = 5
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&weeks={weeks}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 140, 290, 290, 290],
+                'average_occupancy': [0.0, 41.86, 78.86, 92.86, 75.0],
+                'max_occupancy': [0.0, 156.0, 235.0, 243.0, 225.0],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("social-distancing", {
+                'detected_objects': [121, 2352, 3019, 2818, 2961], 'no_infringement': [38, 1511, 2092, 1879, 1935],
+                'low_infringement': [22, 437, 433, 518, 539], 'high_infringement': [53, 313, 443, 328, 384],
+                'critical_infringement': [8, 88, 57, 90, 100],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 648, 626, 940, 625], 'face_with_mask': [0, 1373, 2128, 1817, 1858],
+                'face_without_mask': [0, 878, 895, 807, 892],
+                'weeks': ['2020-08-26 2020-09-01', '2020-09-02 2020-09-08', '2020-09-09 2020-09-15',
+                          '2020-09-16 2020-09-22', '2020-09-23 2020-09-29']
+            })
+        ]
+    )
+    @freeze_time("2020-09-30")
+    def test_get_a_weekly_report_properly_weeks_and_valid_ranges_of_dates_two_areas(self, config_rollback_areas,
+                                                                                    metric,
+                                                                                    expected):
+        """
+        Remember that time was mocked to 2020-09-30.
+        In addition, note that from_date and to_date should be ignored accordingly with the description.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        weeks = 5
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&weeks={weeks}&from_date={from_date}"
+            f"&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_bad_format_weeks_two_areas(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        weeks = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&weeks={weeks}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_bad_format_weeks_and_valid_range_of_dates_two_areas(self, config_rollback_areas,
+                                                                                         metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        weeks = "BAD_FORMAT"
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(
+            f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&weeks={weeks}&from_date={from_date}"
+            f"&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_from_date_after_to_date_two_areas(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "2020-09-17"
+        to_date = "2020-09-15"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&from_date={from_date}"
+                              f"&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0], 'face_without_mask': [0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-14', '2007-03-15 2007-03-21', '2007-03-22 2007-03-28',
+                          '2007-03-29 2007-04-04', '2007-04-05 2007-04-11']
+            })
+        ]
+    )
+    @freeze_time("2007-04-12")
+    def test_get_a_weekly_report_no_data_for_input_weeks_two_areas(self, config_rollback_areas, metric,
+                                                                   expected):
+        """
+        Remember that time was mocked to 2007-04-12.
+        Note that there is no data for given input.
+
+        Remember that whether <weeks> is used: returned response will separate weeks in range taking a number of
+        weeks ago, considering the week ended yesterday. While when we use from_date and to_date: returned response
+        will separate weeks in range considering the week starts on Monday
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        weeks = 5
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&weeks={weeks}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [0, 0, 0, 0, 0, 0], 'average_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'max_occupancy': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            }),
+            ("social-distancing", {
+                'detected_objects': [0, 0, 0, 0, 0, 0], 'no_infringement': [0, 0, 0, 0, 0, 0],
+                'low_infringement': [0, 0, 0, 0, 0, 0], 'high_infringement': [0, 0, 0, 0, 0, 0],
+                'critical_infringement': [0, 0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            }),
+            ("face-mask-detections", {
+                'no_face': [0, 0, 0, 0, 0, 0], 'face_with_mask': [0, 0, 0, 0, 0, 0],
+                'face_without_mask': [0, 0, 0, 0, 0, 0],
+                'weeks': ['2007-03-08 2007-03-11', '2007-03-12 2007-03-18', '2007-03-19 2007-03-25',
+                          '2007-03-26 2007-04-01', '2007-04-02 2007-04-08', '2007-04-09 2007-04-11']
+            })
+        ]
+    )
+    def test_get_a_weekly_report_no_data_for_input_range_of_dates_two_areas(self, config_rollback_areas, metric,
+                                                                            expected):
+        """
+        Remember that whether <weeks> is used: Separate weeks in range taking a number of weeks ago, considering the
+        week ended yesterday. While when we use from_date and to_date: Separate weeks in range considering the week
+        starts on Monday
+        """
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "2007-03-08"
+        to_date = "2007-04-11"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&from_date={from_date}"
+                              f"&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_only_from_date_two_areas(self, config_rollback_areas, metric):
+        """
+        Note that here as we do not send to_date, default value will take place, and to_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "2021-01-10" - "today".
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "2021-01-10"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&from_date={from_date}")
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_only_to_date_two_areas(self, config_rollback_areas, metric):
+        """
+        Note that here as we do not send from_date, default value will take place, and from_date will be
+        date.today().
+        WARNING: We could not mock the date.today() when the function is called within default query parameters.
+        So, we must be careful because the data range will be: "date.today() - timedelta(days=date.today().weekday(),
+        weeks=4)" - "2020-09-20" and this date range is probably wrong because from_date will be later than to_date.
+        """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        to_date = "2020-09-20"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_one_date_bad_format_I_two_areas(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "2007-03-08"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&from_date={from_date}"
+                              f"&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_one_date_bad_format_II_two_areas(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "BAD_FORMAT"
+        to_date = "2007-03-08"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&from_date={from_date}"
+                              f"&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    @pytest.mark.parametrize(
+        "metric",
+        ["occupancy", "social-distancing", "face-mask-detections"]
+    )
+    def test_try_get_a_weekly_report_both_dates_bad_format_two_areas(self, config_rollback_areas, metric):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id_1 = area["id"]
+        area_id_2 = area_2["id"]
+        from_date = "2007-03-08"
+        to_date = "BAD_FORMAT"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id_1},{area_id_2}&from_date={from_date}"
+                              f"&to_date={to_date}")
+
+        assert response.status_code == 400
+
+    # Non existent area
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("social-distancing", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("face-mask-detections", {'detail': "Area with id 'BAD_ID' does not exist"})
+        ]
+    )
+    def test_try_get_a_weekly_report_bad_area_id(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = "BAD_ID"
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 404
+        assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("social-distancing", {'detail': "Area with id 'BAD_ID' does not exist"}),
+            ("face-mask-detections", {'detail': "Area with id 'BAD_ID' does not exist"})
+        ]
+    )
+    @freeze_time("2020-09-30")
+    def test_try_get_a_weekly_report_weeks_bad_area_id(self, config_rollback_areas, metric, expected):
+        """ Remember that time was mocked to 2020-09-30. """
+
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = "BAD_ID"
+        weeks = 5
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&weeks={weeks}")
+
+        assert response.status_code == 404
+        assert response.json() == expected
