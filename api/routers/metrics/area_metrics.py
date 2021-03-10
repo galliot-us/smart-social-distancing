@@ -167,7 +167,7 @@ def get_area_face_mask_detections_weekly_report(
 
 
 # In Out Metrics
-@metrics_router.get("/in-out/live", response_model=FaceMaskLive)
+@metrics_router.get("/in-out/live", response_model=InOutLive)
 def get_camera_in_out_live(areas: str = ""):
     """
     Returns a report with live information about the in-out flow detected in the
@@ -176,7 +176,7 @@ def get_camera_in_out_live(areas: str = ""):
     return get_live_metric(AREAS, areas, IN_OUT)
 
 
-@metrics_router.get("/in-out/hourly", response_model=FaceMaskHourly)
+@metrics_router.get("/in-out/hourly", response_model=InOutHourly)
 def get_camera_in_out_hourly_report(areas: str = "", date: date = Query(date.today().isoformat())):
     """
     Returns a hourly report (for the date specified) with information about the in-out flow detected in
@@ -185,7 +185,7 @@ def get_camera_in_out_hourly_report(areas: str = "", date: date = Query(date.tod
     return get_hourly_metric(AREAS, areas, IN_OUT, date)
 
 
-@metrics_router.get("/in-out/daily", response_model=FaceMaskDaily)
+@metrics_router.get("/in-out/daily", response_model=InOutDaily)
 def get_camera_in_out_daily_report(areas: str = "",
                                                  from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
                                                  to_date: date = Query(date.today().isoformat())):
@@ -196,7 +196,7 @@ def get_camera_in_out_daily_report(areas: str = "",
     return get_daily_metric(AREAS, areas, IN_OUT, from_date, to_date)
 
 
-@metrics_router.get("/in-out/weekly", response_model=FaceMaskWeekly)
+@metrics_router.get("/in-out/weekly", response_model=InOutWeekly)
 def get_camera_in_out_weekly_report(
         areas: str = "",
         weeks: int = Query(0),

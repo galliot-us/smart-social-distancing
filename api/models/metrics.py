@@ -219,7 +219,7 @@ class InOutHourly(HourlyReports, InOut):
         }
 
 
-class InOutDaily(DailyReport, FaceMask):
+class InOutDaily(DailyReport, InOut):
     class Config:
         schema_extra = {
             "example": [{
@@ -230,7 +230,7 @@ class InOutDaily(DailyReport, FaceMask):
         }
 
 
-class InOutWeekly(WeeklyReport, FaceMask):
+class InOutWeekly(WeeklyReport, InOut):
     class Config:
         schema_extra = {
             "example": [{
