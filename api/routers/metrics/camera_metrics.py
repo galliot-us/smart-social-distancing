@@ -156,9 +156,10 @@ def get_camera_in_out_hourly_report(cameras: str = "", date: date = Query(date.t
 
 
 @metrics_router.get("/in-out/daily", response_model=InOutDaily)
-def get_camera_in_out_daily_report(cameras: str = "",
-                                                 from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
-                                                 to_date: date = Query(date.today().isoformat())):
+def get_camera_in_out_daily_report(
+        cameras: str = "",
+        from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
+        to_date: date = Query(date.today().isoformat())):
     """
     Returns a daily report (for the date range specified) with information about the in-out flow detected in
     the cameras <cameras>.
