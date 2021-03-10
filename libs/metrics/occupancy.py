@@ -8,11 +8,11 @@ from statistics import mean
 from typing import Dict, Iterator, List
 
 from .base import BaseMetric
-
+from constants import OCCUPANCY
 
 class OccupancyMetric(BaseMetric):
 
-    reports_folder = "occupancy"
+    reports_folder = OCCUPANCY
     csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold"]
     entity = "area"
     live_csv_headers = ["AverageOccupancy", "MaxOccupancy", "OccupancyThreshold", "Violations"]
@@ -28,7 +28,7 @@ class OccupancyMetric(BaseMetric):
         objects_logs[row_hour]["Occupancy"].append(int(csv_row["Occupancy"]))
 
     @classmethod
-    def generate_hourly_metric_data(cls, objects_logs, entity):
+    def generate_hourly_metric_data(cls, config, objects_logs, entity):
         summary = np.zeros((len(objects_logs), 3), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             summary[index] = (
@@ -54,7 +54,7 @@ class OccupancyMetric(BaseMetric):
         return round(mean(average_ocupancy), 2), max(max_occupancy), threshold
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):
+    def generate_live_csv_data(cls, config, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
@@ -69,7 +69,7 @@ class OccupancyMetric(BaseMetric):
             }
             for hour in objects_logs:
                 objects_logs_merged[0]["Occupancy"].extend(objects_logs[hour]["Occupancy"])
-        occupancy_live = cls.generate_hourly_metric_data(objects_logs_merged, entity)[0].tolist()
+        occupancy_live = cls.generate_hourly_metric_data(config, objects_logs_merged, entity)[0].tolist()
         occupancy_live.append(int(entity["occupancy_threshold"]))
         daily_violations = 0
         entity_directory = entity["base_directory"]

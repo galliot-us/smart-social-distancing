@@ -37,7 +37,7 @@ def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
     cameras = []
     for area_config in config.values():
         if area_config["Id"] in areas:
-            cameras.extend(area_config[CAMERAS].split(","))
+            cameras.extend(area_config[CAMERAS.capitalize()].split(","))
     return cameras
 
 

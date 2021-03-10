@@ -60,33 +60,33 @@ class AreaEngine:
                 # Wait before csv for this day are created
                 logger.info(f"Area reporting on - {self.area_id}: {self.area_name} is waiting for reports to be created")
                 time.sleep(5)
+            else:
+                occupancy = 0
+                active_cameras = []
+                for camera in self.cameras:
+                    with open(os.path.join(camera["file_path"], str(date.today()) + ".csv"), "r") as log:
+                        last_log = deque(csv.DictReader(log), 1)[0]
+                        log_time = datetime.strptime(last_log["Timestamp"], "%Y-%m-%d %H:%M:%S")
+                        # TODO: If the TimeInterval of the Logger is more than 30 seconds this would have to be revised.
+                        if (datetime.now() - log_time).total_seconds() < 30:
+                            occupancy += int(last_log["DetectedObjects"])
+                            active_cameras.append({"camera_id": camera["id"], "camera_name": camera["name"]})
+                        else:
+                            logger.warn(f"Logs aren't being updated for camera {camera['id']} - {camera['name']}")
 
-            occupancy = 0
-            active_cameras = []
-            for camera in self.cameras:
-                with open(os.path.join(camera["file_path"], str(date.today()) + ".csv"), "r") as log:
-                    last_log = deque(csv.DictReader(log), 1)[0]
-                    log_time = datetime.strptime(last_log["Timestamp"], "%Y-%m-%d %H:%M:%S")
-                    # TODO: If the TimeInterval of the Logger is more than 30 seconds this would have to be revised.
-                    if (datetime.now() - log_time).total_seconds() < 30:
-                        occupancy += int(last_log["DetectedObjects"])
-                        active_cameras.append({"camera_id": camera["id"], "camera_name": camera["name"]})
-                    else:
-                        logger.warn(f"Logs aren't being updated for camera {camera['id']} - {camera['name']}")
+                for l in self.loggers:
+                    l.update(active_cameras, {"occupancy": occupancy})
 
-            for l in self.loggers:
-                l.update(active_cameras, {"occupancy": occupancy})
-
-            if (occupancy > self.occupancy_threshold
-                    and time.time() - self.last_notification_time > self.occupancy_sleep_time_interval):
-                # Trigger alerts
-                self.last_notification_time = time.time()
-                if self.should_send_email_notifications:
-                    self.mail_service.send_occupancy_notification(self.area, occupancy)
-                if self.should_send_slack_notifications:
-                    self.slack_service.occupancy_alert(self.area, occupancy)
-            # Sleep until new data is logged
-            time.sleep(self.idle_time)
+                if (occupancy > self.occupancy_threshold
+                        and time.time() - self.last_notification_time > self.occupancy_sleep_time_interval):
+                    # Trigger alerts
+                    self.last_notification_time = time.time()
+                    if self.should_send_email_notifications:
+                        self.mail_service.send_occupancy_notification(self.area, occupancy)
+                    if self.should_send_slack_notifications:
+                        self.slack_service.occupancy_alert(self.area, occupancy)
+                # Sleep until new data is logged
+                time.sleep(self.idle_time)
 
         self.stop_process_area()
 

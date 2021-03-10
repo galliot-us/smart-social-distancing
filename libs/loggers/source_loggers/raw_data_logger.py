@@ -63,6 +63,7 @@ class RawDataLogger:
             obj = {}
             # TODO: Get 3D position of objects
             obj["position"] = [0.0, 0.0, 0.0]
+            obj["bbox_real"] = obj_dict["bboxReal"]
             obj["bbox"] = obj_dict["bbox"]
             obj["tracking_id"] = obj_dict.get("tracked_id", obj_dict["id"])
             if "face_label" in obj_dict and obj_dict["face_label"] != -1:
