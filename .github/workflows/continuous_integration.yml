@@ -3,7 +3,7 @@
 
 name: CI
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   Tests:
@@ -12,10 +12,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python 2.7
-      uses: actions/setup-python@v2
-      with:
-        python-version: 2.7
+    - name: Download docker image
+      run: docker pull neuralet/smart-social-distancing:latest-x86_64
     - name: Docker Build
       run: docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
       # run: docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
