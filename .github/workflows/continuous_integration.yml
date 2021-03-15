@@ -20,10 +20,10 @@ jobs:
     - name: Docker Run (in background)
       # run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
       run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
-    - name: Open interactive Bash
-      run: docker exec -i $(docker ps -q) bash
     - name: Run tests
-      run: pytest
+      run: |
+        docker exec -i $(docker ps -q) bash
+        pytest
     - name: Docker stop
       run: docker stop $(docker ps -q)
 
