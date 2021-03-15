@@ -18,8 +18,14 @@ jobs:
         python-version: 2.7
     - name: Docker Build
       run: docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
-    - name: Docker Run
-      run: docker run -it -p 8400:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
+    - name: Docker Run (in background)
+      run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
+    - name: Open interactive Bash
+      run: docker exec -it $(docker ps -q) bash -c "pytest"
+    - name: Run tests
+      run: pytest
+
+
 #
 #    - name: Install dependencies
 #      working-directory: ./articles
