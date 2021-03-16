@@ -16,30 +16,11 @@ jobs:
       run: docker pull neuralet/smart-social-distancing:latest-x86_64
     - name: Docker Build
       run: docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
-      # run: docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
     - name: Docker Run (in background)
-      # run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
-      run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
-    - name: Run tests
-      run: docker exec -i $(docker ps -q) pytest
+      run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=./timezone.sh neuralet/smart-social-distancing:latest-x86_64 bash -c supervisord -c supervisord.conf -n & pytest
+      # LINE BELOW WORKS! :) Let s try another solution without docker exec
+      # run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
+      # - name: Run tests
+      # run: docker exec -i $(docker ps -q) pytest
     - name: Docker stop
       run: docker stop $(docker ps -q)
-
-#
-#    - name: Install dependencies
-#      working-directory: ./articles
-#      run: |
-#        python -m pip install --upgrade pip
-#        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-#    - name: Create .env file
-#      uses: SpicyPizza/create-envfile@v1
-#      with:
-#        envkey_DATABASE_ENGINE: "django.db.backends.postgresql_psycopg2"
-#        envkey_DATABASE_NAME: "djangorestbase"
-#        envkey_DATABASE_USER: "joaquindjango"
-#        envkey_DATABASE_PASSWORD: "password"
-#        envkey_DATABASE_HOST: "127.0.0.1"
-#        envkey_DATABASE_PORT: 5432
-#        envkey_SECRET_KEY=@_x: "lnoyv&4jv-4(h)783_y!c@!+$sxi=$(87@&sw+*z9rhd$i"
-#        directory: ./articles
-#        file_name: .env
