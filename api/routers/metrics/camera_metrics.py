@@ -5,9 +5,9 @@ from typing import Optional
 from api.models.metrics import (
     FaceMaskDaily, FaceMaskLive, FaceMaskHourly, FaceMaskWeekly, HeatmapReport,
     SocialDistancingDaily, SocialDistancingHourly, SocialDistancingLive,
-    SocialDistancingWeekly)
+    SocialDistancingWeekly, InOutDaily, InOutLive, InOutHourly, InOutWeekly)
 from api.utils import bad_request_serializer
-from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING
+from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING, IN_OUT
 from libs.metrics.utils import generate_heatmap
 
 from .metrics import (validate_camera_existence, get_live_metric, get_hourly_metric, get_daily_metric,
@@ -137,3 +137,55 @@ def get_camera_face_mask_detections_weekly_report(
     - Taking Sunday as the end of week
     """
     return get_weekly_metric(CAMERAS, cameras, FACEMASK_USAGE, from_date, to_date, weeks)
+
+# In Out Metrics
+@metrics_router.get("/in-out/live", response_model=InOutLive)
+def get_camera_in_out_live(cameras: str = ""):
+    """
+    Returns a report with live information about the in-out flow detected in the
+    cameras <cameras>.
+    """
+    return get_live_metric(CAMERAS, cameras, IN_OUT)
+
+
+@metrics_router.get("/in-out/hourly", response_model=InOutHourly)
+def get_camera_in_out_hourly_report(cameras: str = "", date: date = Query(date.today().isoformat())):
+    """
+    Returns a hourly report (for the date specified) with information about the in-out flow detected in
+    the cameras <cameras>.
+    """
+    return get_hourly_metric(CAMERAS, cameras, IN_OUT, date)
+
+
+@metrics_router.get("/in-out/daily", response_model=InOutDaily)
+def get_camera_in_out_daily_report(
+        cameras: str = "",
+        from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
+        to_date: date = Query(date.today().isoformat())):
+    """
+    Returns a daily report (for the date range specified) with information about the in-out flow detected in
+    the cameras <cameras>.
+    """
+    return get_daily_metric(CAMERAS, cameras, IN_OUT, from_date, to_date)
+
+
+@metrics_router.get("/in-out/weekly", response_model=InOutWeekly)
+def get_camera_in_out_weekly_report(
+        cameras: str = "",
+        weeks: int = Query(0),
+        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
+        to_date: date = Query(date.today().isoformat())):
+    """
+    Returns a weekly report (for the date range specified) with information about the in-out flow detected in
+    the cameras <cameras>.
+
+    **If `weeks` is provided and is a positive number:**
+    - `from_date` and `to_date` are ignored.
+    - Report spans from `weeks*7 + 1` days ago to yesterday.
+    - Taking yesterday as the end of week.
+
+    **Else:**
+    - Report spans from `from_Date` to `to_date`.
+    - Taking Sunday as the end of week
+    """
+    return get_weekly_metric(CAMERAS, cameras, IN_OUT, from_date, to_date, weeks)

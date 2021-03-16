@@ -16,7 +16,7 @@ class FaceMaskUsageMetric(BaseMetric):
     csv_headers = ["NoFace", "FaceWithMask", "FaceWithoutMask"]
 
     @classmethod
-    def procces_csv_row(cls, csv_row: Dict, objects_logs: Dict):
+    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
         row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
         detections = ast.literal_eval(csv_row["Detections"])
         row_hour = row_time.hour
@@ -29,7 +29,7 @@ class FaceMaskUsageMetric(BaseMetric):
             objects_logs[row_hour][d["tracking_id"]]["face_labels"].append(d.get("face_label", -1))
 
     @classmethod
-    def generate_hourly_metric_data(cls, objects_logs, entity=None):
+    def generate_hourly_metric_data(cls, config, objects_logs, entity=None):
         summary = np.zeros((len(objects_logs), 3), dtype=np.long)
         for index, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
@@ -89,7 +89,7 @@ class FaceMaskUsageMetric(BaseMetric):
         return total_no_face_detections, total_mask_detections, total_no_mask_detections
 
     @classmethod
-    def generate_live_csv_data(cls, today_entity_csv, entity, entries_in_interval):
+    def generate_live_csv_data(cls, config, today_entity_csv, entity, entries_in_interval):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
@@ -97,8 +97,8 @@ class FaceMaskUsageMetric(BaseMetric):
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in lastest_entries:
-                cls.procces_csv_row(entry, objects_logs)
-        return np.sum(cls.generate_hourly_metric_data(objects_logs), axis=0)
+                cls.process_csv_row(entry, objects_logs)
+        return np.sum(cls.generate_hourly_metric_data(config, objects_logs), axis=0)
 
     @classmethod
     def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:

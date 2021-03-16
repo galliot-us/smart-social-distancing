@@ -6,11 +6,11 @@ from fastapi import HTTPException, status
 from typing import Iterator
 
 from api.utils import bad_request_serializer, extract_config
-from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING
-from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric
+from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT
+from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
 
 
-CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE]
+CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE,IN_OUT]
 
 
 def get_cameras(cameras: str) -> Iterator[str]:
@@ -38,7 +38,7 @@ def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
     cameras = []
     for area_config in config.values():
         if area_config["Id"] in areas:
-            cameras.extend(area_config["Cameras"].split(","))
+            cameras.extend(area_config[CAMERAS.capitalize()].split(","))
     return cameras
 
 
@@ -83,6 +83,8 @@ def get_metric_class(metric: str):
         return FaceMaskUsageMetric
     elif metric == OCCUPANCY:
         return OccupancyMetric
+    elif metric == IN_OUT:
+        return InOutMetric
     else:
         raise ValueError(f"Metric {metric} not supported.")
 

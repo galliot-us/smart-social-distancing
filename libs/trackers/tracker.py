@@ -10,7 +10,7 @@ class Tracker:
         self.tracker = None
         self.config = config
         tracker_name = self.config.get_section_dict("Tracker")["Name"]
-        if tracker_name == "BaseTraker":
+        if tracker_name == "BaseTracker":
             self.tracker = BaseTracker(int(self.config.get_section_dict("Tracker")["MaxLost"]))
         elif tracker_name == "IOUTracker":
             self.tracker = IOUTracker(
