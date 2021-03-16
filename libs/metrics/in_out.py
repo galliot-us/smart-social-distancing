@@ -20,7 +20,7 @@ from libs.utils.utils import validate_file_exists_and_is_not_empty
 class InOutMetric(BaseMetric):
 
     reports_folder = IN_OUT
-    csv_headers = ["In", "Out"]
+    csv_headers = ["In", "Out", "Summary"]
     NUMBER_OF_PATH_SEGMENTS = 7
 
     @classmethod
@@ -87,14 +87,20 @@ class InOutMetric(BaseMetric):
 
     @classmethod
     def generate_hourly_metric_data(cls, config, objects_logs, entity):
-        boundary_line = cls.retrieve_in_out_boundary(config, entity["id"])
-        summary = np.zeros((len(objects_logs), 2), dtype=np.long)
-        for index, hour in enumerate(sorted(objects_logs)):
+        boundaries = cls.retrieve_in_out_boundaries(config, entity["id"])
+        boundary_names = [boundary["name"] for boundary in boundaries]
+        summary = [[0, 0, [boundary_names, [0]*len(boundaries), [0]*len(boundaries)]]]*len(objects_logs)
+        for index_hour, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
             for track_id, data in hour_objects_detections.items():
                 path = data["path"]
-                new_in, new_out = cls.process_path(boundary_line, path)
-                summary[index] += (new_in, new_out)
+                for index_boundary, boundary in enumerate(boundaries):
+                    boundary_line = boundary["in_out_boundary"]
+                    new_in, new_out = cls.process_path(boundary_line, path)
+                    summary[index_hour][0] += new_in
+                    summary[index_hour][1] += new_out
+                    summary[index_hour][2][1][index_boundary] += new_in
+                    summary[index_hour][2][2][index_boundary] += new_out
         return summary
 
     @classmethod
@@ -102,8 +108,9 @@ class InOutMetric(BaseMetric):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
-        people_in, people_out = 0, 0
-        boundary_line = cls.retrieve_in_out_boundary(config, entity["id"])
+        boundaries = cls.retrieve_in_out_boundaries(config, entity["id"])
+        boundary_names = [boundary["name"] for boundary in boundaries]
+        summary = [0, 0, [boundary_names, [0] * len(boundaries), [0] * len(boundaries)]]
         with open(today_entity_csv, "r") as log:
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
@@ -118,10 +125,14 @@ class InOutMetric(BaseMetric):
                     paths[track_id].extend(sub_path)
         for track_id, data in paths.items():
             path = data["path"]
-            new_in, new_out = cls.process_path(boundary_line, path)
-            people_in += new_in
-            people_out += new_out
-        return [people_in, people_out]
+            for index_boundary, boundary in enumerate(boundaries):
+                boundary_line = boundary["in_out_boundary"]
+                new_in, new_out = cls.process_path(boundary_line, path)
+                summary[0] += new_in
+                summary[1] += new_out
+                summary[2][1][index_boundary] += new_in
+                summary[2][2][index_boundary] += new_out
+        return summary
 
     @classmethod
     def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:
@@ -143,13 +154,13 @@ class InOutMetric(BaseMetric):
         return f"{get_source_config_directory(config)}/{camera_id}/{IN_OUT}/{IN_OUT}.json"
 
     @classmethod
-    def retrieve_in_out_boundary(cls, config, camera_id):
+    def retrieve_in_out_boundaries(cls, config, camera_id):
         boundary_path = cls.get_in_out_file_path(camera_id, config)
         boundary_line = cls.read_in_out_boundaries(boundary_path)
         if boundary_line is None:
             raise Exception(f"Camera {camera_id} does not have a defined in/out boundary")
         else:
-            return boundary_line["in_out_boundary"]
+            return boundary_line["in_out_boundaries"]
 
     @classmethod
     def read_in_out_boundaries(cls, in_out_file_path):

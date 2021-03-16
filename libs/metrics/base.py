@@ -1,3 +1,4 @@
+import ast
 import os
 import csv
 import numpy as np
@@ -335,7 +336,14 @@ class BaseMetric:
                 lastest_entry = deque(csv.DictReader(live_file), 1)[0]
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
                 for header in live_headers:
-                    report[header] += int(lastest_entry[header])
+                    if lastest_entry[header][0].isdigit():
+                        report[header] += int(lastest_entry[header])
+                    else: # It's a list
+                        entry = ast.literal_eval(lastest_entry[header])
+                        if report[header] == 0:
+                            report[header] = entry
+                        else:
+                            report[header] = [a.extend(b) for a, b in zip(report[header], entry)]
         report["Time"] = ""
         report["Trend"] = 0
         if times:

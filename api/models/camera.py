@@ -66,12 +66,26 @@ class ContourRoI(BaseModel):
         }
 
 
-class InOutBoundaries(BaseModel):
+class InOutBoundary(BaseModel):
+    name: Optional[str] = Field("", example="Left Door")
     in_out_boundary: Tuple[Tuple[int, int], Tuple[int, int]]
+
+
+class InOutBoundaries(BaseModel):
+    in_out_boundaries: List[InOutBoundary]
 
     class Config:
         schema_extra = {
-            'example': {
-                'in_out_boundary': [[5, 5], [5, 240]],
+            "example": {
+                "in_out_boundaries": [
+                    {
+                        "name": "Left Door",
+                        "in_out_boundary": [[5, 5], [5, 240]]
+                    },
+                    {
+                        "name": "Right Door",
+                        "in_out_boundary": [[280, 5], [280, 240]]
+                    },
+                ]
             }
         }
