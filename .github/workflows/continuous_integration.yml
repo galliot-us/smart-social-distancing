@@ -17,7 +17,8 @@ jobs:
     - name: Docker Build
       run: docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
     - name: Docker Run (in background)
-      run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=./timezone.sh neuralet/smart-social-distancing:latest-x86_64 bash -c supervisord -c supervisord.conf -n & pytest
+      # La de abajo no funciona local. F
+      run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=./timezone.sh neuralet/smart-social-distancing:latest-x86_64 bash -c supervisord -c supervisord.conf -n && pytest
       # LINE BELOW WORKS! :) Let s try another solution without docker exec
       # run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
       # - name: Run tests
