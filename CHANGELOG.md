@@ -2,16 +2,14 @@
 
 This file includes a list of notable changes to this project.
 
-## [0.5.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.6.0)
+## [0.6.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.6.0)
 Released on 2021-03-16.
 
 #### Added:
 
 * Draw Region of Interest contour in live feed ([#136](https://github.com/neuralet/smart-social-distancing/pull/136))
 * List overview of camera configuration ([#138](https://github.com/neuralet/smart-social-distancing/pull/138))
-* In/Out Boundary endpoint configuration ([#135](https://github.com/neuralet/smart-social-distancing/pull/135))
-* In/Out Boundary analytics and logic ([#139](https://github.com/neuralet/smart-social-distancing/pull/139))
-* In/Out Boundary metric endpoints ([#144](https://github.com/neuralet/smart-social-distancing/pull/144))
+* In/Out Boundary metric: ([#135](https://github.com/neuralet/smart-social-distancing/pull/135), [#139](https://github.com/neuralet/smart-social-distancing/pull/139), [#144](https://github.com/neuralet/smart-social-distancing/pull/144))
 
 #### Fixed:
 
