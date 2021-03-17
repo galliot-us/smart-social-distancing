@@ -18,6 +18,7 @@ class SocialDistancingMetric(BaseMetric):
     reports_folder = SOCIAL_DISTANCING
     csv_headers = ["DetectedObjects", "NoInfringement", "LowInfringement", "HighInfringement",
                    "CriticalInfringement"]
+    csv_default_values = [0, 0, 0, 0, 0]
 
     @classmethod
     def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):

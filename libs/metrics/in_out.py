@@ -14,13 +14,14 @@ from datetime import datetime
 from .base import BaseMetric
 from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
-from libs.utils.utils import validate_file_exists_and_is_not_empty
+from libs.utils.utils import validate_file_exists_and_is_not_empty, is_list_recursively_empty
 
 
 class InOutMetric(BaseMetric):
 
     reports_folder = IN_OUT
     csv_headers = ["In", "Out", "Summary"]
+    csv_default_values = [0, 0, [[], [], []]]
     NUMBER_OF_PATH_SEGMENTS = 7
 
     @classmethod
@@ -178,6 +179,47 @@ class InOutMetric(BaseMetric):
         if boundary_line is None:
             return False
         return True
+
+
+    @classmethod
+    def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,
+                          from_date: date = None, to_date: date = None) -> Dict:
+        # The In/Out metric cannot be fully aggregated using "sum"
+        weekly_report_data = cls.generate_weekly_report_data(entities, number_of_weeks, from_date, to_date)
+        report = { "Weeks": [] }
+        for header in cls.csv_headers:
+            report[header] = []
+        for week, week_data in weekly_report_data.items():
+            report["Weeks"].append(week)
+            report["In"].append(sum(week_data["In"]))
+            report["Out"].append(sum(week_data["Out"]))
+            _, weekly_in, weekly_out = zip(*week_data["Summary"])
+            weekly_in = [x for x in weekly_in if not is_list_recursively_empty(x)]
+            weekly_out = [x for x in weekly_out if not is_list_recursively_empty(x)]
+            if is_list_recursively_empty(week_data["Summary"]):
+                continue
+            elif is_list_recursively_empty((report["Summary"])):
+                print(weekly_in)
+                print(list(zip(*weekly_in)))
+                #print([sum(x for x in zip(*weekly_in))])
+                print([sum(x) for x in zip(*weekly_in)])
+                report["Summary"] = [
+                    # week_data["Summary"][0],
+                    ["Left", "Right"],
+                    [[sum(x) for x in zip(*weekly_in)]],
+                    [[sum(x) for x in zip(*weekly_out)]]
+                ]
+                print("Initialization")
+                print(report["Summary"])
+                print()
+            else:
+                report["Summary"][1].append([sum(x) for x in zip(*weekly_in)])
+                report["Summary"][2].append([sum(x) for x in zip(*weekly_out)])
+                print("Update")
+                print(report["Summary"])
+                print()
+        print(report)
+        return report
 
 # Auxiliary methods taken from:
 # https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py
