@@ -27,7 +27,7 @@ def config_rollback_base(option="JUST_CAMERAS"):
             camera_example (ID: 49)
             camera_example_2 (ID: 50)
         """
-        original_path = "/repo/api/tests/data/config-x86-openvino_MAIN.ini"
+        original_path = "/repo/api/tests/data/config-x86-openvino_JUST_CAMERAS.ini"
     elif option == "METRICS":
         """
         Here there are charged 4 cameras and two areas:
@@ -55,11 +55,11 @@ def config_rollback_base(option="JUST_CAMERAS"):
 @pytest.fixture
 def rollback_camera_template():
     yield None
-    for i in [str(camera_template["id"]), str(int(camera_template["id"]) + 1)]:
-        camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), i)
+    for id_camera in [str(camera_template["id"]), str(int(camera_template["id"]) + 1)]:
+        camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), id_camera)
         if os.path.exists(camera_screenshot_directory):
             shutil.rmtree(camera_screenshot_directory)
-        camera_directory = os.path.join(os.environ.get("SourceLogDirectory"), i)
+        camera_directory = os.path.join(os.environ.get("SourceLogDirectory"), id_camera)
         if os.path.exists(camera_directory):
             shutil.rmtree(camera_directory)
 
@@ -99,10 +99,18 @@ def camera_sample():
 
 @pytest.fixture
 def rollback_homography_matrix_folder():
+    """
+    '/repo/api/tests/data/mocked_data/data/processor/config/'
+    comes from -->
+    config.get_section_dict('App')['EntityConfigDirectory']
+
+    Remember that we use another configuration file to test. So ('App')['EntityConfigDirectory'] is modified
+    to point to our mocked data.
+    """
     yield None
     # Deletes the homography_matrix directory and all its content.
-    raw = os.environ.get("SourceLogDirectory")
-    path = os.path.join(raw, str(camera_template["id"]))
+    raw = "/repo/api/tests/data/mocked_data/data/processor/config"
+    path = os.path.join(raw, "sources", str(camera_template["id"]), "homography_matrix")
     if os.path.exists(path):
         shutil.rmtree(path)
 

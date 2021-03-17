@@ -431,7 +431,15 @@ class TestsGetCameraImage:
 
 
 def get_h_inverse(camera_id):
-    path = f"/repo/api/tests/data/mocked_data/data/processor/static/data/sources/{camera_id}/homography_matrix" \
+    """
+    '/repo/api/tests/data/mocked_data/data/processor/config/'
+    comes from -->
+    config.get_section_dict('App')['EntityConfigDirectory']
+
+    Remember that we use another configuration file to test. So ('App')['EntityConfigDirectory'] is modified
+    to point to our mocked data.
+    """
+    path = f"/repo/api/tests/data/mocked_data/data/processor/config/sources/{camera_id}/homography_matrix" \
            f"/h_inverse.txt"
 
     with open(path, "r") as file:
