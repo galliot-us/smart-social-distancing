@@ -11,20 +11,21 @@ from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING, IN_OUT
 from libs.metrics.utils import generate_heatmap
 
 from .metrics import (validate_camera_existence, get_live_metric, get_hourly_metric, get_daily_metric,
-                      get_weekly_metric)
+                      get_weekly_metric, validate_dates)
 
 metrics_router = APIRouter()
 
 
 @metrics_router.get("/{camera_id}/heatmap", response_model=HeatmapReport)
 def get_heatmap(camera_id: str,
-                from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-                to_date: date = Query(date.today().isoformat()),
+                from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4))),
+                to_date: date = Query(date.today()),
                 report_type: Optional[str] = "violations"):
     """
     Returns a heatmap image displaying the violations/detections detected by the camera <camera_id>
     """
     validate_camera_existence(camera_id)
+    validate_dates(from_date, to_date)
     if report_type in ["violations", "detections"]:
         return generate_heatmap(camera_id, from_date, to_date, report_type)
     else:
@@ -32,6 +33,7 @@ def get_heatmap(camera_id: str,
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Invalid report_type", error_type="invalid config")
         )
+
 
 # Social Distancing Metrics
 @metrics_router.get("/social-distancing/live", response_model=SocialDistancingLive)
@@ -44,7 +46,7 @@ def get_camera_distancing_live(cameras: str = ""):
 
 
 @metrics_router.get("/social-distancing/hourly", response_model=SocialDistancingHourly)
-def get_camera_distancing_hourly_report(cameras: str = "", date: date = Query(date.today().isoformat())):
+def get_camera_distancing_hourly_report(cameras: str = "", date: date = Query(date.today())):
     """
     Returns a hourly report (for the date specified) with information about the social distancing infractions
     detected in the cameras <cameras>.
@@ -54,8 +56,8 @@ def get_camera_distancing_hourly_report(cameras: str = "", date: date = Query(da
 
 @metrics_router.get("/social-distancing/daily", response_model=SocialDistancingDaily)
 def get_camera_distancing_daily_report(cameras: str = "",
-                                       from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
-                                       to_date: date = Query(date.today().isoformat())):
+                                       from_date: date = Query((date.today() - timedelta(days=3))),
+                                       to_date: date = Query(date.today())):
     """
     Returns a daily report (for the date range specified) with information about the social distancing infractions
     detected in the cameras <cameras>.
@@ -67,8 +69,8 @@ def get_camera_distancing_daily_report(cameras: str = "",
 def get_camera_distancing_weekly_report(
         cameras: str = "",
         weeks: int = Query(0),
-        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-        to_date: date = Query(date.today().isoformat())):
+        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4))),
+        to_date: date = Query(date.today())):
     """
     Returns a weekly report (for the date range specified) with information about the social distancing
     infractions detected in the cameras <cameras>.
@@ -96,7 +98,7 @@ def get_camera_face_mask_detections_live(cameras: str = ""):
 
 
 @metrics_router.get("/face-mask-detections/hourly", response_model=FaceMaskHourly)
-def get_camera_face_mask_detections_hourly_report(cameras: str = "", date: date = Query(date.today().isoformat())):
+def get_camera_face_mask_detections_hourly_report(cameras: str = "", date: date = Query(date.today())):
     """
     Returns a hourly report (for the date specified) with information about the facemasks detected in
     the cameras <cameras>.
@@ -106,8 +108,8 @@ def get_camera_face_mask_detections_hourly_report(cameras: str = "", date: date 
 
 @metrics_router.get("/face-mask-detections/daily", response_model=FaceMaskDaily)
 def get_camera_face_mask_detections_daily_report(cameras: str = "",
-                                                 from_date: date = Query((date.today() - timedelta(days=3)).isoformat()),
-                                                 to_date: date = Query(date.today().isoformat())):
+                                                 from_date: date = Query((date.today() - timedelta(days=3))),
+                                                 to_date: date = Query(date.today())):
     """
     Returns a daily report (for the date range specified) with information about the facemasks detected in
     the cameras <cameras>.
@@ -119,8 +121,8 @@ def get_camera_face_mask_detections_daily_report(cameras: str = "",
 def get_camera_face_mask_detections_weekly_report(
         cameras: str = "",
         weeks: int = Query(0),
-        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4)).isoformat()),
-        to_date: date = Query(date.today().isoformat())):
+        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4))),
+        to_date: date = Query(date.today())):
     """
     Returns a weekly report (for the date range specified) with information about the facemasks detected in
     the cameras <cameras>.

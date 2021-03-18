@@ -3,7 +3,7 @@ import pytest
 from api.tests.utils.common_functions import get_config_file_json, app_config_file_multi_type_json_to_string_json
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions.
 # This is why the IDE cannot recognize them.
-from api.tests.utils.fixtures_tests import config_rollback, app_config
+from api.tests.utils.fixtures_tests import config_rollback
 
 
 def expected_response_update_report_info(config_sample_path):
