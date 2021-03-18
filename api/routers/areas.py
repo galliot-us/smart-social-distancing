@@ -1,3 +1,7 @@
+import os
+import shutil
+from pathlib import Path
+
 from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
 from typing import Optional
@@ -63,6 +67,10 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     success = update_config(config_dict, reboot_processor)
     if not success:
         return handle_response(area_dict, success, status.HTTP_201_CREATED)
+
+    area_directory = os.path.join(os.getenv("AreaLogDirectory"), new_area.id, "occupancy_log")
+    Path(area_directory).mkdir(parents=True, exist_ok=True)
+
     return next((area for area in get_areas() if area["id"] == area_dict["Id"]), None)
 
 
@@ -114,4 +122,8 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     config_dict = reestructure_areas((config_dict))
 
     success = update_config(config_dict, reboot_processor)
+
+    area_directory = os.path.join(os.getenv("AreaLogDirectory"), area_id)
+    shutil.rmtree(area_directory)
+
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)

@@ -207,6 +207,8 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
 
     camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), new_camera.id)
     Path(camera_screenshot_directory).mkdir(parents=True, exist_ok=True)
+    heatmap_directory = os.path.join(os.getenv("SourceLogDirectory"), new_camera.id, "objects_log")
+    Path(heatmap_directory).mkdir(parents=True, exist_ok=True)
 
     return next((camera for camera in get_cameras() if camera["id"] == camera_dict["Id"]), None)
 
@@ -242,6 +244,8 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     # Deletes the camera screenshots directory and all its content.
     camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), camera_id)
     shutil.rmtree(camera_screenshot_directory)
+    source_directory = os.path.join(os.getenv("SourceLogDirectory"), camera_id)
+    shutil.rmtree(source_directory)
 
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 

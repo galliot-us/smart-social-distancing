@@ -63,12 +63,14 @@ def update_config(config_dict, reboot_processor):
         return success
     return True
 
+
 def bad_request_serializer(msg, error_type="unknown error", loc=[]):
     return [{
         "loc": loc,
         "msg": msg,
         "type": error_type
     }]
+
 
 def handle_response(response, success, status_code=status.HTTP_200_OK):
     if not success:
