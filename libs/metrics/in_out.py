@@ -1,9 +1,7 @@
 import ast
 import csv
 import json
-import os
 import numpy as np
-import logging
 
 from numpy import linalg as LA
 from collections import deque
@@ -193,33 +191,30 @@ class InOutMetric(BaseMetric):
             report["Weeks"].append(week)
             report["In"].append(sum(week_data["In"]))
             report["Out"].append(sum(week_data["Out"]))
-            _, weekly_in, weekly_out = zip(*week_data["Summary"])
-            weekly_in = [x for x in weekly_in if not is_list_recursively_empty(x)]
-            weekly_out = [x for x in weekly_out if not is_list_recursively_empty(x)]
             if is_list_recursively_empty(week_data["Summary"]):
-                continue
-            elif is_list_recursively_empty((report["Summary"])):
-                print(weekly_in)
-                print(list(zip(*weekly_in)))
-                #print([sum(x for x in zip(*weekly_in))])
-                print([sum(x) for x in zip(*weekly_in)])
-                report["Summary"] = [
-                    # week_data["Summary"][0],
-                    ["Left", "Right"],
-                    [[sum(x) for x in zip(*weekly_in)]],
-                    [[sum(x) for x in zip(*weekly_out)]]
-                ]
-                print("Initialization")
-                print(report["Summary"])
-                print()
+                boundary_name = []
+                weekly_in = []
+                weekly_out = []
             else:
-                report["Summary"][1].append([sum(x) for x in zip(*weekly_in)])
-                report["Summary"][2].append([sum(x) for x in zip(*weekly_out)])
-                print("Update")
-                print(report["Summary"])
-                print()
-        print(report)
+                boundary_names, weekly_in, weekly_out = list(zip(*week_data["Summary"]))
+                boundary_name = next(x for x in boundary_names if not is_list_recursively_empty(x))
+                weekly_in = fill_partially_empty_result(weekly_in, 0)
+                weekly_out = fill_partially_empty_result(weekly_out, 0)
+
+            report["Summary"].append([
+                boundary_name,
+                [sum(x) for x in zip(*weekly_in)],
+                [sum(x) for x in zip(*weekly_out)]
+            ])
         return report
+
+def fill_partially_empty_result(tuple_of_lists, default_value):
+    tuple_of_lists = list(tuple_of_lists)
+    length_of_sublists = len(next(x for x in tuple_of_lists if not is_list_recursively_empty(x)))
+    for i in range(len(tuple_of_lists)):
+        if is_list_recursively_empty(tuple_of_lists[i]):
+            tuple_of_lists[i] = [default_value] * length_of_sublists
+    return tuple_of_lists
 
 # Auxiliary methods taken from:
 # https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py

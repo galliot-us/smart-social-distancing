@@ -1,5 +1,6 @@
 import ast
 import os
+import copy
 import csv
 import numpy as np
 import pandas as pd
@@ -256,7 +257,7 @@ class BaseMetric:
         for key in date_range:
             base_results[key.strftime('%Y-%m-%d')] = {}
             for index, header in enumerate(cls.csv_headers):
-                base_results[key.strftime('%Y-%m-%d')][header] = cls.csv_default_values[index]
+                base_results[key.strftime('%Y-%m-%d')][header] = copy.deepcopy(cls.csv_default_values[index])
 
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity)
@@ -344,7 +345,7 @@ class BaseMetric:
         report = {}
         live_headers = cls.live_csv_headers if cls.live_csv_headers else cls.csv_headers
         for index, header in enumerate(live_headers):
-            report[header] = cls.csv_default_values[index]
+            report[header] = copy.deepcopy(cls.csv_default_values[index])
         times = []
         live_report_paths = []
         for entity in entities:
