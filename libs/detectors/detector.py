@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class Detector:
 
-    def __init__(self, config):
+    def __init__(self, config, source):
         self.config = config
         self.device = self.config.get_section_dict("Detector")["Device"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
@@ -29,7 +29,7 @@ class Detector:
             self.detector = DummyDetector(self.config)
         elif self.device in ["x86", "x86-gpu"]:
             from libs.detectors.x86.detector import Detector as X86Detector
-            self.detector = X86Detector(self.config)
+            self.detector = X86Detector(self.config, source)
         else:
             raise ValueError(f"Detector: Not supported device named: {self.device}")
         if self.device != "Dummy":
