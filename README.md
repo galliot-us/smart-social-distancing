@@ -59,8 +59,8 @@ The features supported, the detection accuracy reached and the performance can v
 You should have [Docker](https://docs.docker.com/get-docker/) on your device.
 
 Optionally, you can install [docker-compose](https://docs.docker.com/compose) to build and run the processor containers easily.
-**In some edge devices, such as Coral or Jetson Nano, the [official installation documentation](https://docs.docker.com/compose/install/) 
-can fail because there isn't in the repository an already build image for that device architecture  . If this is the case, we recommend installing docker-compose using the [pip](https://pypi.org/project/docker-compose/)**
+**In some edge devices, such as Coral or Jetson Nano, the [official installation guide](https://docs.docker.com/compose/install/) 
+can fail because there isn't in the repository an already build image for that device architecture. If this is the case, we recommend installing docker-compose using [pip](https://pypi.org/project/docker-compose/)**
 
 
 #### Download a sample video (Optional)
@@ -336,7 +336,7 @@ docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-open
 docker-compose -f docker-compose.yml -f docker-compose-jetson-nano.yml build
 
 # 3) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-jetson-nano.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-jetson-nano.yml up
 ```
 
 ###### Run on Jetson TX2
@@ -350,7 +350,7 @@ docker-compose -f docker-compose.yml -f docker-compose-jetson-nano.yml build up
 docker-compose -f docker-compose.yml -f docker-compose-jetson-tx2.yml build
 
 # 3) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-jetson-tx2.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-jetson-tx2.yml up
 ```
 
 ###### Run on Coral Dev Board
@@ -368,7 +368,7 @@ docker-compose -f docker-compose.yml -f docker-compose-coral-dev.yml build up
 docker-compose -f docker-compose.yml -f docker-compose-amd64.yml build
 
 # 2) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-amd64.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-amd64.yml up
 ```
 
 ###### Run on x86
@@ -384,7 +384,7 @@ docker-compose -f docker-compose.yml -f docker-compose-amd64.yml build up
 docker-compose -f docker-compose.yml -f docker-compose-x86.yml build
 
 # 3) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-x86.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-x86.yml up
 ```
 
 ###### Run on x86 with GPU
@@ -401,7 +401,7 @@ Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvid
 docker-compose -f docker-compose.yml -f docker-compose-gpu.yml build
 
 # 3) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-gpu.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-gpu.yml up
 ```
 
 ###### Run on x86 with GPU using TensorRT optimization
@@ -413,7 +413,7 @@ Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvid
 docker-compose -f docker-compose.yml -f docker-compose-gpu-tensorrt.yml build
 
 # 2) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-gpu-tensorrt.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-gpu-tensorrt.yml up
 ```
 
 ###### Run on x86 using OpenVino
@@ -425,7 +425,7 @@ docker-compose -f docker-compose.yml -f docker-compose-gpu-tensorrt.yml build up
 docker-compose -f docker-compose.yml -f docker-compose-x86-openvino.yml build
 
 # 2) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-x86-openvino.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-x86-openvino.yml up
 ```
 
 
