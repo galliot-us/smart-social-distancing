@@ -36,6 +36,13 @@ async def get_area(area_id: str):
     """
     Returns the configuration related to the area <area_id>
     """
+    if area_id.upper() == "ALL":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' is not valid. Instead, try the endpoint GET /areas to "
+                                          "get all areas.",
+                                          error_type="Invalid ID")
+        )
     area = next((area for area in get_areas() if area["id"] == area_id), None)
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
@@ -54,6 +61,11 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area already exists", error_type="config duplicated area")
+        )
+    elif new_area.id.upper() == "ALL":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' is not valid.", error_type="Invalid ID")
         )
 
     cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
@@ -79,6 +91,11 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     """
     Edits the configuration related to the area <area_id>
     """
+    if area_id.upper() == "ALL":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' cannot be edited.", error_type="Invalid ID")
+        )
     edited_area.id = area_id
     config_dict = extract_config()
     area_names = [x for x in config_dict.keys() if x.startswith("Area_")]
@@ -109,6 +126,11 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the area <area_id>
     """
+    if area_id.upper() == "ALL":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' cannot be deleted.", error_type="Invalid ID")
+        )
     config_dict = extract_config()
     areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
     areas = [map_section_from_config(x, config_dict) for x in areas_name]

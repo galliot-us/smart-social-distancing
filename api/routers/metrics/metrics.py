@@ -10,7 +10,7 @@ from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCI
 from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
 
 
-CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE,IN_OUT]
+CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE, IN_OUT]
 
 
 def get_cameras(cameras: str) -> Iterator[str]:
@@ -27,7 +27,7 @@ def validate_camera_existence(camera_id: str):
 
 
 def get_areas(areas: str) -> Iterator[str]:
-    if areas:
+    if areas and areas.upper() != "ALL":
         return areas.split(",")
     config = extract_config(config_type=AREAS)
     return [x["Id"] for x in config.values()]
