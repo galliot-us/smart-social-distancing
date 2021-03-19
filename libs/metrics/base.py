@@ -243,7 +243,7 @@ class BaseMetric:
                         if is_list_recursively_empty(results[header]):
                             results[header] = entry
                         else:
-                            results[header] = [[c + d for c, d in zip(a, b)] for a, b in zip(results[header], entry)]
+                            results[header] = [[c + d for c, d in a] for a in zip(results[header], entry)]
         for metric in results:
             results[metric] = list(results[metric])
         results["Hours"] = hours
