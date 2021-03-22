@@ -1,11 +1,8 @@
 import ast
 import csv
 import json
-import os
 import numpy as np
-import logging
 
-from numpy import linalg as LA
 from collections import deque
 from datetime import date
 from typing import Dict, Iterator, List
@@ -14,13 +11,14 @@ from datetime import datetime
 from .base import BaseMetric
 from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
-from libs.utils.utils import validate_file_exists_and_is_not_empty
-
+from libs.utils.utils import validate_file_exists_and_is_not_empty, is_list_recursively_empty
+from libs.utils.in_out import check_line_cross
 
 class InOutMetric(BaseMetric):
 
     reports_folder = IN_OUT
-    csv_headers = ["In", "Out"]
+    csv_headers = ["In", "Out", "Summary"]
+    csv_default_values = [0, 0, [[], [], []]]
     NUMBER_OF_PATH_SEGMENTS = 7
 
     @classmethod
@@ -87,14 +85,20 @@ class InOutMetric(BaseMetric):
 
     @classmethod
     def generate_hourly_metric_data(cls, config, objects_logs, entity):
-        boundary_line = cls.retrieve_in_out_boundary(config, entity["id"])
-        summary = np.zeros((len(objects_logs), 2), dtype=np.long)
-        for index, hour in enumerate(sorted(objects_logs)):
+        boundaries = cls.retrieve_in_out_boundaries(config, entity["id"])
+        boundary_names = [boundary["name"] for boundary in boundaries]
+        summary = [[0, 0, [boundary_names, [0]*len(boundaries), [0]*len(boundaries)]]]*len(objects_logs)
+        for index_hour, hour in enumerate(sorted(objects_logs)):
             hour_objects_detections = objects_logs[hour]
             for track_id, data in hour_objects_detections.items():
                 path = data["path"]
-                new_in, new_out = cls.process_path(boundary_line, path)
-                summary[index] += (new_in, new_out)
+                for index_boundary, boundary in enumerate(boundaries):
+                    boundary_line = boundary["in_out_boundary"]
+                    new_in, new_out = cls.process_path(boundary_line, path)
+                    summary[index_hour][0] += new_in
+                    summary[index_hour][1] += new_out
+                    summary[index_hour][2][1][index_boundary] += new_in
+                    summary[index_hour][2][2][index_boundary] += new_out
         return summary
 
     @classmethod
@@ -102,8 +106,9 @@ class InOutMetric(BaseMetric):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
-        people_in, people_out = 0, 0
-        boundary_line = cls.retrieve_in_out_boundary(config, entity["id"])
+        boundaries = cls.retrieve_in_out_boundaries(config, entity["id"])
+        boundary_names = [boundary["name"] for boundary in boundaries]
+        summary = [0, 0, [boundary_names, [0] * len(boundaries), [0] * len(boundaries)]]
         with open(today_entity_csv, "r") as log:
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
@@ -118,10 +123,14 @@ class InOutMetric(BaseMetric):
                     paths[track_id].extend(sub_path)
         for track_id, data in paths.items():
             path = data["path"]
-            new_in, new_out = cls.process_path(boundary_line, path)
-            people_in += new_in
-            people_out += new_out
-        return [people_in, people_out]
+            for index_boundary, boundary in enumerate(boundaries):
+                boundary_line = boundary["in_out_boundary"]
+                new_in, new_out = cls.process_path(boundary_line, path)
+                summary[0] += new_in
+                summary[1] += new_out
+                summary[2][1][index_boundary] += new_in
+                summary[2][2][index_boundary] += new_out
+        return summary
 
     @classmethod
     def get_trend_live_values(cls, live_report_paths: Iterator[str]) -> Iterator[int]:
@@ -143,13 +152,13 @@ class InOutMetric(BaseMetric):
         return f"{get_source_config_directory(config)}/{camera_id}/{IN_OUT}/{IN_OUT}.json"
 
     @classmethod
-    def retrieve_in_out_boundary(cls, config, camera_id):
+    def retrieve_in_out_boundaries(cls, config, camera_id):
         boundary_path = cls.get_in_out_file_path(camera_id, config)
         boundary_line = cls.read_in_out_boundaries(boundary_path)
         if boundary_line is None:
             raise Exception(f"Camera {camera_id} does not have a defined in/out boundary")
         else:
-            return boundary_line["in_out_boundary"]
+            return boundary_line["in_out_boundaries"]
 
     @classmethod
     def read_in_out_boundaries(cls, in_out_file_path):
@@ -168,87 +177,41 @@ class InOutMetric(BaseMetric):
             return False
         return True
 
-# Auxiliary methods taken from:
-# https://github.com/yas-sim/object-tracking-line-crossing-area-intrusion/blob/master/object-detection-and-line-cross.py
-def check_line_cross(boundary_line, trajectory):
-    """
-    Args:
-        boundary_line: Two coordinates [x,y] are in 2-tuples [A,B]
-                Boundaries of the in/out line.
-                If someone crosses the line while having A to their right, they are going in the in direction (entering)
-                Crossing the line while having A to their left means they are going in the out direction (leaving)
-        trajectory: vector ((x1, y1), (x2, y2))
 
-    Returns:
-        (in, out) : tuple
-             (1, 0) - if the trajectory crossed the boundary entering (in)
-             (0, 1) - if the trajectory crossed the boundary leaving (out)
-             (0, 0) - if the trajectory didn't cross the boundary.
-    """
-    traj_p0 = (trajectory[0][0], trajectory[0][1])  # Trajectory of an object
-    traj_p1 = (trajectory[1][0], trajectory[1][1])
-    b_line_p0 = (boundary_line[0][0], boundary_line[0][1])  # Boundary line
-    b_line_p1 = (boundary_line[1][0], boundary_line[1][1])
-    intersect = check_intersect(traj_p0, traj_p1, b_line_p0, b_line_p1)  # Check if intersect or not
-    if intersect == False:
-        return 0, 0
+    @classmethod
+    def get_weekly_report(cls, entities: List[str], number_of_weeks: int = 0,
+                          from_date: date = None, to_date: date = None) -> Dict:
+        # The In/Out metric cannot be fully aggregated using "sum"
+        weekly_report_data = cls.generate_weekly_report_data(entities, number_of_weeks, from_date, to_date)
+        report = { "Weeks": [] }
+        for header in cls.csv_headers:
+            report[header] = []
+        for week, week_data in weekly_report_data.items():
+            report["Weeks"].append(week)
+            report["In"].append(sum(week_data["In"]))
+            report["Out"].append(sum(week_data["Out"]))
+            if is_list_recursively_empty(week_data["Summary"]):
+                boundary_name = []
+                weekly_in = []
+                weekly_out = []
+            else:
+                boundary_names, weekly_in, weekly_out = list(zip(*week_data["Summary"]))
+                boundary_name = next(x for x in boundary_names if not is_list_recursively_empty(x))
+                weekly_in = fill_partially_empty_result(weekly_in, 0)
+                weekly_out = fill_partially_empty_result(weekly_out, 0)
 
-    angle = calc_vector_angle(traj_p0, traj_p1, b_line_p0, b_line_p1)  # Calculate angle between trajectory and boundary line
-    if angle < 180: # in
-        return 1, 0
-    else: # out
-        return 0, 1
+            report["Summary"].append([
+                boundary_name,
+                [sum(x) for x in zip(*weekly_in)],
+                [sum(x) for x in zip(*weekly_out)]
+            ])
+        return report
 
-def check_intersect(p1, p2, p3, p4):
-    """
-    Check if the line p1-p2 intersects the line p3-p4
-    Args:
-        p1: (x,y)
-        p2: (x,y)
-        p3: (x,y)
-        p4: (x,y)
 
-    Returns:
-        boolean : True if intersection occurred
-    """
-    tc1 = (p1[0] - p2[0]) * (p3[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p3[0])
-    tc2 = (p1[0] - p2[0]) * (p4[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p4[0])
-    td1 = (p3[0] - p4[0]) * (p1[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p1[0])
-    td2 = (p3[0] - p4[0]) * (p2[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p2[0])
-    return tc1 * tc2 < 0 and td1 * td2 < 0
-
-def calc_vector_angle(line1_p1, line1_p2, line2_p1, line2_p2):
-    """
-    Calculate the and return the angle made by two line segments line1(p1)-(p2), line2(p1)-(p2)
-    Args:
-        line1_p1: (x,y)
-        line1_p2: (x,y)
-        line2_p1: (x,y)
-        line2_p2: (x,y)
-
-    Returns:
-        angle : [0, 360)
-    """
-    u = np.array(line_vectorize(line1_p1, line1_p2))
-    v = np.array(line_vectorize(line2_p1, line2_p2))
-    i = np.inner(u, v)
-    n = LA.norm(u) * LA.norm(v)
-    c = i / n
-    a = np.rad2deg(np.arccos(np.clip(c, -1.0, 1.0)))
-    if u[0] * v[1] - u[1] * v[0] < 0:
-        return a
-    else:
-        return 360 - a
-
-def line_vectorize(point1, point2):
-    """
-    Args:
-        point1: (x,y)
-        point2: (x,y)
-
-    Returns:
-        The vector of intersecting the points with a line line(point1)-(point2)
-    """
-    a = point2[0] - point1[0]
-    b = point2[1] - point1[1]
-    return [a, b]
+def fill_partially_empty_result(tuple_of_lists, default_value):
+    tuple_of_lists = list(tuple_of_lists)
+    length_of_sublists = len(next(x for x in tuple_of_lists if not is_list_recursively_empty(x)))
+    for i in range(len(tuple_of_lists)):
+        if is_list_recursively_empty(tuple_of_lists[i]):
+            tuple_of_lists[i] = [default_value] * length_of_sublists
+    return tuple_of_lists

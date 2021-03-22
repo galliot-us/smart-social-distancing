@@ -14,6 +14,7 @@ class FaceMaskUsageMetric(BaseMetric):
 
     reports_folder = "face-mask-usage"
     csv_headers = ["NoFace", "FaceWithMask", "FaceWithoutMask"]
+    csv_default_values = [0, 0, 0]
 
     @classmethod
     def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
