@@ -1,0 +1,7 @@
+services:
+  processor:
+    image: neuralet/smart-social-distancing:latest-coral-dev-board
+    privileged: true
+    build:
+        context: .
+        dockerfile: coral-dev-board.Dockerfile

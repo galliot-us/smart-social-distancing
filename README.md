@@ -58,6 +58,11 @@ The features supported, the detection accuracy reached and the performance can v
 
 You should have [Docker](https://docs.docker.com/get-docker/) on your device.
 
+Optionally, you can install [docker-compose](https://docs.docker.com/compose) to build and run the processor containers easily.
+**In some edge devices, such as Coral or Jetson Nano, the [official installation guide](https://docs.docker.com/compose/install/) 
+can fail because there isn't in the repository an already build image for that device architecture. If this is the case, we recommend installing docker-compose using [pip](https://pypi.org/project/docker-compose/)**
+
+
 #### Download a sample video (Optional)
 
 If you don't have any camera to test the solution you can use any video as an input source. You can download an example with the following command.
@@ -85,9 +90,10 @@ The frontend site uses HTTPs, in order to have it communicate with the processor
 Make sure you have `Docker` installed on your device by following [these instructions](https://docs.docker.com/install/linux/docker-ce/debian).
 The command that you need to execute will depend on the chosen device because each one has an independent Dockerfile.
 
-There are two alternatives to run the processor in your device:
+There are three alternatives to run the processor in your device:
   1. Using `git` and building the docker image yourself (Follow the guide in [this](#running-the-processor-building-the-image) section). 
   2. Pulling the (already built) image from [Neuralet's Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing) (Follow the guide in [this](#running-the-processor-from-neuralet-docker-hub-repository) section).
+  3. Using docker-compose to build and run the processor (Follow the guide in [this](#running-the-processor-with-docker-compose) section).
 
 ##### Running a proof of concept
 
@@ -317,6 +323,111 @@ mkdir data/x86
 # Run Docker container:
 docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-openvino.ini:/repo/config-x86-openvino.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
 ```
+##### Running the processor with docker-compose
+
+###### Run on Jetson Nano
+* You need to have JetPack 4.3 installed on your Jetson Nano.
+
+```bash
+# 1) Download TensorRT engine file built with JetPack 4.3:
+./download_jetson_nano_trt.sh
+
+# 2) Build Docker image for Jetson Nano (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-jetson-nano.yml build
+
+# 3) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-jetson-nano.yml up
+```
+
+###### Run on Jetson TX2
+* You need to have JetPack 4.4 installed on your Jetson TX2. If you are using Openpifpaf as a detector, skip the first step as the TensorRT engine will be generated automatically with calling the `generate_tensorrt.bash` script by detector.
+
+```bash
+# 1) Download TensorRT engine file built with JetPack 4.3:
+./download_jetson_tx2_trt.sh
+
+# 2) Build Docker image for Jetson TX2 (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-jetson-tx2.yml build
+
+# 3) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-jetson-tx2.yml up
+```
+
+###### Run on Coral Dev Board
+```bash
+# 1) Build Docker image for Coral (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-coral-dev.yml build
+
+# 2) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-coral-dev.yml build up
+```
+
+###### Run on AMD64 node with a connected Coral USB Accelerator
+```bash
+# 1) Build Docker image for Coral USB Accelerator (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-amd64.yml build
+
+# 2) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-amd64.yml up
+```
+
+###### Run on x86
+```bash
+
+# If you use the OpenPifPaf model, download the model first:
+./download-x86-openpifpaf-model.sh
+
+# If you use the MobileNet model run this instead:
+# ./download_x86_model.sh
+
+# 2) Build Docker image for x86 (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-x86.yml build
+
+# 3) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-x86.yml up
+```
+
+###### Run on x86 with GPU
+Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
+```bash
+
+# If you use the OpenPifPaf model, download the model first:
+./download-x86-openpifpaf-model.sh
+
+# If you use the MobileNet model run this instead:
+# ./download_x86_model.sh
+
+# 2) Build Docker image for gpu (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-gpu.yml build
+
+# 3) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-gpu.yml up
+```
+
+###### Run on x86 with GPU using TensorRT optimization
+
+Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvidia-docker) to run the app with GPU support
+```bash
+
+# 1) Build Docker image for gpu using TensorRT (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-gpu-tensorrt.yml build
+
+# 2) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-gpu-tensorrt.yml up
+```
+
+###### Run on x86 using OpenVino
+```bash
+# download model first
+./download_openvino_model.sh
+
+# 2) Build Docker image for openvino (you can omit this step and use the docker-hub images)
+docker-compose -f docker-compose.yml -f docker-compose-x86-openvino.yml build
+
+# 2) Run Docker container:
+docker-compose -f docker-compose.yml -f docker-compose-x86-openvino.yml up
+```
+
 
 ## Processor
 

@@ -1,0 +1,6 @@
+services:
+  processor:
+    image: neuralet/smart-social-distancing:latest-x86_64_openvino
+    build:
+        context: .
+        dockerfile: x86-openvino.Dockerfile
