@@ -359,7 +359,7 @@ docker-compose -f docker-compose.yml -f docker-compose-jetson-tx2.yml up
 docker-compose -f docker-compose.yml -f docker-compose-coral-dev.yml build
 
 # 2) Run Docker container:
-docker-compose -f docker-compose.yml -f docker-compose-coral-dev.yml build up
+docker-compose -f docker-compose.yml -f docker-compose-coral-dev.yml up
 ```
 
 ###### Run on AMD64 node with a connected Coral USB Accelerator
