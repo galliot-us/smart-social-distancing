@@ -45,23 +45,25 @@ class Detector:
     """
 
     def _load_engine(self):
-        precision=int(self.config.get_section_dict('Detector')['TensorrtPrecision'])
-        TRTbinPath='/repo/data/tensorrt/openpifpaf_resnet50_{}_{}_d{}.trt'.format(self.w,self.h,precision)
+        precision = int(self.model_variables['TensorrtPrecision'])
+        TRTbinPath = '/repo/data/tensorrt/openpifpaf_resnet50_{}_{}_d{}.trt'.format(self.w, self.h, precision)
         if not os.path.exists(TRTbinPath):
             os.system('bash /repo/generate_tensorrt.bash config-jetson.ini 1')
         with open(TRTbinPath, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:    
             return runtime.deserialize_cuda_engine(f.read())
 
-
-    def __init__(self, config):
+    def __init__(self, config, model_name, variables):
         self.config = config
+        self.model_name = model_name
+        self.model_variables = variables
         self.fps = None
-        self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
+        self.w, self.h, _ = [int(i) for i in self.model_variables['ImageSize'].split(',')]
         self.trt_logger = trt.Logger(trt.Logger.INFO)
         self.model_input_size = (self.w, self.h)
         self.device = None  # enter your Gpu id here
         self.cuda_context = None 
         self._init_cuda_stuff()
+
     def _init_cuda_stuff(self):
         cuda.init()
         self.engine = self._load_engine()

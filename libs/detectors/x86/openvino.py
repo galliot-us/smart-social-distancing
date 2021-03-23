@@ -22,10 +22,8 @@ class Detector:
 
     def __init__(self, config, model_name, variables):
         self.config = config
-        self.model_variables = variables
-        # Get the model name
-        # self.model_name = self.config.get_section_dict('Detector')['Name']
         self.model_name = model_name
+        self.model_variables = variables
         # Frames Per Second
         self.fps = None
 

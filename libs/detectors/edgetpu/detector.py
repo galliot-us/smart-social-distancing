@@ -1,3 +1,6 @@
+from libs.detectors.utils.ml_model_functions import get_model_json_file_or_return_default_values
+
+
 class Detector:
     """
     Detector class is a high level class for detecting object using edgetpu devices.
@@ -5,26 +8,33 @@ class Detector:
     input image in order to get the detection results.
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
+    :param source: A string that represents the camera. Ex: "Source_1".
     """
 
-    def __init__(self, config):
+    def __init__(self, config, source):
         self.config = config
         self.net = None
         self.fps = None
         # Get model name from the config
-        self.name = self.config.get_section_dict('Detector')['Name']
+
+        camera_id = self.config.get_section_dict(source)["Id"]
+        device = self.config.get_section_dict("Detector")["Device"]
+        model_data = get_model_json_file_or_return_default_values(self.config, device, camera_id)
+
+        self.name = model_data["model_name"]
+
         if self.name == 'mobilenet_ssd_v2':  # or mobilenet_ssd_v1
             from . import mobilenet_ssd
-            self.net = mobilenet_ssd.Detector(self.config)
+            self.net = mobilenet_ssd.Detector(self.config, self.name, model_data["variables"])
         elif self.name == "pedestrian_ssd_mobilenet_v2":
             from . import pedestrian_ssd_mobilenet_v2
-            self.net = pedestrian_ssd_mobilenet_v2.Detector(self.config)
+            self.net = pedestrian_ssd_mobilenet_v2.Detector(self.config, self.name, model_data["variables"])
         elif self.name == "pedestrian_ssdlite_mobilenet_v2":
             from . import pedestrian_ssdlite_mobilenet_v2
-            self.net = pedestrian_ssdlite_mobilenet_v2.Detector(self.config)
+            self.net = pedestrian_ssdlite_mobilenet_v2.Detector(self.config, self.name, model_data["variables"])
         elif self.name == "posenet":
             from . import posenet
-            self.net = posenet.Detector(self.config)
+            self.net = posenet.Detector(self.config, self.name, model_data["variables"])
         else:
             raise ValueError('Not supported network named: ', self.name)
 

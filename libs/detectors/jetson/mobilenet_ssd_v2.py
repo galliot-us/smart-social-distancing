@@ -53,12 +53,13 @@ class Detector:
         logger.info('allocated buffers')
         return
 
-    def __init__(self, config, output_layout=7):
+    def __init__(self, config, model_name, variables, output_layout=7):
         """ Initialize TensorRT plugins, engine and context. """
         self.config = config
-        self.model = self.config.get_section_dict('Detector')['Name']
-        self.class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-        self.conf_threshold = self.config.get_section_dict('Detector')['MinScore']
+        self.model = model_name
+        self.model_variables = variables
+        self.class_id = int(self.model_variables['ClassID'])
+        self.conf_threshold = self.model_variables['MinScore']
         self.output_layout = output_layout
         self.trt_logger = trt.Logger(trt.Logger.INFO)
         self._load_plugins()

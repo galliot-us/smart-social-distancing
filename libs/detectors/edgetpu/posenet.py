@@ -12,20 +12,20 @@ class Detector:
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, model_name, variables):
         self.config = config
-        # Get the model name from the config
-        self.model_name = self.config.get_section_dict('Detector')['Name']
+        self.model_name = model_name
+        self.model_variables = variables
         # Frames Per Second
         self.fps = None
-        self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
+        self.w, self.h, _ = [int(i) for i in self.model_variables['ImageSize'].split(',')]
         self.engine = PoseEngine(
             f"/project-posenet/models/mobilenet/posenet_mobilenet_v1_075_{self.h}_{self.w}_quant_decoder_edgetpu.tflite"
         )
 
         # Get class id from config
-        self.class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-        self.score_threshold = float(self.config.get_section_dict('Detector')['MinScore'])
+        self.class_id = int(self.model_variables['ClassID'])
+        self.score_threshold = float(self.model_variables['MinScore'])
         self.keypoints = (
             'nose',
             'left eye',

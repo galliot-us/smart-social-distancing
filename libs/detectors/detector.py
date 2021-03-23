@@ -11,6 +11,8 @@ class Detector:
         self.config = config
         self.device = self.config.get_section_dict("Detector")["Device"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
+        # TODO: Iterator in the below line should be replaced with:
+        #  get_model_json_file_or_return_default_values(self.config, self.device, self.config.get_section_dict(source)["Id"])["variables"]["ImageSize"]
         self.image_size = [int(i) for i in self.config.get_section_dict("Detector")["ImageSize"].split(",")]
 
         self.has_classifier = "Classifier" in self.config.get_sections()
@@ -20,13 +22,13 @@ class Detector:
 
         if self.device == "Jetson":
             from .jetson.detector import Detector as JetsonDetector
-            self.detector = JetsonDetector(self.config)
+            self.detector = JetsonDetector(self.config, source)
         elif self.device == "EdgeTPU":
             from .edgetpu.detector import Detector as EdgeTPUDetector
-            self.detector = EdgeTPUDetector(self.config)
+            self.detector = EdgeTPUDetector(self.config, source)
         elif self.device == "Dummy":
             from .dummy.detector import Detector as DummyDetector
-            self.detector = DummyDetector(self.config)
+            self.detector = DummyDetector(self.config, source)
         elif self.device in ["x86", "x86-gpu"]:
             from libs.detectors.x86.detector import Detector as X86Detector
             self.detector = X86Detector(self.config, source)
