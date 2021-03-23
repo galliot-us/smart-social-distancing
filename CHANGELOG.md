@@ -11,7 +11,7 @@ Released on 2021-03-23.
 * List overview of camera configuration ([#138](https://github.com/neuralet/smart-social-distancing/pull/138))
 * In/Out Boundary metric: ([#135](https://github.com/neuralet/smart-social-distancing/pull/135), [#139](https://github.com/neuralet/smart-social-distancing/pull/139), [#144](https://github.com/neuralet/smart-social-distancing/pull/144)), [#147](https://github.com/neuralet/smart-social-distancing/pull/147))
 * Unitary tests for the metrics endpoints ([#140](https://github.com/neuralet/smart-social-distancing/pull/140))
-* Docker Compose ([#149](https://github.com/neuralet/smart-social-distancing/pull/149))
+* Support for Docker Compose ([#149](https://github.com/neuralet/smart-social-distancing/pull/149))
 
 #### Fixed:
 
