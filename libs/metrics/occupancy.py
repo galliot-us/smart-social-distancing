@@ -71,16 +71,15 @@ class OccupancyMetric(BaseMetric):
             for hour in objects_logs:
                 objects_logs_merged[0]["Occupancy"].extend(objects_logs[hour]["Occupancy"])
         occupancy_live = cls.generate_hourly_metric_data(config, objects_logs_merged, entity)[0].tolist()
-        occupancy_live.append(int(entity["occupancy_threshold"]))
         daily_violations = 0
         entity_directory = entity["base_directory"]
         reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
         file_path = os.path.join(reports_directory, "live.csv")
         if os.path.exists(file_path):
             with open(file_path, "r") as live_file:
-                lastest_entry = deque(csv.DictReader(live_file), 1)[0]
-                if datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S").date() == datetime.today().date():
-                    daily_violations = int(lastest_entry["Violations"])
+                last_entry = deque(csv.DictReader(live_file), 1)[0]
+                if datetime.strptime(last_entry["Time"], "%Y-%m-%d %H:%M:%S").date() == datetime.today().date():
+                    daily_violations = int(last_entry["Violations"])
         if occupancy_live[1] > occupancy_live[2]:
             # Max Occupancy detections > Occupancy threshold
             daily_violations += 1

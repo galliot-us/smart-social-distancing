@@ -1,0 +1,3 @@
+
+class BaseEntity:
+    pass
