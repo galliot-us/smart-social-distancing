@@ -564,6 +564,15 @@ All the configurations are grouped in *sections* and some of them can vary depen
       - `BackupInterval`: Expressed in minutes. Defines the time interval desired to back up the raw data.
       - `BackupS3Bucket`: Configures the S3 Bucket used to store the backups.
 
+
+#### Use different models per camera
+Before processing video from a camera, a ML model could be specified to process that camera.
+This information is stored in a .json file in the path: /repo/data/processor/config/sources/<camera_id>/ml_models/model_<device>.json
+To modify the model used, use the endpoint `/models` documented below.
+This custom model must specify: "model_name" and "variables" for the model. 
+If no custom model is detected, the default values will be applied and taken from the `[Detector]` section, mentioned above. 
+
+
 ### API usage
 After you run the processor on your node, you can use the exposed API to control the Processor's Core, where all the process is getting done.
 
