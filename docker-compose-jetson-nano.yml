@@ -1,0 +1,10 @@
+services:
+  processor:
+    image: neuralet/smart-social-distancing:latest-jetson-nano
+    privileged: true
+    build:
+        context: .
+        dockerfile: jetson-nano.Dockerfile
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all

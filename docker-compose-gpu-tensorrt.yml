@@ -1,0 +1,11 @@
+services:
+  processor:
+    image: neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+    build:
+        context: .
+        dockerfile: x86-gpu-tensorrt-openpifpaf.Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - capabilities: [gpu]

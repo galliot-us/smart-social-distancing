@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from .base import SnakeModel
 
@@ -201,12 +201,13 @@ class OccupancyWeekly(WeeklyReport, Occupancy):
 class InOut(SnakeModel):
     In: List[int]
     Out: List[int]
+    Summary: List[Tuple[List[str], List[int], List[int]]]
 
 
 class InOutLive(LiveReport):
     In: int
     Out: int
-
+    Summary: Tuple[List[str], List[int], List[int]]
 
 class InOutHourly(HourlyReports, InOut):
     class Config:
@@ -215,6 +216,32 @@ class InOutHourly(HourlyReports, InOut):
                 "hours": list(range(0, 23)),
                 "in": [0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 0, 7, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 "out": [0, 0, 0, 0, 0, 0, 1, 0, 2, 0, 1, 2, 1, 2, 5, 3, 3, 2, 2, 1, 0, 0, 0, 0],
+                "summary": [
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 1], [0, 0]],
+                    [['Left Door', 'Right Door'], [1, 0], [1, 0]],
+                    [['Left Door', 'Right Door'], [0, 2], [0, 0]],
+                    [['Left Door', 'Right Door'], [2, 0], [0, 2]],
+                    [['Left Door', 'Right Door'], [0, 3], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [1, 0]],
+                    [['Left Door', 'Right Door'], [4, 3], [1, 1]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 1]],
+                    [['Left Door', 'Right Door'], [0, 3], [2, 0]],
+                    [['Left Door', 'Right Door'], [1, 2], [4, 1]],
+                    [['Left Door', 'Right Door'], [0, 0], [3, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [3, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [1, 1]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 2]],
+                    [['Left Door', 'Right Door'], [0, 0], [1, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]]
+                ]
             }]
         }
 
@@ -226,6 +253,12 @@ class InOutDaily(DailyReport, InOut):
                 "dates": ["2020-08-15", "2020-08-16", "2020-08-17", "2020-08-18"],
                 "in": [4, 23, 50, 0],
                 "out": [4, 23, 50, 0],
+                "summary": [
+                    [['Left Door', 'Right Door'], [2, 2], [3, 1]],
+                    [['Left Door', 'Right Door'], [12, 11], [12, 11]],
+                    [['Left Door', 'Right Door'], [42, 8], [8, 42]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]]
+                ]
             }]
         }
 
@@ -237,5 +270,11 @@ class InOutWeekly(WeeklyReport, InOut):
                 "weeks": ["2020-07-03 2020-07-05", "2020-07-06 2020-07-12", "2020-07-13 2020-07-19", "2020-07-20 2020-07-26"],
                 "in": [40, 420, 300, 0],
                 "out": [40, 420, 300, 0],
+                "summary": [
+                    [['Left Door', 'Right Door'], [20, 20], [30, 10]],
+                    [['Left Door', 'Right Door'], [300, 120], [300, 120]],
+                    [['Left Door', 'Right Door'], [150, 150], [150, 150]],
+                    [['Left Door', 'Right Door'], [0, 0], [0, 0]]
+                ]
             }]
         }

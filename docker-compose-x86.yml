@@ -1,0 +1,6 @@
+services:
+  processor:
+    image: neuralet/smart-social-distancing:latest-x86_64
+    build:
+        context: .
+        dockerfile: x86.Dockerfile

@@ -9,3 +9,6 @@ def validate_file_exists_and_is_not_empty(file_path):
         return True
     else:
         return False
+
+def is_list_recursively_empty(l):
+    return all(is_list_recursively_empty(i) if isinstance(i, list) else False for i in l)
