@@ -1,4 +1,5 @@
 import os
+import re
 
 from datetime import date
 from fastapi import HTTPException, status
@@ -9,7 +10,7 @@ from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCI
 from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
 
 
-CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE,IN_OUT]
+CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE, IN_OUT]
 
 
 def get_cameras(cameras: str) -> Iterator[str]:

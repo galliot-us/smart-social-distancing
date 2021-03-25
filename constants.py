@@ -1,4 +1,4 @@
-PROCESSOR_VERSION = "0.5.0"
+PROCESSOR_VERSION = "0.6.0"
 
 # Entities
 AREAS = "areas"

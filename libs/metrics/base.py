@@ -1,14 +1,19 @@
+import ast
 import os
+import copy
 import csv
 import numpy as np
 import pandas as pd
 import logging
+import numbers
 
 from collections import deque
 from datetime import date, datetime, timedelta, time
 from typing import Dict, List, Iterator
+from pandas.api.types import is_numeric_dtype
 
 from libs.utils.loggers import get_source_log_directory, get_area_log_directory, get_source_logging_interval
+from libs.utils.utils import is_list_recursively_empty
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +34,7 @@ class BaseMetric:
     processing_count_threshold = 3
     reports_folder = None
     csv_headers = []
+    csv_default_values = []
     # entity value can be "source" or "area"
     entity = "source"
     # Use the `live_csv_headers` when the csv strucutre differs from the hourly/daily
@@ -215,8 +221,11 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory()
         hours = list(range(0, 24))
         results = {}
-        for header in cls.csv_headers:
-            results[header] = np.zeros(24)
+        for index, header in enumerate(cls.csv_headers):
+            if cls.csv_default_values[index] == 0:
+                results[header] = np.zeros(24)
+            else:
+                results[header] = []
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity)
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
@@ -224,11 +233,19 @@ class BaseMetric:
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path)
                 for header in cls.csv_headers:
-                    results[header] += np.pad(
-                        df[header].to_numpy(), (0, 24 - df[header].to_numpy().size), mode="constant"
-                    )
+                    if is_numeric_dtype(df[header]):
+                        results[header] += np.pad(
+                            df[header].to_numpy(), (0, 24 - df[header].to_numpy().size), mode="constant"
+                        )
+                    else: # It's a list
+                        values = df[header].apply(ast.literal_eval).tolist()
+                        entry = np.pad(values, (0, 24 - len(values)), mode="constant").tolist()
+                        if is_list_recursively_empty(results[header]):
+                            results[header] = entry
+                        else:
+                            results[header] = [[c + d for c, d in zip(a, b)] for a, b in zip(results[header], entry)]
         for metric in results:
-            results[metric] = results[metric].tolist()
+            results[metric] = list(results[metric])
         results["Hours"] = hours
         return results
 
@@ -239,8 +256,8 @@ class BaseMetric:
         base_results = {}
         for key in date_range:
             base_results[key.strftime('%Y-%m-%d')] = {}
-            for header in cls.csv_headers:
-                base_results[key.strftime('%Y-%m-%d')][header] = 0
+            for index, header in enumerate(cls.csv_headers):
+                base_results[key.strftime('%Y-%m-%d')][header] = copy.deepcopy(cls.csv_default_values[index])
 
         for entity in entities:
             entity_directory = os.path.join(base_directory, entity)
@@ -257,7 +274,14 @@ class BaseMetric:
             entity_report_dict = entity_report.to_dict()
             for key in entity_report_dict:
                 for header in cls.csv_headers:
-                    base_results[key][header] += entity_report_dict[key][header]
+                    if isinstance(entity_report_dict[key][header], numbers.Number):
+                        base_results[key][header] += entity_report_dict[key][header]
+                    else: # It's a list
+                        entry = ast.literal_eval(entity_report_dict[key][header])
+                        if is_list_recursively_empty(base_results[key][header]):
+                            base_results[key][header] = entry
+                        else:
+                            base_results[key][header] = [a + b for a, b in zip(base_results[key][header], entry)]
 
         report = {"Dates": []}
         for header in cls.csv_headers:
@@ -320,8 +344,8 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory()
         report = {}
         live_headers = cls.live_csv_headers if cls.live_csv_headers else cls.csv_headers
-        for header in live_headers:
-            report[header] = 0
+        for index, header in enumerate(live_headers):
+            report[header] = copy.deepcopy(cls.csv_default_values[index])
         times = []
         live_report_paths = []
         for entity in entities:
@@ -335,7 +359,14 @@ class BaseMetric:
                 lastest_entry = deque(csv.DictReader(live_file), 1)[0]
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
                 for header in live_headers:
-                    report[header] += int(lastest_entry[header])
+                    if lastest_entry[header][0].isdigit():
+                        report[header] += int(lastest_entry[header])
+                    else: # It's a list
+                        entry = ast.literal_eval(lastest_entry[header])
+                        if is_list_recursively_empty(report[header]):
+                            report[header] = entry
+                        else:
+                            report[header] = [a + b for a, b in zip(report[header], entry)]
         report["Time"] = ""
         report["Trend"] = 0
         if times:

@@ -207,6 +207,8 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
 
     camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), new_camera.id)
     Path(camera_screenshot_directory).mkdir(parents=True, exist_ok=True)
+    heatmap_directory = os.path.join(os.getenv("SourceLogDirectory"), new_camera.id, "objects_log")
+    Path(heatmap_directory).mkdir(parents=True, exist_ok=True)
 
     return next((camera for camera in get_cameras() if camera["id"] == camera_dict["Id"]), None)
 
@@ -242,6 +244,8 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     # Deletes the camera screenshots directory and all its content.
     camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), camera_id)
     shutil.rmtree(camera_screenshot_directory)
+    source_directory = os.path.join(os.getenv("SourceLogDirectory"), camera_id)
+    shutil.rmtree(source_directory)
 
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 
@@ -368,6 +372,7 @@ async def remove_roi_contour(camera_id: str, reboot_processor: Optional[bool] = 
 async def get_in_out_boundaries(camera_id: str):
     """
         Get the In/Out Boundaries for a camera.
+        Each In/Out boundary in the list is represented by a name and:
         Two coordinates `[x,y]` are given in 2-tuples `[A,B]`. These points form a **line**.
         - If someone crosses the **line** while having **A** to their right, they are going in the `in` direction (entering).
         - Crossing the **line** while having **A** to their left means they are going in the `out` direction (leaving).
@@ -384,7 +389,8 @@ async def get_in_out_boundaries(camera_id: str):
 @cameras_router.put("/{camera_id}/in_out_boundaries", status_code=status.HTTP_201_CREATED)
 async def add_or_replace_in_out_boundaries(camera_id: str, body: InOutBoundaries, reboot_processor: Optional[bool] = True):
     """
-        Define the In/Out boundaries for a camera.
+        Create or replace the In/Out boundaries for a camera.
+        Each In/Out boundary in the list is represented by a name and:
         Two coordinates `[x,y]` are given in 2-tuples `[A,B]`. These points form a **line**.
         - If someone crosses the **line** while having **A** to their right, they are going in the `in` direction (entering).
         - Crossing the **line** while having **A** to their left means they are going in the `out` direction (leaving).

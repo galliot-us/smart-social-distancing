@@ -101,20 +101,25 @@ def app_config_file_multi_type_json_to_string_json(app_config):
 
 
 def create_app_config(key_value_dict=None):
-    default = {"has_been_configured": False,
-               "resolution": "string",
-               "encoder": "string",
-               "max_processes": 0,
-               "dashboardurl": "string",
-               "screenshots_directory": "/repo/data/processor/static/screenshots",
-               "slack_channel": "lanthorn-notifications",
-               "occupancy_alerts_min_interval": 180,
-               "max_thread_restarts": 0,
-               "global_reporting_emails": "email@email,email2@email",
-               "global_report_time": "string",
-               "daily_global_report": False,
-               "weekly_global_report": False,
-               "heatmap_resolution": "string"}
+    # "screenshots_directory": "/repo/data/processor/static/screenshots"
+    default = {
+        "has_been_configured": False,
+        "resolution": "string",
+        "encoder": "string",
+        "max_processes": 0,
+        "dashboardurl": "string",
+        "slack_channel": "lanthorn-notifications",
+        "occupancy_alerts_min_interval": 180,
+        "max_thread_restarts": 0,
+        "global_reporting_emails": "email@email,email2@email",
+        "global_report_time": "string",
+        "daily_global_report": False,
+        "weekly_global_report": False,
+        "log_performance_metrics": False,
+        "log_performance_metrics_directory": "/repo/data/processor/static/data/performace-metrics",
+        "entity_config_directory": "/repo/data/processor/static/data/config",
+        "heatmap_resolution": "string"
+    }
 
     if key_value_dict is not None:
         for key in key_value_dict.keys():
@@ -135,3 +140,7 @@ def camel_case_to_snake_case_dict(dictionary):
         del di["dashboard_u_r_l"]
 
     return di
+
+
+def create_a_camera(client, camera):
+    return client.post("/cameras", json=camera)

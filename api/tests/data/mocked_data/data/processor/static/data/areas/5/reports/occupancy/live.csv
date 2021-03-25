@@ -1,0 +1,4 @@
+Time,AverageOccupancy,MaxOccupancy,OccupancyThreshold,Violations
+2020-12-16 17:44:31,160,165,140,0
+2020-12-16 17:54:32,175,178,140,35
+2020-12-16 20:26:48,180,182,140,40

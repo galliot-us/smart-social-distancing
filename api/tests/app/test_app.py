@@ -73,7 +73,10 @@ class TestsUpdateAppConfig:
         ({"weekly_global_report": 40}, "bool"),
         ({"heatmap_resolution": 40}, "string"),
         ({"heatmap_resolution": False}, "string"),
-        ({"entity_config_directory": False}, "string")
+        ({"entity_config_directory": False}, "string"),
+        ({"entity_config_directory": 40}, "string"),
+        ({"log_performance_metrics_directory": False}, "string"),
+        ({"log_performance_metrics_directory": 40}, "string")
     ])
     def test_try_change_app_config_wrong_type_variable_all(self, config_rollback, key_value_dict,
                                                            correct_type):
@@ -96,11 +99,11 @@ class TestsUpdateAppConfig:
 
         if correct_type == "string":
             assert response.status_code == 200
+
             expected_response = get_app_from_config_file(config_sample_path)
             key = list(key_value_dict.keys())[0]
             value = list(key_value_dict.values())[0]
             expected_response[key] = str(value)
-
             assert response.json() == expected_response
         elif correct_type == "integer":
             for key, value in key_value_dict.items():

@@ -2,6 +2,24 @@
 
 This file includes a list of notable changes to this project.
 
+## [0.6.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.6.0)
+Released on 2021-03-23.
+
+#### Added:
+
+* Draw Region of Interest contour in live feed ([#136](https://github.com/neuralet/smart-social-distancing/pull/136))
+* List overview of camera configuration ([#138](https://github.com/neuralet/smart-social-distancing/pull/138))
+* In/Out Boundary metric: ([#135](https://github.com/neuralet/smart-social-distancing/pull/135), [#139](https://github.com/neuralet/smart-social-distancing/pull/139), [#144](https://github.com/neuralet/smart-social-distancing/pull/144)), [#147](https://github.com/neuralet/smart-social-distancing/pull/147))
+* Unitary tests for the metrics endpoints ([#140](https://github.com/neuralet/smart-social-distancing/pull/140))
+* Support for Docker Compose ([#149](https://github.com/neuralet/smart-social-distancing/pull/149))
+
+#### Fixed:
+
+* Bad reference in config files ([#137](https://github.com/neuralet/smart-social-distancing/pull/137))
+* Area logger sometimes tried to start before processing started (causing error) ([#141](https://github.com/neuralet/smart-social-distancing/pull/141))
+* Bad reference in accessing the cameras of a config ([#142](https://github.com/neuralet/smart-social-distancing/pull/142))
+* Crash when logging without a classifier ([#143](https://github.com/neuralet/smart-social-distancing/pull/143))
+
 ## [0.5.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.5.0)
 Released on 2021-02-10.
 
