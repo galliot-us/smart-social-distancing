@@ -21,4 +21,4 @@ jobs:
     - name: Run tests
       run: docker exec -i $(docker ps -q) pytest
     - name: Docker stop
-      run: docker stop $(docker ps -q)
+      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml stop
