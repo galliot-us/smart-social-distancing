@@ -32,7 +32,7 @@ def validate_camera_existence(camera_id: str):
 
 
 def get_areas(areas: str) -> Iterator[str]:
-    if ALL_AREAS in areas.upper():
+    if ALL_AREAS in areas.upper().split(","):
         return [ALL_AREAS]
     if areas:
         return areas.split(",")

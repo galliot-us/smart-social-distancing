@@ -37,7 +37,7 @@ def get_all_cameras_ids():
     return ",".join(ids_list)
 
 
-def all_areas():
+def all_cameras_area():
     # Returns information about all the cameras in one area.
     return {
         "violation_threshold": -1,
@@ -59,7 +59,7 @@ async def get_area(area_id: str):
     Returns the configuration related to the area <area_id>
     """
     if area_id.upper() == ALL_AREAS:
-        return all_areas()
+        return all_cameras_area()
     area = next((area for area in get_areas() if area["id"] == area_id), None)
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")

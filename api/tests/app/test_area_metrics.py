@@ -2211,3 +2211,39 @@ class TestsGetMetricsWeekly:
 
         assert response.status_code == 200
         assert response.json() == expected
+
+    @pytest.mark.parametrize(
+        "metric,expected",
+        [
+            ("occupancy", {
+                'occupancy_threshold': [140, 290, 290, 290, 140],
+                'average_occupancy': [0.0, 63.43, 95.71, 87.57, 0.0],
+                'max_occupancy': [0.0, 192.0, 235.0, 243.0, 0.0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            }),
+            ("social-distancing", {
+                'detected_objects': [20, 3170, 2786, 2854, 94], 'no_infringement': [4, 2135, 1882, 1875, 33],
+                'low_infringement': [14, 480, 511, 474, 59], 'high_infringement': [2, 504, 300, 402, 2],
+                'critical_infringement': [0, 57, 90, 100, 0],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            }),
+            ("face-mask-detections", {
+                'no_face': [14, 719, 862, 571, 122], 'face_with_mask': [88, 2061, 1810, 1893, 91],
+                'face_without_mask': [31, 864, 897, 909, 29],
+                'weeks': ['2020-09-06 2020-09-06', '2020-09-07 2020-09-13', '2020-09-14 2020-09-20',
+                          '2020-09-21 2020-09-27', '2020-09-28 2020-09-28']
+            })
+        ]
+    )
+    def test_get_a_weekly_report_properly_ids_all_and_another_valid(self, config_rollback_areas, metric, expected):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = "5,aLl"
+        from_date = "2020-09-06"
+        to_date = "2020-09-28"
+
+        response = client.get(f"/metrics/areas/{metric}/weekly?areas={area_id}&from_date={from_date}&to_date={to_date}")
+
+        assert response.status_code == 200
+        assert response.json() == expected
