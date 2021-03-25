@@ -20,4 +20,4 @@ class AppDTO(SnakeModel):
     heatmapResolution = Field("150,150")
     logPerformanceMetrics: bool = Field(False)
     logPerformanceMetricsDirectory: str = Field("", example="/repo/data/processor/static/data/performace-metrics")
-    entityConfigDirectory: str = Field("", example="/repo/data/processor/static/data/config")
+    entityConfigDirectory: str = Field("", example="/repo/data/processor/config")
