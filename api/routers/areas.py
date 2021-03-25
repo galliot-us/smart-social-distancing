@@ -8,7 +8,7 @@ from typing import Optional
 
 from api.models.area import AreaConfigDTO, AreasListDTO
 from constants import ALL_AREAS
-from .cameras import map_camera
+from .cameras import map_camera, get_cameras
 from api.utils import (
     extract_config, handle_response, reestructure_areas, update_config, map_section_from_config,
     map_to_config_file_format, bad_request_serializer
@@ -32,18 +32,34 @@ async def list_areas():
     }
 
 
+def get_all_cameras_ids():
+    ids_list = [camera['id'] for camera in get_cameras()]
+    return ",".join(ids_list)
+
+
+def all_areas():
+    # Returns information about all the cameras in one area.
+    return {
+        "violation_threshold": -1,
+        "notify_every_minutes": -1,
+        "emails": "",
+        "enable_slack_notifications": False,  # "N/A"
+        "daily_report": False,  # "N/A"
+        "daily_report_time": "N/A",
+        "occupancy_threshold": -1,
+        "id": "All",
+        "name": "All",
+        "cameras": get_all_cameras_ids()
+    }
+
+
 @areas_router.get("/{area_id}", response_model=AreaConfigDTO)
 async def get_area(area_id: str):
     """
     Returns the configuration related to the area <area_id>
     """
     if area_id.upper() == ALL_AREAS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=bad_request_serializer("Area with ID: 'ALL' is not valid. Instead, try the endpoint GET /areas to "
-                                          "get all areas.",
-                                          error_type="Invalid ID")
-        )
+        return all_areas()
     area = next((area for area in get_areas() if area["id"] == area_id), None)
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
