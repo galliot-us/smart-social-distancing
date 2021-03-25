@@ -54,7 +54,7 @@ class OccupancyMetric(BaseMetric):
                 if int(row["AverageOccupancy"]):
                     average_ocupancy.append(int(row["AverageOccupancy"]))
                 max_occupancy.append(int(row["MaxOccupancy"]))
-                threshold = max(row["OccupancyThreshold"], threshold)
+                threshold = max(int(row["OccupancyThreshold"]), threshold)
         if not average_ocupancy:
             return 0, 0
         return round(mean(average_ocupancy), 2), max(max_occupancy), threshold
