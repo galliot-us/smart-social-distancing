@@ -17,7 +17,7 @@ jobs:
     - name: Docker Build
       run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml build
     - name: Docker Run (in background)
-      run: docker-compose -d -f docker-compose.yml -f docker-compose-x86.yml up
+      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml up -d
     - name: Run tests
       run: docker exec -i $(docker ps -q) pytest
     - name: Docker stop
