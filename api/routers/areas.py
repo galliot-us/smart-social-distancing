@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException
 from typing import Optional
 
 from api.models.area import AreaConfigDTO, AreasListDTO
+from constants import ALL_AREAS
 from .cameras import map_camera
 from api.utils import (
     extract_config, handle_response, reestructure_areas, update_config, map_section_from_config,
@@ -36,7 +37,7 @@ async def get_area(area_id: str):
     """
     Returns the configuration related to the area <area_id>
     """
-    if area_id.upper() == "ALL":
+    if area_id.upper() == ALL_AREAS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area with ID: 'ALL' is not valid. Instead, try the endpoint GET /areas to "
@@ -62,7 +63,7 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area already exists", error_type="config duplicated area")
         )
-    elif new_area.id.upper() == "ALL":
+    elif new_area.id.upper() == ALL_AREAS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area with ID: 'ALL' is not valid.", error_type="Invalid ID")
@@ -91,7 +92,7 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     """
     Edits the configuration related to the area <area_id>
     """
-    if area_id.upper() == "ALL":
+    if area_id.upper() == ALL_AREAS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area with ID: 'ALL' cannot be edited.", error_type="Invalid ID")
@@ -126,7 +127,7 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the area <area_id>
     """
-    if area_id.upper() == "ALL":
+    if area_id.upper() == ALL_AREAS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area with ID: 'ALL' cannot be deleted.", error_type="Invalid ID")

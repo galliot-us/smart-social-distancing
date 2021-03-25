@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from typing import Iterator
 
 from api.utils import bad_request_serializer, extract_config
-from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT
+from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT, ALL_AREAS
 from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
 
 
@@ -27,7 +27,7 @@ def validate_camera_existence(camera_id: str):
 
 
 def get_areas(areas: str) -> Iterator[str]:
-    if areas and areas.upper() != "ALL":
+    if areas and not ALL_AREAS in areas.upper():
         return areas.split(",")
     config = extract_config(config_type=AREAS)
     return [x["Id"] for x in config.values()]
