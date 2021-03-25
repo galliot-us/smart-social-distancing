@@ -15,10 +15,18 @@ jobs:
     - name: Download docker image
       run: docker pull neuralet/smart-social-distancing:latest-x86_64
     - name: Docker Build
-      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml build
+      run: docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
     - name: Docker Run (in background)
-      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml up -d
+      run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
     - name: Run tests
       run: docker exec -i $(docker ps -q) pytest
     - name: Docker stop
-      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml stop
+      run: docker stop $(docker ps -q)
+    #    - name: Docker Build
+    #      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml build
+    #    - name: Docker Run (in background)
+    #      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml up -d
+    #    - name: Run tests
+    #      run: docker exec -i $(docker ps -q) pytest
+    #    - name: Docker stop
+    #      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml stop
