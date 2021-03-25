@@ -4,7 +4,7 @@ from libs.utils.utils import config_to_boolean
 class BaseEntity():
 
     def __init__(self, config_section: dict, section_title: str, send_email_enabled: bool, send_slack_enabled: bool, config_dir: str, logs_dir: str):
-        self._config_dir = config_dir
+        self.config_dir = config_dir
         self.section = section_title
         self.id = config_section["Id"]
         self.base_directory = os.path.join(logs_dir, self.id)

@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, status
@@ -9,8 +10,9 @@ from typing import Optional
 from api.models.area import AreaConfigDTO, AreasListDTO
 from constants import ALL_AREAS
 from .cameras import map_camera, get_cameras
+from api.models.occupancy_rule import AreaOccupancyRule, OccupancyRuleListDTO
 from api.utils import (
-    extract_config, handle_response, reestructure_areas, update_config, map_section_from_config,
+    extract_config, get_config, handle_response, reestructure_areas, update_config, map_section_from_config,
     map_to_config_file_format, bad_request_serializer
 )
 
@@ -166,3 +168,33 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     shutil.rmtree(area_directory)
 
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
+
+@areas_router.put("/occupancy-rules/{area_id}", response_model=OccupancyRuleListDTO, status_code=status.HTTP_201_CREATED)
+async def add_occupancy_rules(area_id: str, new_rules: OccupancyRuleListDTO):
+    """
+    Adds a new area to the processor.
+    """
+    config = get_config()
+    areas = config.get_areas()
+    area = next((a for a in areas if a.id == area_id), None)
+    if not area:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+    area_config_path = area.get_config_path()
+    with open(area_config_path, "w") as area_file:
+        json.dump(new_rules.to_store_json(), area_file)
+    return new_rules
+
+@areas_router.get("/occupancy-rules/{area_id}", response_model=OccupancyRuleListDTO)
+async def get_area_occupancy_rules(area_id: str):
+    """
+    Returns the configuration related to the area <area_id>
+    """
+    config = get_config()
+    areas = config.get_areas()
+    area = next((area for area in areas if area.id == area_id), None)
+    if not area:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+    area_config_path = area.get_config_path()
+    with open(area_config_path, "r") as area_file:
+        rules_data = json.load(area_file)
+    return OccupancyRuleListDTO.from_store_json(rules_data)

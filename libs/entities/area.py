@@ -29,7 +29,7 @@ class Area(BaseEntity):
 
     def load_occupancy_rules(self):
         self.occupancy_rules = []
-        area_config_path = os.path.join(self._config_dir, self.id + ".json")
+        area_config_path = self.get_config_path()
         if validate_file_exists_and_is_not_empty(area_config_path):
             with open(area_config_path) as json_file:
                 area_config = json.load(json_file)
@@ -39,3 +39,6 @@ class Area(BaseEntity):
     def get_occupancy_threshold(self, date: datetime):
         return next((rule.occupancy_threshold for rule in self.occupancy_rules if rule.date_is_included(date)),
             self.occupancy_threshold)
+
+    def get_config_path(self):
+        return os.path.join(self.config_dir, self.id + ".json")
