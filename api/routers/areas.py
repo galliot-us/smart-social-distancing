@@ -47,8 +47,8 @@ def all_cameras_area():
         "daily_report": False,  # "N/A"
         "daily_report_time": "N/A",
         "occupancy_threshold": -1,
-        "id": "All",
-        "name": "All",
+        "id": ALL_AREAS,
+        "name": ALL_AREAS,
         "cameras": get_all_cameras_ids()
     }
 
