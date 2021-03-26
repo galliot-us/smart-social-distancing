@@ -23,7 +23,6 @@ def get_areas():
     config = extract_config(config_type="areas")
     return [map_section_from_config(x, config) for x in config.keys()]
 
-
 @areas_router.get("", response_model=AreasListDTO)
 async def list_areas():
     """
@@ -172,22 +171,26 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
 @areas_router.put("/occupancy-rules/{area_id}", response_model=OccupancyRuleListDTO, status_code=status.HTTP_201_CREATED)
 async def add_occupancy_rules(area_id: str, new_rules: OccupancyRuleListDTO):
     """
-    Adds a new area to the processor.
+    Adds new time-based occupancy rules to an area.
     """
     config = get_config()
     areas = config.get_areas()
     area = next((a for a in areas if a.id == area_id), None)
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+
     area_config_path = area.get_config_path()
+    Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
+
     with open(area_config_path, "w") as area_file:
         json.dump(new_rules.to_store_json(), area_file)
+
     return new_rules
 
 @areas_router.get("/occupancy-rules/{area_id}", response_model=OccupancyRuleListDTO)
 async def get_area_occupancy_rules(area_id: str):
     """
-    Returns the configuration related to the area <area_id>
+    Returns time-based occupancy rules for an area.
     """
     config = get_config()
     areas = config.get_areas()
@@ -198,3 +201,19 @@ async def get_area_occupancy_rules(area_id: str):
     with open(area_config_path, "r") as area_file:
         rules_data = json.load(area_file)
     return OccupancyRuleListDTO.from_store_json(rules_data)
+
+@areas_router.delete("/occupancy-rules/{area_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_occupancy_rules(area_id: str):
+    """
+    Deletes the time-based occupancy rules of an area.
+    """
+    config = get_config()
+    areas = config.get_areas()
+    area = next((area for area in areas if area.id == area_id), None)
+    if not area:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+    area_config_path = area.get_config_path()
+    if os.path.exists(area_config_path):
+        os.remove(area_config_path)
+
+    return handle_response(None, True, status.HTTP_204_NO_CONTENT)
