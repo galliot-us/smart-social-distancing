@@ -7,7 +7,8 @@ from starlette.exceptions import HTTPException
 from typing import Optional
 
 from api.models.area import AreaConfigDTO, AreasListDTO
-from .cameras import map_camera
+from constants import ALL_AREAS
+from .cameras import map_camera, get_cameras
 from api.utils import (
     extract_config, handle_response, reestructure_areas, update_config, map_section_from_config,
     map_to_config_file_format, bad_request_serializer
@@ -31,11 +32,34 @@ async def list_areas():
     }
 
 
+def get_all_cameras_ids():
+    ids_list = [camera['id'] for camera in get_cameras()]
+    return ",".join(ids_list)
+
+
+def all_cameras_area():
+    # Returns information about all the cameras in one area.
+    return {
+        "violation_threshold": -1,
+        "notify_every_minutes": -1,
+        "emails": "",
+        "enable_slack_notifications": False,  # "N/A"
+        "daily_report": False,  # "N/A"
+        "daily_report_time": "N/A",
+        "occupancy_threshold": -1,
+        "id": ALL_AREAS,
+        "name": ALL_AREAS,
+        "cameras": get_all_cameras_ids()
+    }
+
+
 @areas_router.get("/{area_id}", response_model=AreaConfigDTO)
 async def get_area(area_id: str):
     """
     Returns the configuration related to the area <area_id>
     """
+    if area_id.upper() == ALL_AREAS:
+        return all_cameras_area()
     area = next((area for area in get_areas() if area["id"] == area_id), None)
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
@@ -54,6 +78,11 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area already exists", error_type="config duplicated area")
+        )
+    elif new_area.id.upper() == ALL_AREAS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' is not valid.", error_type="Invalid ID")
         )
 
     cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
@@ -79,6 +108,11 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     """
     Edits the configuration related to the area <area_id>
     """
+    if area_id.upper() == ALL_AREAS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' cannot be edited.", error_type="Invalid ID")
+        )
     edited_area.id = area_id
     config_dict = extract_config()
     area_names = [x for x in config_dict.keys() if x.startswith("Area_")]
@@ -109,6 +143,11 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the area <area_id>
     """
+    if area_id.upper() == ALL_AREAS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' cannot be deleted.", error_type="Invalid ID")
+        )
     config_dict = extract_config()
     areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
     areas = [map_section_from_config(x, config_dict) for x in areas_name]
