@@ -24,9 +24,6 @@ class Area(BaseEntity):
             self.should_send_slack_notifications = False
         self.load_occupancy_rules()
 
-    def __getitem__(self, key):
-        return self.__dict__[key]
-
     def load_occupancy_rules(self):
         self.occupancy_rules = []
         area_config_path = self.get_config_path()
