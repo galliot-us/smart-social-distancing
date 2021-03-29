@@ -105,11 +105,7 @@ class BaseMetric:
             os.makedirs(log_directory, exist_ok=True)
             os.makedirs(reports_directory, exist_ok=True)
             time_until = datetime.combine(date.today(), time(current_hour, 0))
-            if current_hour == 0:
-                # Pending to process the latest hour from yesterday
-                report_date = date.today() - timedelta(days=1)
-            else:
-                report_date = date.today()
+            report_date = cls.get_report_date()
             entity_csv = os.path.join(log_directory, str(report_date) + ".csv")
             daily_csv = os.path.join(reports_directory, "report_" + str(report_date) + ".csv")
 
@@ -379,3 +375,11 @@ class BaseMetric:
     @classmethod
     def can_execute(cls, config, entity):
         return True
+
+    @classmethod
+    def get_report_date(cls):
+        if datetime.now().hour == 0:
+            # Pending to process the latest hour from yesterday
+            return date.today() - timedelta(days=1)
+        else:
+            return date.today()
