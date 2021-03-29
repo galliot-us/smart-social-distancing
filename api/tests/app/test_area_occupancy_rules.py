@@ -52,6 +52,23 @@ class TestsOccupancyRules:
 
         assert set_response.json() == get_response.json()
 
+    def test_get_not_found(self, config_rollback_areas):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = 404
+
+        get_response = client.get(f"/areas/occupancy-rules/{area_id}")
+
+        assert get_response.status_code == 404
+
+
+    def test_get_empty(self, config_rollback_areas):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = 5
+
+        get_response = client.get(f"/areas/occupancy-rules/{area_id}")
+
+        assert get_response.status_code == 200
+        assert get_response.json() == []
 
     def test_set_invalid_threshold(self, config_rollback_areas):
         area, area_2, client, config_sample_path = config_rollback_areas

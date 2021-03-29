@@ -30,6 +30,8 @@ class Area(BaseEntity):
         if validate_file_exists_and_is_not_empty(area_config_path):
             with open(area_config_path) as json_file:
                 area_config = json.load(json_file)
+            if "occupancy_rules" not in area_config:
+                return
             for rule in area_config["occupancy_rules"]:
                 self.occupancy_rules.append(OccupancyRule(rule))
 
