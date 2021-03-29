@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from typing import Iterator
 
 from api.utils import bad_request_serializer, extract_config
-from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT
+from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT, ALL_AREAS
 from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
 
 
@@ -20,6 +20,11 @@ def get_cameras(cameras: str) -> Iterator[str]:
     return [x["Id"] for x in config.values()]
 
 
+def get_all_cameras() -> Iterator[str]:
+    config = extract_config(config_type=CAMERAS)
+    return [x["Id"] for x in config.values()]
+
+
 def validate_camera_existence(camera_id: str):
     dir_path = os.path.join(os.getenv("SourceLogDirectory"), camera_id, "objects_log")
     if not os.path.exists(dir_path):
@@ -27,6 +32,8 @@ def validate_camera_existence(camera_id: str):
 
 
 def get_areas(areas: str) -> Iterator[str]:
+    if ALL_AREAS in areas.upper().split(","):
+        return [ALL_AREAS]
     if areas:
         return areas.split(",")
     config = extract_config(config_type=AREAS)
@@ -34,6 +41,8 @@ def get_areas(areas: str) -> Iterator[str]:
 
 
 def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
+    if areas == [ALL_AREAS]:
+        return get_all_cameras()
     config = extract_config(config_type=AREAS)
     cameras = []
     for area_config in config.values():
@@ -43,9 +52,10 @@ def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
 
 
 def validate_area_existence(area_id: str):
-    dir_path = os.path.join(os.getenv("AreaLogDirectory"), area_id, "occupancy_log")
-    if not os.path.exists(dir_path):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Area with id '{area_id}' does not exist")
+    if area_id != ALL_AREAS:
+        dir_path = os.path.join(os.getenv("AreaLogDirectory"), area_id, "occupancy_log")
+        if not os.path.exists(dir_path):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Area with id '{area_id}' does not exist")
 
 
 def validate_dates(from_date: date, to_date: date):
@@ -73,6 +83,9 @@ def get_entities(entity: str, entities_ids: str, metric: str):
             validate_area_existence(e)
     if entity == AREAS and metric in CAMERAS_METRICS:
         entities = get_cameras_for_areas(entities)
+    if ALL_AREAS in entities_ids.upper() and entity == AREAS and metric == OCCUPANCY:
+        # Occupancy is not a CAMERA_METRIC, it is an AREA_METRIC. So we have to return a list with all area ids.
+        entities = get_areas("")
     return entities
 
 
