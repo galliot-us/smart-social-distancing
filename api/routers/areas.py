@@ -182,8 +182,15 @@ async def add_occupancy_rules(area_id: str, new_rules: OccupancyRuleListDTO):
     area_config_path = area.get_config_path()
     Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
 
+    if os.path.exists(area_config_path):
+        with open(area_config_path, "r") as area_file:
+            data = json.load(area_file)
+    else:
+        data = {}
+
     with open(area_config_path, "w") as area_file:
-        json.dump(new_rules.to_store_json(), area_file)
+        data["occupancy_rules"] = new_rules.to_store_json()["occupancy_rules"]
+        json.dump(data, area_file)
 
     return new_rules
 
@@ -198,6 +205,10 @@ async def get_area_occupancy_rules(area_id: str):
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
     area_config_path = area.get_config_path()
+
+    if not os.path.exists(area_config_path):
+        return OccupancyRuleListDTO.parse_obj([])
+
     with open(area_config_path, "r") as area_file:
         rules_data = json.load(area_file)
     return OccupancyRuleListDTO.from_store_json(rules_data)
@@ -213,7 +224,15 @@ async def delete_occupancy_rules(area_id: str):
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
     area_config_path = area.get_config_path()
+
     if os.path.exists(area_config_path):
-        os.remove(area_config_path)
+        with open(area_config_path, "r") as area_file:
+            data = json.load(area_file)
+    else:
+        return handle_response(None, False, status.HTTP_204_NO_CONTENT)
+
+    with open(area_config_path, "w") as area_file:
+        del data["occupancy_rules"]
+        json.dump(data, area_file)
 
     return handle_response(None, True, status.HTTP_204_NO_CONTENT)
