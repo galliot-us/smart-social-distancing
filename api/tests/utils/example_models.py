@@ -7,7 +7,7 @@ camera_template = {
     "daily_report_time": "06:00",
     "id": "20",
     "name": "Kitchen",
-    "video_path": "/repo/data/softbio_vid.mp4",
+    "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
     "tags": "kitchen,living_room",
     "dist_method": "CenterPointsDistance",
     "live_feed_enabled": False
@@ -23,7 +23,7 @@ camera_example = {
     "daily_report_time": "06:00",
     "id": "49",
     "name": "Kitchen",
-    "video_path": "/repo/data/softbio_vid.mp4",
+    "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
     "tags": "kitchen,living_room",
     "dist_method": "CenterPointsDistance",
     "live_feed_enabled": False
@@ -38,7 +38,7 @@ camera_example_2 = {
     "daily_report_time": "05:40",
     "id": "50",
     "name": "Kitchen",
-    "video_path": "/repo/data/softbio_vid.mp4",
+    "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
     "tags": "kitchen,living_room",
     "dist_method": "CenterPointsDistance",
     "live_feed_enabled": False
@@ -53,7 +53,7 @@ camera_example_3 = {
     "daily_report_time": "04:40",
     "id": "51",
     "name": "Bedroom",
-    "video_path": "/repo/data/softbio_vid.mp4",
+    "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
     "tags": "bedroom,living_room",
     "dist_method": "CenterPointsDistance",
     "live_feed_enabled": False
@@ -69,7 +69,7 @@ camera_example_4 = {
     "daily_report_time": "03:15",
     "id": "52",
     "name": "Bedroom",
-    "video_path": "/repo/data/softbio_vid.mp4",
+    "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
     "tags": "bedroom,living_room",
     "dist_method": "CenterPointsDistance",
     "live_feed_enabled": False
