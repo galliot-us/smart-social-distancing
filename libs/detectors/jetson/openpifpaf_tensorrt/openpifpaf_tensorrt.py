@@ -42,6 +42,8 @@ class Detector:
     TODO: UPDATE for TensorRT
     Perform pose estimation with Openpifpaf model. extract pedestrian's bounding boxes from key-points.
     :param config: Is a ConfigEngine instance which provides necessary parameters.
+    :model_name: Name of the ML model.
+    :variables: A dict with all the variables needed for the ML model.
     """
 
     def _load_engine(self):

@@ -65,6 +65,14 @@ def rollback_camera_template():
 
 
 @pytest.fixture
+def rollback_camera_config():
+    for id_camera in [str(camera_example["id"]), str(camera_example_2["id"])]:
+        ml_models_directory = os.path.join(os.environ.get("SourceConfigDirectory"), id_camera, "ml_models")
+        if os.path.exists(ml_models_directory):
+            shutil.rmtree(ml_models_directory)
+
+
+@pytest.fixture
 def config_rollback():
     client, config_sample_path_to_modify = config_rollback_base(option="EMPTY")
     yield client, config_sample_path_to_modify
@@ -167,3 +175,8 @@ def heatmap_simulation():
     yield None
     # Deletes everything
     shutil.rmtree(heatmap_directory)
+
+
+@pytest.fixture
+def heatmap_simulation():
+    get_source_config_directory()

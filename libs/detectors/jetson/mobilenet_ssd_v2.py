@@ -16,6 +16,8 @@ class Detector:
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     :param output_layout:
+    :model_name: Name of the ML model.
+    :variables: A dict with all the variables needed for the ML model.
     """
 
     def _load_plugins(self):
