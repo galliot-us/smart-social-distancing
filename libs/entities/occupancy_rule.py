@@ -1,5 +1,6 @@
 from datetime import time, datetime
 
+
 class OccupancyRule:
 
     def __init__(self, json_value: dict):
@@ -18,6 +19,7 @@ def occ_str_to_time(value: str):
     if len(splits) != 2:
         return None
     return time(int(splits[0]), int(splits[1]))
+
 
 # Friendly Occupancy Rules Date Compare :-)
 def date_before(start: time, end: time, strict=False):

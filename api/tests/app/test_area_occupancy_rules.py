@@ -1,9 +1,9 @@
-import pytest
 from copy import deepcopy
 
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
 from api.tests.utils.fixtures_tests import config_rollback_areas
+
 
 class TestsOccupancyRules:
     """ LIVE """
@@ -59,7 +59,6 @@ class TestsOccupancyRules:
         get_response = client.get(f"/areas/occupancy-rules/{area_id}")
 
         assert get_response.status_code == 404
-
 
     def test_get_empty(self, config_rollback_areas):
         area, area_2, client, config_sample_path = config_rollback_areas
@@ -158,7 +157,7 @@ class TestsOccupancyRules:
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["days"] = [True, False, True, False, True] # should be 7
+        data[0]["days"] = [True, False, True, False, True]  # should be 7
         response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
 
         assert response.status_code == 400

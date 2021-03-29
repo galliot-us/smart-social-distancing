@@ -1,15 +1,10 @@
-import os
-import json
-from datetime import datetime
-
 from .base_entity import BaseEntity
-from .occupancy_rule import OccupancyRule
-from libs.utils.utils import config_to_boolean, validate_file_exists_and_is_not_empty
 
 
 class VideoSource(BaseEntity):
 
-    def __init__(self, config_section: dict, section_title: str, send_email_enabled: bool, send_slack_enabled: bool, config_dir: str, logs_dir: str):
+    def __init__(self, config_section: dict, section_title: str, send_email_enabled: bool, send_slack_enabled: bool,
+                 config_dir: str, logs_dir: str):
         super().__init__(config_section, section_title, send_email_enabled, send_slack_enabled, config_dir, logs_dir)
         self.type = "Camera"
         self.url = config_section["VideoPath"]

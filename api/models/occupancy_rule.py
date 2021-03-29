@@ -8,6 +8,7 @@ from .base import SnakeModel
 import logging
 logger = logging.getLogger(__name__)
 
+
 class AreaOccupancyRule(SnakeModel):
     days: List[bool]
     start_hour: str = Field(example="08:00")
@@ -23,7 +24,7 @@ class AreaOccupancyRule(SnakeModel):
             if not t:
                 return False
             return t
-        except:
+        except:  # noqa
             return False
 
     @validator('days')
@@ -62,6 +63,7 @@ class AreaOccupancyRule(SnakeModel):
             "max_occupancy": self.max_occupancy
         }
 
+
 class OccupancyRuleListDTO(SnakeModel):
     __root__: List[AreaOccupancyRule]
 
@@ -80,7 +82,7 @@ class OccupancyRuleListDTO(SnakeModel):
         return the_list
 
     def to_store_json(self):
-        return { "occupancy_rules": [r.to_store_json() for r in self]}
+        return {"occupancy_rules": [r.to_store_json() for r in self]}
 
     @classmethod
     def from_store_json(cls, json_value):
@@ -89,10 +91,12 @@ class OccupancyRuleListDTO(SnakeModel):
         objs = [AreaOccupancyRule.parse_obj(v) for v in json_value["occupancy_rules"]]
         return OccupancyRuleListDTO.parse_obj(objs)
 
+
 def do_overlap(a: AreaOccupancyRule, b: AreaOccupancyRule):
     for d in range(7):
         if a.days[d] and b.days[d]:
             # sorry for the nots
-            if not (not date_before(b.start_time, a.finish_time, strict=True) or not date_before(a.start_time, b.finish_time, strict=True)):
+            if not (not date_before(b.start_time, a.finish_time, strict=True) or
+                    not date_before(a.start_time, b.finish_time, strict=True)):
                 return True
     return False

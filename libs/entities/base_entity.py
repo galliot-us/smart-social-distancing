@@ -1,9 +1,11 @@
 import os
 from libs.utils.utils import config_to_boolean
 
+
 class BaseEntity():
 
-    def __init__(self, config_section: dict, section_title: str, send_email_enabled: bool, send_slack_enabled: bool, config_dir: str, logs_dir: str):
+    def __init__(self, config_section: dict, section_title: str, send_email_enabled: bool, send_slack_enabled: bool,
+                 config_dir: str, logs_dir: str):
         self.config_dir = config_dir
         self.section = section_title
         self.id = config_section["Id"]
@@ -22,7 +24,6 @@ class BaseEntity():
         self.violation_threshold = int(config_section["ViolationThreshold"])
         self.daily_report = config_to_boolean(config_section["DailyReport"])
         self.daily_report_time = config_section.get("DailyReportTime") or "06:00"
-
 
     def __getitem__(self, key):
         return self.__dict__[key]
