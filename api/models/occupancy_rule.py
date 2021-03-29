@@ -74,7 +74,7 @@ class OccupancyRuleListDTO(SnakeModel):
         return self.__root__[item]
 
     @validator('__root__')
-    def no_overlap_please(cls, the_list):
+    def validate_no_overlaps(cls, the_list):
         for l1 in the_list:
             for l2 in the_list:
                 if l1 != l2 and do_overlap(l1, l2):
@@ -95,8 +95,7 @@ class OccupancyRuleListDTO(SnakeModel):
 def do_overlap(a: AreaOccupancyRule, b: AreaOccupancyRule):
     for d in range(7):
         if a.days[d] and b.days[d]:
-            # sorry for the nots
-            if not (not date_before(b.start_time, a.finish_time, strict=True) or
-                    not date_before(a.start_time, b.finish_time, strict=True)):
+            if (date_before(b.start_time, a.finish_time, strict=True) and
+               date_before(a.start_time, b.finish_time, strict=True)):
                 return True
     return False
