@@ -94,6 +94,7 @@ class BaseMetric:
             if not cls.can_execute(config, entity):
                 continue
             entity_directory = os.path.join(base_directory, entity["id"])
+            entity["base_directory"] = entity_directory
             log_directory = None
             if cls.entity == "source":
                 log_directory = os.path.join(entity_directory, "objects_log")
@@ -149,7 +150,7 @@ class BaseMetric:
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             # Create missing directories
             os.makedirs(reports_directory, exist_ok=True)
-            yesterday = str(date.today() - timedelta(days=1))
+            yesterday = str(date.today() - timedelta(days=0))
             hourly_csv = os.path.join(reports_directory, "report_" + yesterday + ".csv")
             report_csv = os.path.join(reports_directory, "report.csv")
             if not os.path.isfile(hourly_csv):
@@ -165,6 +166,9 @@ class BaseMetric:
                 if not report_file_exists:
                     writer.writeheader()
                 row = {"Date": yesterday}
+                print(row)
+                print(daily_data)
+                print(cls.csv_headers)
                 for index, header in enumerate(cls.csv_headers):
                     row[header] = daily_data[index]
                 writer.writerow(row)
@@ -228,14 +232,14 @@ class BaseMetric:
             file_path = os.path.join(reports_directory, f"report_{report_date}.csv")
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path)
-                for header in cls.csv_headers:
+                for index, header in enumerate(cls.csv_headers):
                     if is_numeric_dtype(df[header]):
                         results[header] += np.pad(
                             df[header].to_numpy(), (0, 24 - df[header].to_numpy().size), mode="constant"
                         )
                     else: # It's a list
                         values = df[header].apply(ast.literal_eval).tolist()
-                        entry = np.pad(values, (0, 24 - len(values)), mode="constant").tolist()
+                        entry = np.pad(values, 0, mode="constant").tolist()
                         if is_list_recursively_empty(results[header]):
                             results[header] = entry
                         else:
@@ -356,7 +360,7 @@ class BaseMetric:
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
                 for header in live_headers:
                     if lastest_entry[header][0].isdigit():
-                        report[header] += int(lastest_entry[header])
+                        report[header] += int(ast.literal_eval(lastest_entry[header]))
                     else: # It's a list
                         entry = ast.literal_eval(lastest_entry[header])
                         if is_list_recursively_empty(report[header]):

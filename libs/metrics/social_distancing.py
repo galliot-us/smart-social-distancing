@@ -157,7 +157,7 @@ class SocialDistancingMetric(BaseMetric):
             # Create missing directories
             os.makedirs(objects_log_directory, exist_ok=True)
             os.makedirs(heatmaps_directory, exist_ok=True)
-            yesterday = str(date.today() - timedelta(days=1))
+            yesterday = str(date.today() - timedelta(days=0))
             yesterday_csv = os.path.join(objects_log_directory, yesterday + ".csv")
             if os.path.isfile(yesterday_csv):
                 detection_heatmap_file = os.path.join(heatmaps_directory, "detections_heatmap_" + yesterday)

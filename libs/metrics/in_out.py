@@ -3,6 +3,8 @@ import csv
 import json
 import os
 import numpy as np
+import logging
+import copy
 
 from collections import deque
 from datetime import date
@@ -15,6 +17,8 @@ from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
 from libs.utils.utils import validate_file_exists_and_is_not_empty, is_list_recursively_empty
 from libs.utils.in_out import check_line_cross
+
+logger = logging.getLogger(__name__)
 
 class InOutMetric(BaseMetric):
 
@@ -47,6 +51,7 @@ class InOutMetric(BaseMetric):
     def generate_daily_csv_data(cls, yesterday_hourly_file):
         people_in, people_out = 0, 0
         estimated_max_occupancy, estimated_average_occupancy = [], []
+        boundary_names, summary_in, summary_out = [], [], []
         estimated_latest_occupancy = _read_estimated_latest_occupancy(yesterday_hourly_file)
         with open(yesterday_hourly_file, newline="") as csvfile:
             reader = csv.DictReader(csvfile)
@@ -54,16 +59,28 @@ class InOutMetric(BaseMetric):
                 people_in += int(row["In"])
                 people_out += int(row["Out"])
                 estimated_max_occupancy.append(int(row["EstimatedMaxOccupancy"]))
-                estimated_average_occupancy.append(int(row["EstimatedAverageOccupancy"]))
+                estimated_average_occupancy.append(float(row["EstimatedAverageOccupancy"]))
+
+                if not is_list_recursively_empty(row["Summary"]):
+                    hourly_boundary_names, hourly_in, hourly_out = ast.literal_eval(row["Summary"])
+                    hourly_in, hourly_out = np.array(hourly_in, dtype=int), np.array(hourly_out, dtype=int)
+                    if not boundary_names:
+                        boundary_names = hourly_boundary_names
+                        daily_in = np.zeros(len(boundary_names), dtype=int)
+                        daily_out = np.zeros(len(boundary_names), dtype=int)
+                    daily_in += hourly_in
+                    daily_out += hourly_out
         estimated_max_occupancy = max(estimated_max_occupancy)
         estimated_average_occupancy = round(mean(estimated_average_occupancy), 2)
-        return people_in, people_out, estimated_max_occupancy, estimated_average_occupancy, estimated_latest_occupancy
+        summary = [boundary_names, list(daily_in), list(daily_out)]
+        return people_in, people_out, estimated_max_occupancy, estimated_average_occupancy, estimated_latest_occupancy, summary
 
     @classmethod
     def generate_hourly_metric_data(cls, config, objects_logs, entity):
         boundaries = cls.retrieve_in_out_boundaries(config, entity["id"])
         boundary_names = [boundary["name"] for boundary in boundaries]
-        summary = [[0, 0, 0, 0, 0, [boundary_names, [0] * len(boundaries), [0] * len(boundaries)]]] * len(objects_logs)
+        hourly_summary = [0, 0, 0, 0, 0, [boundary_names, [0] * len(boundaries), [0] * len(boundaries)]]
+        summary = [copy.deepcopy(hourly_summary) for x in range(len(objects_logs))]
         reports_directory = os.path.join(entity["base_directory"], "reports", cls.reports_folder)
         daily_csv = os.path.join(reports_directory, "report_" + str(cls.get_report_date()) + ".csv")
         latest_estimated_occupancy = _read_estimated_latest_occupancy(daily_csv)
@@ -74,11 +91,13 @@ class InOutMetric(BaseMetric):
                 objects_logs[hour], latest_estimated_occupancy, boundaries,
                 hour_in, hour_out, hour_balance, summary[index_hour][5]
             )
+            if not hour_balance:
+                hour_balance = [0]
             summary[index_hour][0] = sum(hour_in)
             summary[index_hour][1] = sum(hour_out)
-            summary[index_hour][2] = max(hour_balance)  # estimated_max_occupancy
-            summary[index_hour][3] = round(mean(hour_balance), 2)  # estimated_average_occupancy
-            summary[index_hour][4] = max(0, hour_balance[-1])  # estimated_latest_occupancy
+            summary[index_hour][2] = max(0, max(hour_balance)) # estimated_max_occupancy
+            summary[index_hour][3] = max(0, round(mean(hour_balance), 2))  # estimated_average_occupancy
+            summary[index_hour][4] = max(0, hour_balance[-1]) # estimated_latest_occupancy
         return summary
 
     @classmethod
@@ -106,8 +125,8 @@ class InOutMetric(BaseMetric):
             )
         summary[0] = sum(hour_in)
         summary[1] = sum(hour_out)
-        summary[2] = max(hour_balance)  # estimated_max_occupancy
-        summary[3] = round(mean(hour_balance), 2)  # estimated_average_occupancy
+        summary[2] = max(0, max(hour_balance))  # estimated_max_occupancy
+        summary[3] = max(0, round(mean(hour_balance), 2))  # estimated_average_occupancy
         summary[4] = max(0, hour_balance[-1])  # estimated_latest_occupancy
         return summary
 
@@ -170,8 +189,8 @@ class InOutMetric(BaseMetric):
             report["In"].append(sum(week_data["In"]))
             report["Out"].append(sum(week_data["Out"]))
             report["EstimatedMaxOccupancy"].append(max(week_data["EstimatedMaxOccupancy"]))
-            report["EstimatedAverageOccupancy"].append(round(mean(week_data["In"]), 2))
-            report["EstimatedLatestOccupancy"].append(week_data["In"]["EstimatedLatestOccupancy"][-1])
+            report["EstimatedAverageOccupancy"].append(round(mean(week_data["EstimatedAverageOccupancy"]), 2))
+            report["EstimatedLatestOccupancy"].append(week_data["EstimatedLatestOccupancy"][-1])
             if is_list_recursively_empty(week_data["Summary"]):
                 boundary_name = []
                 weekly_in = []
@@ -188,22 +207,6 @@ class InOutMetric(BaseMetric):
                 [sum(x) for x in zip(*weekly_out)]
             ])
         return report
-
-    @classmethod
-    def generate_daily_csv_data(cls, yesterday_hourly_file):
-        people_in, people_out = 0, 0
-        estimated_max_occupancy, estimated_average_occupancy = [], []
-        estimated_latest_occupancy = _read_estimated_latest_occupancy(yesterday_hourly_file)
-        with open(yesterday_hourly_file, newline="") as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                people_in += int(row["In"])
-                people_out += int(row["Out"])
-                estimated_max_occupancy.append(int(row["EstimatedMaxOccupancy"]))
-                estimated_average_occupancy.append(int(row["EstimatedAverageOccupancy"]))
-        estimated_max_occupancy = max(estimated_max_occupancy)
-        estimated_average_occupancy = round(mean(estimated_average_occupancy), 2)
-        return people_in, people_out, estimated_max_occupancy, estimated_average_occupancy, estimated_latest_occupancy
 
     @classmethod
     def _process_path(cls, boundary_line, trajectory_path, number_of_cuts=NUMBER_OF_PATH_SEGMENTS):
@@ -242,11 +245,12 @@ class InOutMetric(BaseMetric):
 
     @classmethod
     def _process_hourly_segments(
-        cls, hourly_objects_logs, latest_estimated_occupancy, boundaries,  # input
-        hour_in, hour_out, hour_balance, summary_report  # output
+        cls, hourly_objects_logs, latest_estimated_occupancy, boundaries, # input
+        hour_in, hour_out, hour_balance, summary_report # output
     ):
+        logger.info(summary_report)
         for index_segment, segment in enumerate(hourly_objects_logs):
-            segment_objects_detections = [hourly_objects_logs[segment]]
+            segment_objects_detections = hourly_objects_logs[segment]
             segment_in, segment_out, segment_balance = 0, 0, 0
             for track_id, data in segment_objects_detections.items():
                 path = data["path"]
@@ -261,6 +265,7 @@ class InOutMetric(BaseMetric):
             hour_in.append(segment_in)
             hour_out.append(segment_out)
             hour_balance.append(latest_estimated_occupancy)
+        logger.info(summary_report)
 
 
 def _fill_partially_empty_result(tuple_of_lists, default_value):
@@ -273,9 +278,15 @@ def _fill_partially_empty_result(tuple_of_lists, default_value):
 
 def _read_estimated_latest_occupancy(in_out_file_path):
     if os.path.exists(in_out_file_path):
-        with open(in_out_file_path, "r") as live_file:
-            latest_entry = deque(csv.DictReader(live_file), 1)[0]
-            if datetime.strptime(latest_entry["Time"], "%Y-%m-%d %H:%M:%S").date() == datetime.today().date():
-                return int(latest_entry["EstimatedLatestOccupancy"])
+        with open(in_out_file_path, "r") as in_out_file:
+            latest_entry = deque(csv.DictReader(in_out_file), 1)
+            if len(latest_entry) != 0:
+                print(latest_entry)
+                if "Time" not in latest_entry[0] or datetime.strptime(latest_entry[0]["Time"], "%Y-%m-%d %H:%M:%S").date() == datetime.today().date():
+                    return int(latest_entry[0]["EstimatedLatestOccupancy"])
+                else:
+                    return 0
+            else:
+                return 0
     else:
         return 0
