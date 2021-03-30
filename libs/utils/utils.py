@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 
+BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
+                  '0': False, 'no': False, 'false': False, 'off': False}
+
 
 def validate_file_exists_and_is_not_empty(file_path):
     if os.path.exists(file_path) \
@@ -10,5 +13,12 @@ def validate_file_exists_and_is_not_empty(file_path):
     else:
         return False
 
-def is_list_recursively_empty(l):
-    return all(is_list_recursively_empty(i) if isinstance(i, list) else False for i in l)
+
+def is_list_recursively_empty(lst):
+    return all(is_list_recursively_empty(i) if isinstance(i, list) else False for i in lst)
+
+
+def config_to_boolean(value):
+    if value.lower() not in BOOLEAN_STATES:
+        raise ValueError("Invalid boolean value")
+    return BOOLEAN_STATES[value.lower()]
