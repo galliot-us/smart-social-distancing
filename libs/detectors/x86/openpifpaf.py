@@ -20,7 +20,7 @@ class Detector:
         self.config = config
         self.model_name = model_name
         self.model_variables = variables
-        self.device = "cuda:0" if self.model_variables['Device'] == "x86-gpu" else "cpu"
+        self.device = "cuda:0" if self.config.get_section_dict("Detector")["Device"] == "x86-gpu" else "cpu"
         # Frames Per Second
         self.fps = None
         self.net, self.processor = self.load_model()

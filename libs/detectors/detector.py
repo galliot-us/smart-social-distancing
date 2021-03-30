@@ -14,6 +14,7 @@ class Detector:
         # TODO: Iterator in the below line should be replaced with:
         #  get_model_json_file_or_return_default_values(self.config, self.device, self.config.get_section_dict(source)["Id"])["variables"]["ImageSize"]
         self.image_size = [int(i) for i in self.config.get_section_dict("Detector")["ImageSize"].split(",")]
+        # Do: Ctrl + Shift + F and type: "ImageSize" and "get_section_dict("Detector")" (also with this '' quotes)
 
         self.has_classifier = "Classifier" in self.config.get_sections()
         if self.has_classifier:

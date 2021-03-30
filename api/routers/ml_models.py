@@ -16,8 +16,6 @@ from libs.utils.config import get_source_config_directory
 ml_model_router = APIRouter()
 settings = Settings()
 
-# Todo: test if I create a new camera, if base path is created.
-
 
 def pascal_case_to_snake_case(parameters):
     result = {}
@@ -38,15 +36,15 @@ async def modify_ml_model(camera_id: str, model_parameters: MLModelDTO):
 
     validate_camera_existence(camera_id)
 
+    parameters = pascal_case_to_snake_case(model_parameters)
+
     base_path = os.path.join(get_source_config_directory(settings.config), camera_id)
     models_directory_path = os.path.join(base_path, "ml_models")
-    json_file_path = os.path.join(models_directory_path,
-                                  f"model_{settings.config.get_section_dict('Detector')['Device']}.json")
-
-    parameters = pascal_case_to_snake_case(model_parameters)
+    json_file_path = os.path.join(models_directory_path, f"model_{parameters['Device']}.json")
 
     model_name = parameters["Name"]
     del parameters["Name"]
+    del parameters["Device"]
 
     # Create .json file
     json_content = {
