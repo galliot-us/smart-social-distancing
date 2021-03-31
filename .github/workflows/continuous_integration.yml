@@ -1,0 +1,24 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: CI
+
+on: [pull_request]
+
+jobs:
+  Tests:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Download docker image
+      run: docker pull neuralet/smart-social-distancing:latest-x86_64
+    - name: Docker Build
+      run: docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
+    - name: Docker Run (in background)
+      run: docker run -d --rm -it -p 8400:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
+    - name: Run tests
+      run: docker exec -i $(docker ps -q) pytest
+    - name: Docker stop
+      run: docker stop $(docker ps -q)
