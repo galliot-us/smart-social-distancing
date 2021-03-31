@@ -166,9 +166,6 @@ class BaseMetric:
                 if not report_file_exists:
                     writer.writeheader()
                 row = {"Date": yesterday}
-                print(row)
-                print(daily_data)
-                print(cls.csv_headers)
                 for index, header in enumerate(cls.csv_headers):
                     row[header] = daily_data[index]
                 writer.writerow(row)

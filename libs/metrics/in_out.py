@@ -248,7 +248,6 @@ class InOutMetric(BaseMetric):
         cls, hourly_objects_logs, latest_estimated_occupancy, boundaries, # input
         hour_in, hour_out, hour_balance, summary_report # output
     ):
-        logger.info(summary_report)
         for index_segment, segment in enumerate(hourly_objects_logs):
             segment_objects_detections = hourly_objects_logs[segment]
             segment_in, segment_out, segment_balance = 0, 0, 0
@@ -265,7 +264,6 @@ class InOutMetric(BaseMetric):
             hour_in.append(segment_in)
             hour_out.append(segment_out)
             hour_balance.append(latest_estimated_occupancy)
-        logger.info(summary_report)
 
 
 def _fill_partially_empty_result(tuple_of_lists, default_value):
@@ -281,7 +279,6 @@ def _read_estimated_latest_occupancy(in_out_file_path):
         with open(in_out_file_path, "r") as in_out_file:
             latest_entry = deque(csv.DictReader(in_out_file), 1)
             if len(latest_entry) != 0:
-                print(latest_entry)
                 if "Time" not in latest_entry[0] or datetime.strptime(latest_entry[0]["Time"], "%Y-%m-%d %H:%M:%S").date() == datetime.today().date():
                     return int(latest_entry[0]["EstimatedLatestOccupancy"])
                 else:
