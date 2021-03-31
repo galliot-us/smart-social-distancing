@@ -26,10 +26,10 @@ def check_violations(entity_type, threshold, config, entity_info, interval, shou
 
     violations = 0
     if entity_type == 'Camera':
-        file_paths = [os.path.join(log_dir, entity_info['id'], "objects_log", today + ".csv")]
+        file_paths = [os.path.join(log_dir, entity_info.id, "objects_log", today + ".csv")]
     else:
         # entity_type == 'Area'
-        camera_ids = entity_info['cameras']
+        camera_ids = entity_info.cameras
         file_paths = [os.path.join(log_dir, camera_id, "objects_log", today + ".csv") for camera_id in camera_ids]
 
     for file_path in file_paths:
@@ -46,7 +46,7 @@ def check_violations(entity_type, threshold, config, entity_info, interval, shou
 
 
 def run_check_violations(threshold, config, entity_info, interval, should_send_email, should_send_slack):
-    entity_type = entity_info['type']
+    entity_type = entity_info.type
     job_thread = Thread(target=check_violations,
                         args=[entity_type, threshold, config, entity_info, interval, should_send_email, should_send_slack])
     job_thread.start()

@@ -4,6 +4,10 @@ import configparser
 import threading
 from libs.notifications.slack_notifications import is_slack_configured
 from libs.utils.mailing import is_mailing_configured
+from libs.utils import config as config_utils
+from libs.utils.loggers import get_area_log_directory, get_source_log_directory
+from libs.entities.area import Area
+from libs.entities.video_source import VideoSource
 
 
 class ConfigEngine:
@@ -135,37 +139,16 @@ class ConfigEngine:
         if save_file:
             self.save(self.config_file_path)
 
-    def get_entity_with_notifications(self, title, section):
-        ent = {"section": title, "id": section["Id"], "name": section["Name"]}
-        if "Tags" in section and section["Tags"].strip() != "":
-            ent["tags"] = section["Tags"].split(",")
-        if "Emails" in section and section["Emails"].strip() != "":
-            ent["emails"] = section["Emails"].split(",")
-        ent["enable_slack_notifications"] = self.config.getboolean(title, "EnableSlackNotifications")
-        ent["notify_every_minutes"] = int(section["NotifyEveryMinutes"])
-        ent["violation_threshold"] = int(section["ViolationThreshold"])
-        ent["daily_report"] = self.config.getboolean(title, "DailyReport")
-        ent["daily_report_time"] = section.get("DailyReportTime") or "06:00"
-
-        return ent
-
     def get_video_sources(self):
         try:
             sources = []
             for title, section in self.config.items():
                 if title.startswith("Source_"):
-                    src = self.get_entity_with_notifications(title, section)
-                    src["type"] = "Camera"
-                    src["url"] = section["VideoPath"]
-                    src["dist_method"] = section["DistMethod"]
-                    if "Tags" in section and section["Tags"].strip() != "":
-                        src["tags"] = section["Tags"].split(",")
-                    if src["notify_every_minutes"] > 0 and src["violation_threshold"] > 0:
-                        src["should_send_email_notifications"] = self.should_send_email_notifications(src)
-                        src["should_send_slack_notifications"] = self.should_send_slack_notifications(src)
-                    else:
-                        src["should_send_email_notifications"] = False
-                        src["should_send_slack_notifications"] = False
+                    is_slack_enabled = self.config["App"]["SlackChannel"] and is_slack_configured()
+                    is_email_enabled = is_mailing_configured()
+                    config_dir = config_utils.get_source_config_directory(self)
+                    video_source_logs_dir = get_source_log_directory(self)
+                    src = VideoSource(section, title, is_email_enabled, is_slack_enabled, config_dir, video_source_logs_dir)
                     sources.append(src)
             return sources
         except Exception:
@@ -177,18 +160,11 @@ class ConfigEngine:
             areas = []
             for title, section in self.config.items():
                 if title.startswith("Area_"):
-                    area = self.get_entity_with_notifications(title, section)
-                    area["type"] = "Area"
-                    area["occupancy_threshold"] = int(section["OccupancyThreshold"])
-                    if "Cameras" in section and section["Cameras"].strip() != "":
-                        area["cameras"] = section["Cameras"].split(",")
-
-                    if (area["notify_every_minutes"] > 0 and area["violation_threshold"] > 0) or area["occupancy_threshold"] > 0:
-                        area["should_send_email_notifications"] = self.should_send_email_notifications(area)
-                        area["should_send_slack_notifications"] = self.should_send_slack_notifications(area)
-                    else:
-                        area["should_send_email_notifications"] = False
-                        area["should_send_slack_notifications"] = False
+                    is_slack_enabled = self.config["App"]["SlackChannel"] and is_slack_configured()
+                    is_email_enabled = is_mailing_configured()
+                    config_dir = config_utils.get_area_config_directory(self)
+                    area_logs_dir = get_area_log_directory(self)
+                    area = Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
                     areas.append(area)
             return areas
         except Exception:

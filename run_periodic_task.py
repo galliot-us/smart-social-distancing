@@ -50,8 +50,8 @@ def main(config):
             schedule.every().day.at(src['daily_report_time']).do(
                 send_daily_report_notification, config=config, entity_info=src)
     for area in areas:
-        if area['daily_report']:
-            schedule.every().day.at(area['daily_report_time']).do(
+        if area.daily_report:
+            schedule.every().day.at(area.daily_report_time).do(
                 send_daily_report_notification, config=config, entity_info=area)
     if config.get_boolean("App", "DailyGlobalReport"):
         schedule.every().day.at(config.get_section_dict("App")["GlobalReportTime"]).do(

@@ -61,11 +61,11 @@ class SlackService:
         msg = f"Yesterday we found {number} violations in {entity_id}: {entity_name} ({entity_type})."
         self.post_message_to_channel(msg, self.channel)
 
-    def occupancy_alert(self, entity_info, number):
+    def occupancy_alert(self, entity_info, number, threshold):
         entity_id, entity_type = entity_info['id'], entity_info['type']
-        entity_name, entity_threshold = entity_info['name'], entity_info['occupancy_threshold']
+        entity_name = entity_info['name']
         msg = f"Occupancy threshold was exceeded in {entity_type} {entity_id}: {entity_name}." \
-              f"We found {number} people out of a capacity of {entity_threshold}."
+              f"We found {number} people out of a capacity of {threshold}."
         self.post_message_to_channel(msg, self.channel)
 
     def send_global_report(self, report_type, sources, areas, sources_violations_per_hour, areas_violations_per_hour):
@@ -79,5 +79,3 @@ class SlackService:
             entity_id, entity_name = source['id'], source['name']
             msg += f"*{entity_id}:* {entity_name} - {sum(sources_violations_per_hour[index])} Violations\n"
         self.post_message_to_channel(msg, self.channel)
-
-
