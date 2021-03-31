@@ -566,11 +566,10 @@ All the configurations are grouped in *sections* and some of them can vary depen
 
 
 #### Use different models per camera
-Before processing video from a camera, a ML model could be specified to process that camera.
-This information is stored in a .json file in the path: /repo/data/processor/config/sources/<camera_id>/ml_models/model_<device>.json
-To modify the model used, use the endpoint `/ml_model` documented below.
-This custom model must specify: "model_name" and "variables" for the model. 
-If no custom model is detected, the default values will be applied and taken from the `[Detector]` section, mentioned above. 
+By default, all video streams are processing running against the same ML model.
+When a processing threads starts running it verifies if a configuration .json file exists in the path: /repo/data/processor/config/sources/<camera_id>/ml_models/model_<device>.json
+If no custom configuration is detected, a file will be generated using the default values from the `[Detector]` section, documented above. 
+These JSONs contain the configuration of which ML Model is used for processing said stream, and can be modified either manually or using the endpoint  `/ml_model` documented below. Please note that models that differ in their location or name regarding the `./download_` scripts must specify their location in the field `file_path`.
 
 
 ### API usage

@@ -15,9 +15,6 @@ def get_model_json_file_or_return_default_values(config, device, camera_id):
 
     # Hypothesis: source config directory (base_path) should always exists.
 
-    if not os.path.exists(models_directory_path):
-        Path(models_directory_path).mkdir(parents=True, exist_ok=True)
-
     if not os.path.exists(json_file_path):
         return {
             "model_name": config.get_section_dict("Detector")["Name"],

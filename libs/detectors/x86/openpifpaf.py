@@ -25,7 +25,6 @@ class Detector:
         self.fps = None
         self.net, self.processor = self.load_model()
         self.w, self.h, _ = [int(i) for i in self.model_variables['ImageSize'].split(',')]
-        # self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
 
     def load_model(self):
 
