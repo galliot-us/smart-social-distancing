@@ -150,7 +150,7 @@ class BaseMetric:
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             # Create missing directories
             os.makedirs(reports_directory, exist_ok=True)
-            yesterday = str(date.today() - timedelta(days=0))
+            yesterday = str(date.today() - timedelta(days=1))
             hourly_csv = os.path.join(reports_directory, "report_" + yesterday + ".csv")
             report_csv = os.path.join(reports_directory, "report.csv")
             if not os.path.isfile(hourly_csv):
