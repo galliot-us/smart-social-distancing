@@ -3,7 +3,6 @@ import csv
 import json
 import os
 import numpy as np
-import logging
 import copy
 
 from collections import deque
@@ -17,8 +16,6 @@ from constants import IN_OUT
 from libs.utils.config import get_source_config_directory
 from libs.utils.utils import validate_file_exists_and_is_not_empty, is_list_recursively_empty
 from libs.utils.in_out import check_line_cross
-
-logger = logging.getLogger(__name__)
 
 class InOutMetric(BaseMetric):
 
