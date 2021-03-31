@@ -3,7 +3,7 @@
 
 name: CI
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   Tests:
@@ -22,11 +22,3 @@ jobs:
       run: docker exec -i $(docker ps -q) pytest
     - name: Docker stop
       run: docker stop $(docker ps -q)
-    #    - name: Docker Build
-    #      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml build
-    #    - name: Docker Run (in background)
-    #      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml up -d
-    #    - name: Run tests
-    #      run: docker exec -i $(docker ps -q) pytest
-    #    - name: Docker stop
-    #      run: docker-compose -f docker-compose.yml -f docker-compose-x86.yml stop
