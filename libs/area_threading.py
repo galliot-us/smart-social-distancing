@@ -46,7 +46,7 @@ class AreaThread(Thread):
                     self.engine.process_area()
                 except Exception as e:
                     logging.error(e, exc_info=True)
-                    logging.info(f"Exception processing area {self.area['name']}")
+                    logging.info(f"Exception processing area {self.area.name}")
                     if (datetime.now() - last_restart_time).total_seconds() > 60:
                         # If the last restart was previous than 1 minute ago, restart the counter.
                         restarts = 0

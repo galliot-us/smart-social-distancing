@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 130
+exclude =
+    .git,__pycache__,
+    # Excluding until we fix fixture import linter issues
+    api/tests/*

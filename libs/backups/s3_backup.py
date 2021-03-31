@@ -28,10 +28,10 @@ def raw_data_backup(config: ConfigEngine, bucket_name: str):
             s3_uploader.upload_file(bucket_name, today_objects_csv, f"{str(date.today())}.csv", bucket_prefix)
     # Backup all the area files
     for area in areas:
-        area_directory = os.path.join(area_log_directory, area["id"])
+        area_directory = os.path.join(area_log_directory, area.id)
         occupancy_log_directory = os.path.join(area_directory, "occupancy_log")
         today_occupancy_csv = os.path.join(occupancy_log_directory, str(date.today()) + ".csv")
-        bucket_prefix = f"areas/{area['id']}/occupancy_log"
+        bucket_prefix = f"areas/{area.id}/occupancy_log"
         if os.path.isfile(today_objects_csv):
             # Upload the today occupancy files to S3
             s3_uploader.upload_file(bucket_name, today_occupancy_csv, f"{str(date.today())}.csv", bucket_prefix)
@@ -63,11 +63,11 @@ def reports_backup(config: ConfigEngine, bucket_name: str):
                 s3_uploader.upload_file(bucket_name, metric_daily_report, "report.csv", bucket_prefix)
     # Backup the areas yesterday reports
     for area in areas:
-        area_directory = os.path.join(area_log_directory, area["id"])
+        area_directory = os.path.join(area_log_directory, area.id)
         occupancy_reports_directory = os.path.join(area_directory, "reports", OccupancyMetric.reports_folder)
         occupancy_hourly_report = os.path.join(occupancy_reports_directory, f"report_{yesterday}.csv")
         occupancy_daily_report = os.path.join(occupancy_reports_directory, "report.csv")
-        bucket_prefix = f"areas/{area['id']}/reports/{OccupancyMetric.reports_folder}"
+        bucket_prefix = f"areas/{area.id}/reports/{OccupancyMetric.reports_folder}"
         if os.path.isfile(occupancy_hourly_report):
             s3_uploader.upload_file(bucket_name, occupancy_hourly_report, f"report_{yesterday}.csv", bucket_prefix)
         if os.path.isfile(occupancy_daily_report):

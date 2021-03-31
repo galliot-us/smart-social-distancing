@@ -1,5 +1,6 @@
 import os
 import shutil
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, status
@@ -7,9 +8,11 @@ from starlette.exceptions import HTTPException
 from typing import Optional
 
 from api.models.area import AreaConfigDTO, AreasListDTO
-from .cameras import map_camera
+from constants import ALL_AREAS
+from .cameras import map_camera, get_cameras
+from api.models.occupancy_rule import OccupancyRuleListDTO
 from api.utils import (
-    extract_config, handle_response, reestructure_areas, update_config, map_section_from_config,
+    extract_config, get_config, handle_response, reestructure_areas, update_config, map_section_from_config,
     map_to_config_file_format, bad_request_serializer
 )
 
@@ -31,11 +34,34 @@ async def list_areas():
     }
 
 
+def get_all_cameras_ids():
+    ids_list = [camera['id'] for camera in get_cameras()]
+    return ",".join(ids_list)
+
+
+def all_cameras_area():
+    # Returns information about all the cameras in one area.
+    return {
+        "violation_threshold": -1,
+        "notify_every_minutes": -1,
+        "emails": "",
+        "enable_slack_notifications": False,  # "N/A"
+        "daily_report": False,  # "N/A"
+        "daily_report_time": "N/A",
+        "occupancy_threshold": -1,
+        "id": ALL_AREAS,
+        "name": ALL_AREAS,
+        "cameras": get_all_cameras_ids()
+    }
+
+
 @areas_router.get("/{area_id}", response_model=AreaConfigDTO)
 async def get_area(area_id: str):
     """
     Returns the configuration related to the area <area_id>
     """
+    if area_id.upper() == ALL_AREAS:
+        return all_cameras_area()
     area = next((area for area in get_areas() if area["id"] == area_id), None)
     if not area:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
@@ -54,6 +80,11 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=bad_request_serializer("Area already exists", error_type="config duplicated area")
+        )
+    elif new_area.id.upper() == ALL_AREAS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' is not valid.", error_type="Invalid ID")
         )
 
     cameras = [x for x in config_dict.keys() if x.startswith("Source_")]
@@ -79,6 +110,11 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     """
     Edits the configuration related to the area <area_id>
     """
+    if area_id.upper() == ALL_AREAS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' cannot be edited.", error_type="Invalid ID")
+        )
     edited_area.id = area_id
     config_dict = extract_config()
     area_names = [x for x in config_dict.keys() if x.startswith("Area_")]
@@ -109,6 +145,11 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     """
     Deletes the configuration related to the area <area_id>
     """
+    if area_id.upper() == ALL_AREAS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=bad_request_serializer("Area with ID: 'ALL' cannot be deleted.", error_type="Invalid ID")
+        )
     config_dict = extract_config()
     areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
     areas = [map_section_from_config(x, config_dict) for x in areas_name]
@@ -127,3 +168,75 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     shutil.rmtree(area_directory)
 
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
+
+
+@areas_router.put("/occupancy-rules/{area_id}", response_model=OccupancyRuleListDTO, status_code=status.HTTP_201_CREATED)
+async def add_occupancy_rules(area_id: str, new_rules: OccupancyRuleListDTO):
+    """
+    Adds new time-based occupancy rules to an area.
+    """
+    config = get_config()
+    areas = config.get_areas()
+    area = next((a for a in areas if a.id == area_id), None)
+    if not area:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+
+    area_config_path = area.get_config_path()
+    Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
+
+    if os.path.exists(area_config_path):
+        with open(area_config_path, "r") as area_file:
+            data = json.load(area_file)
+    else:
+        data = {}
+
+    with open(area_config_path, "w") as area_file:
+        data["occupancy_rules"] = new_rules.to_store_json()["occupancy_rules"]
+        json.dump(data, area_file)
+
+    return new_rules
+
+
+@areas_router.get("/occupancy-rules/{area_id}", response_model=OccupancyRuleListDTO)
+async def get_area_occupancy_rules(area_id: str):
+    """
+    Returns time-based occupancy rules for an area.
+    """
+    config = get_config()
+    areas = config.get_areas()
+    area = next((area for area in areas if area.id == area_id), None)
+    if not area:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+    area_config_path = area.get_config_path()
+
+    if not os.path.exists(area_config_path):
+        return OccupancyRuleListDTO.parse_obj([])
+
+    with open(area_config_path, "r") as area_file:
+        rules_data = json.load(area_file)
+    return OccupancyRuleListDTO.from_store_json(rules_data)
+
+
+@areas_router.delete("/occupancy-rules/{area_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_occupancy_rules(area_id: str):
+    """
+    Deletes the time-based occupancy rules of an area.
+    """
+    config = get_config()
+    areas = config.get_areas()
+    area = next((area for area in areas if area.id == area_id), None)
+    if not area:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+    area_config_path = area.get_config_path()
+
+    if os.path.exists(area_config_path):
+        with open(area_config_path, "r") as area_file:
+            data = json.load(area_file)
+    else:
+        return handle_response(None, False, status.HTTP_204_NO_CONTENT)
+
+    with open(area_config_path, "w") as area_file:
+        del data["occupancy_rules"]
+        json.dump(data, area_file)
+
+    return handle_response(None, True, status.HTTP_204_NO_CONTENT)

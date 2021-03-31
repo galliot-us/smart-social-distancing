@@ -48,11 +48,11 @@ class ProcessorCore:
         sources = self.config.get_video_sources()
         areas = self.config.get_areas()
         for src in sources:
-            should_send_email_notifications = src['should_send_email_notifications']
-            should_send_slack_notifications = src['should_send_slack_notifications']
+            should_send_email_notifications = src.should_send_email_notifications
+            should_send_slack_notifications = src.should_send_slack_notifications
             if should_send_email_notifications or should_send_slack_notifications:
-                interval = src['notify_every_minutes']
-                threshold = src['violation_threshold']
+                interval = src.notify_every_minutes
+                threshold = src.violation_threshold
                 schedule.every(interval).minutes.do(
                     run_check_violations, threshold, self.config, src, interval,
                     should_send_email_notifications, should_send_slack_notifications
@@ -60,18 +60,18 @@ class ProcessorCore:
             else:
                 logger.info(f"should not send notification for camera {src['id']}")
         for area in areas:
-            should_send_email_notifications = area['should_send_email_notifications']
-            should_send_slack_notifications = area['should_send_slack_notifications']
+            should_send_email_notifications = area.should_send_email_notifications
+            should_send_slack_notifications = area.should_send_slack_notifications
             if should_send_email_notifications or should_send_slack_notifications:
-                interval = area['notify_every_minutes']
-                violation_threshold = area['violation_threshold']
+                interval = area.notify_every_minutes
+                violation_threshold = area.violation_threshold
                 if violation_threshold > 0:
                     schedule.every(interval).minutes.do(
                         run_check_violations, violation_threshold, self.config, area, interval,
                         should_send_email_notifications, should_send_slack_notifications
                     ).tag("notification-task")
             else:
-                logger.info(f"should not send notification for camera {area['id']}")
+                logger.info(f"should not send notification for camera {area.id}")
 
     def _serve(self):
         logger.info("Core is listening for commands ... ")

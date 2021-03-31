@@ -204,9 +204,9 @@ class BaseMetric:
             report_file_exists = os.path.isfile(live_report_csv)
             if not os.path.isfile(today_entity_csv):
                 return
-            entity["base_directory"] = entity_directory
             entries_in_interval = int(live_interval * 60 / get_source_logging_interval(config))
             live_data = cls.generate_live_csv_data(config, today_entity_csv, entity, entries_in_interval)
+            assert len(live_data) == len(csv_headers), "Row element count not the same as header count!!"
             with open(live_report_csv, "a") as csvfile:
                 writer = csv.DictWriter(csvfile, fieldnames=headers)
                 if not report_file_exists:
