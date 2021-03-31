@@ -229,12 +229,12 @@ class BaseMetric:
             file_path = os.path.join(reports_directory, f"report_{report_date}.csv")
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path)
-                for index, header in enumerate(cls.csv_headers):
+                for header in cls.csv_headers:
                     if is_numeric_dtype(df[header]):
                         results[header] += np.pad(
                             df[header].to_numpy(), (0, 24 - df[header].to_numpy().size), mode="constant"
                         )
-                    else: # It's a list
+                    else:  # It's a list
                         values = df[header].apply(ast.literal_eval).tolist()
                         entry = np.pad(values, 0, mode="constant").tolist()
                         if is_list_recursively_empty(results[header]):
@@ -273,7 +273,7 @@ class BaseMetric:
                 for header in cls.csv_headers:
                     if isinstance(entity_report_dict[key][header], numbers.Number):
                         base_results[key][header] += entity_report_dict[key][header]
-                    else: # It's a list
+                    else:  # It's a list
                         entry = ast.literal_eval(entity_report_dict[key][header])
                         if is_list_recursively_empty(base_results[key][header]):
                             base_results[key][header] = entry
@@ -358,7 +358,7 @@ class BaseMetric:
                 for header in live_headers:
                     if lastest_entry[header][0].isdigit():
                         report[header] += int(ast.literal_eval(lastest_entry[header]))
-                    else: # It's a list
+                    else:  # It's a list
                         entry = ast.literal_eval(lastest_entry[header])
                         if is_list_recursively_empty(report[header]):
                             report[header] = entry

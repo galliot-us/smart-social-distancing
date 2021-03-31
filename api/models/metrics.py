@@ -198,6 +198,7 @@ class OccupancyWeekly(WeeklyReport, Occupancy):
             }]
         }
 
+
 class InOut(SnakeModel):
     In: List[int]
     Out: List[int]
@@ -214,6 +215,7 @@ class InOutLive(LiveReport):
     EstimatedAverageOccupancy: float
     EstimatedLatestOccupancy: int
     Summary: Tuple[List[str], List[int], List[int]]
+
 
 class InOutHourly(HourlyReports, InOut):
     class Config:
