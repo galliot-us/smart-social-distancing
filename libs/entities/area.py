@@ -27,10 +27,12 @@ class Area(BaseEntity):
 
     @classmethod
     def get_global_areas(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir):
-        config_path = cls.get_config_path()
-        Hay que ver de crear lo que hay en el path, y si no existe crearlo de wanda nara.
-        Ver que los test crean esta carpeta: api/tests/data/mocked_data/data/processor/config/areas/
-        Capaz fue porque habia fallado el test y no llego al rollback (Fallo xq el append de config daba algo que no retornadba anda ).
+        if not os.path.exists(cls.get_config_path()):
+            
+        # Hay que ver de crear lo que hay en el path, y si no existe crearlo de wanda nara.
+        # Ver que los test crean esta carpeta: api/tests/data/mocked_data/data/processor/config/areas/
+        # Capaz fue porque habia fallado el test y no llego al rollback (Fallo xq el append de config daba algo que no retornadba anda ).
+
         section = None
         title = None
         return Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
