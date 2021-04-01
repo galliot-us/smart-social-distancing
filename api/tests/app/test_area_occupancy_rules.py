@@ -5,6 +5,7 @@ from copy import deepcopy
 from api.tests.utils.fixtures_tests import config_rollback_areas
 
 
+# pytest -v api/tests/app/test_area_occupancy_rules.py::TestsOccupancyRules
 class TestsOccupancyRules:
     """ LIVE """
     """ Get Area Occupancy Rules, GET /areas/occupancy-rules/:id """

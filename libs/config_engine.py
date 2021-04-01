@@ -158,14 +158,15 @@ class ConfigEngine:
     def get_areas(self):
         try:
             areas = []
+            is_slack_enabled = self.config["App"]["SlackChannel"] and is_slack_configured()
+            is_email_enabled = is_mailing_configured()
+            config_dir = config_utils.get_area_config_directory(self)
+            area_logs_dir = get_area_log_directory(self)
             for title, section in self.config.items():
                 if title.startswith("Area_"):
-                    is_slack_enabled = self.config["App"]["SlackChannel"] and is_slack_configured()
-                    is_email_enabled = is_mailing_configured()
-                    config_dir = config_utils.get_area_config_directory(self)
-                    area_logs_dir = get_area_log_directory(self)
                     area = Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
                     areas.append(area)
+            areas.append(Area.get_global_areas(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir))
             return areas
         except Exception:
             # Sources are invalid in config file. What should we do?
