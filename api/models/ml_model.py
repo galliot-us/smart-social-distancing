@@ -4,6 +4,18 @@ from typing import List, Optional
 from .base import SnakeModel
 
 
+MODELS_DEVICES = {
+    "Jetson": ["ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio", "openpifpaf_tensorrt"],
+    "EdgeTPU": ["mobilenet_ssd_v2", "pedestrian_ssd_mobilenet_v2", "pedestrian_ssdlite_mobilenet_v2", "posenet"],
+    "Dummy": ["openvino", "openpifpaf_tensorrt", "mobilenet_ssd_v2", "openpifpaf", "yolov3", "ssd_mobilenet_v2_coco",
+              "ssd_mobilenet_v2_pedestrian_softbio", "posenet", "pedestrian_ssd_mobilenet_v2",
+              "pedestrian_ssdlite_mobilenet_v2"],  # All available models.
+    "x86": ["mobilenet_ssd_v2", "openvino", "openpifpaf", "openpifpaf_tensorrt", "yolov3"],
+    "x86-gpu": ["mobilenet_ssd_v2", "openvino", "openpifpaf", "openpifpaf_tensorrt", "yolov3"],
+
+}
+
+
 class MLModelDTO(SnakeModel):
     device: str = Field(example="Jetson")
     name: str = Field(example="openvino")
@@ -27,17 +39,6 @@ class MLModelDTO(SnakeModel):
 
         return tensorrt_precision
 
-    @validator("name")
-    def validate_name(cls, name):
-        if name not in ["openvino", "openpifpaf_tensorrt", "mobilenet_ssd_v2", "openpifpaf", "yolov3",
-                              "ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio", "posenet",
-                              "pedestrian_ssd_mobilenet_v2", "pedestrian_ssdlite_mobilenet_v2"]:
-            raise ValueError('Not valid ML model. Try one of the following: "openvino", "openpifpaf_tensorrt",'
-                             '"mobilenet_ssd_v2", "openpifpaf", "yolov3",'
-                             '"ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio", "posenet",'
-                             '"pedestrian_ssd_mobilenet_v2", "pedestrian_ssdlite_mobilenet_v2".')
-        return name
-
     @validator("image_size")
     def validate_image_size(cls, image_size):
         integers = image_size.split(",")
@@ -53,28 +54,39 @@ class MLModelDTO(SnakeModel):
         return image_size
 
     # Root validators are called after each field validators success.
-    # TODO: discutir con renzo porque esto no esta bueno hacerlo con constantes, si saco lo de name de arriba.
 
     @root_validator(skip_on_failure=True)
     def check_models_and_device(cls, values):
         if values.get("device") == "Jetson":
-            if values.get("name") not in ["ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio",
-                                          "openpifpaf_tensorrt"]:
+            if values.get("name") not in MODELS_DEVICES["Jetson"]:
                 raise ValueError(f'The device {values.get("device")} only supports the following models:'
                                  f'"ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio",'
                                  f'"openpifpaf_tensorrt". ')
+
         elif values.get("device") == "EdgeTPU":
-            if values.get("name") not in ["mobilenet_ssd_v2", "pedestrian_ssd_mobilenet_v2",
-                                          "pedestrian_ssdlite_mobilenet_v2", "posenet"]:
+            if values.get("name") not in MODELS_DEVICES["EdgeTPU"]:
                 raise ValueError(f'The device {values.get("device")} only supports the following models:'
                                  f'"mobilenet_ssd_v2", "pedestrian_ssd_mobilenet_v2","pedestrian_ssdlite_mobilenet_v2",'
                                  f'"posenet". ')
+
         elif values.get("device") == "Dummy":
             # No restrictions on this model.
-            pass
-        elif values.get("device") in ["x86", "x86-gpu"]:
-            if values.get("name") not in ["mobilenet_ssd_v2", "openvino", "openpifpaf", "openpifpaf_tensorrt",
-                                          "yolov3"]:
+            # All available models.
+            if values.get("name") not in MODELS_DEVICES["Dummy"]:
+                raise ValueError('The device {values.get("device")} only supports the following models: '
+                                 '"openvino", "openpifpaf_tensorrt",'
+                                 '"mobilenet_ssd_v2", "openpifpaf", "yolov3",'
+                                 '"ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio", "posenet",'
+                                 '"pedestrian_ssd_mobilenet_v2", "pedestrian_ssdlite_mobilenet_v2".')
+
+        elif values.get("device") == "x86":
+            if values.get("name") not in MODELS_DEVICES["x86"]:
+                raise ValueError(f'The device {values.get("device")} only supports the following models:'
+                                 f'"mobilenet_ssd_v2", "openvino","openpifpaf","openpifpaf_tensorrt"'
+                                 f'"yolov3". ')
+
+        elif values.get("device") == "x86-gpu":
+            if values.get("name") not in MODELS_DEVICES["x86-gpu"]:
                 raise ValueError(f'The device {values.get("device")} only supports the following models:'
                                  f'"mobilenet_ssd_v2", "openvino","openpifpaf","openpifpaf_tensorrt"'
                                  f'"yolov3". ')
@@ -90,10 +102,14 @@ class MLModelDTO(SnakeModel):
             pass
 
         elif values.get("name") == "openpifpaf_tensorrt":
-            # TODO: Is there any "ImageSize" restriction here?
             if values.get("tensorrt_precision") is None:
                 raise ValueError('The model "openpifpaf_tensorrt" requires the parameter "tensorrt_precision", and'
                                  'said parameter can be either 16 or 32.')
+
+            integers = values.get("image_size").split(",")
+            if int(integers[0]) % 16 != 1 or int(integers[0]) % 16 != 1:
+                raise ValueError('First two values of ImageSize must be multiples of 16 plus 1 for openpifpaf_tensorrt.'
+                                 ' Ex: "641,369,3".')
 
         elif values.get("name") == "posenet":
             integers = values.get("image_size").split(",")

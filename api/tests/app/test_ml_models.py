@@ -55,7 +55,7 @@ class TestsModifyMLModel:
         body = {
             "device": "Jetson",
             "name": "openpifpaf_tensorrt",
-            "image_size": "300,300,3",
+            "image_size": "641,369,3",
             "model_path": "string",
             "class_id": 0,
             "min_score": 0.3,
@@ -74,7 +74,7 @@ class TestsModifyMLModel:
         body = {
             "device": "Jetson",
             "name": "openpifpaf_tensorrt",
-            "image_size": "300,300,3",
+            "image_size": "641,369,3",
             "model_path": "string",
             "class_id": 0,
             "min_score": 0.3,
@@ -95,7 +95,7 @@ class TestsModifyMLModel:
         ({"device": {}}, 400),
         ({"device": None}, 400),
         ({"tensorrt_precision": 40}, 400),
-        ({"tensorrt_precision": None}, 400),
+        ({"tensorrt_precision": None}, 200),
         ({"tensorrt_precision": "None"}, 400),
         ({"tensorrt_precision": ""}, 400),
         ({"tensorrt_precision": "string"}, 400),
@@ -173,9 +173,9 @@ class TestsModifyMLModel:
         camera_id = camera["id"]
 
         body = {
-            "device": "Jetson",
-            "name": "openpifpaf_tensorrt",
-            "image_size": "300,300,3",
+            "device": "EdgeTPU",
+            "name": "mobilenet_ssd_v2",
+            "image_size": "641,369,3",
             "model_path": "string",
             "class_id": 0,
             "min_score": 0.3,
@@ -320,7 +320,7 @@ class TestsModifyMLModel:
         body = {
             "device": "Jetson",
             "name": "openpifpaf_tensorrt",
-            "image_size": "300,300,3",
+            "image_size": "641,369,3",
             "model_path": "string",
             "class_id": 0,
             "min_score": 0.3,
@@ -378,7 +378,7 @@ class TestsModifyMLModel:
         body_ml_model = {
             "device": "Jetson",
             "name": "openpifpaf_tensorrt",
-            "image_size": "300,300,3",
+            "image_size": "641,369,3",
             "model_path": "string",
             "class_id": 0,
             "min_score": 0.3,

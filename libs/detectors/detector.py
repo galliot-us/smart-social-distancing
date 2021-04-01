@@ -2,6 +2,8 @@ import cv2 as cv
 import logging
 import numpy as np
 
+from libs.detectors.utils.ml_model_functions import get_model_json_file_or_return_default_values
+
 logger = logging.getLogger(__name__)
 
 
@@ -11,11 +13,10 @@ class Detector:
         self.config = config
         self.device = self.config.get_section_dict("Detector")["Device"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
-        # TODO: Iterator in the below line should be replaced with:
-        #  get_model_json_file_or_return_default_values(self.config, self.device, self.config.get_section_dict(source)["Id"])["variables"]["ImageSize"]
-        self.image_size = [int(i) for i in self.config.get_section_dict("Detector")["ImageSize"].split(",")]
-        # Do: Ctrl + Shift + F and type: "ImageSize" and "get_section_dict("Detector")" (also with this '' quotes)
-
+        self.image_size = [int(i) for i in get_model_json_file_or_return_default_values(self.config, self.device, self.config.get_section_dict(source)["Id"])["variables"]["ImageSize"].split(",")]
+        logger.info("-----------------------------------------")
+        logger.info(source)
+        logger.info("-----------------------------------------")
         self.has_classifier = "Classifier" in self.config.get_sections()
         if self.has_classifier:
             self.classifier_img_size = [

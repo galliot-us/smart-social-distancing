@@ -54,7 +54,7 @@ class Classifier():
         self.config = config
         self.trt_logger = trt.Logger(trt.Logger.INFO)
         self.trt_bin_path = self.config.get_section_dict('Classifier')['ModelPath']
-        self.model_input_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')] 
+        self.model_input_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]  # TODO: Have a look
         self.device = None  # enter your Gpu id here
         self.cuda_context = None 
         self._init_cuda_stuff()
