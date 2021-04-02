@@ -158,6 +158,7 @@ class ConfigEngine:
     def get_areas(self):
         try:
             areas = []
+            cameras_list = []
             is_slack_enabled = self.config["App"]["SlackChannel"] and is_slack_configured()
             is_email_enabled = is_mailing_configured()
             config_dir = config_utils.get_area_config_directory(self)
@@ -166,7 +167,15 @@ class ConfigEngine:
                 if title.startswith("Area_"):
                     area = Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
                     areas.append(area)
-            areas.append(Area.get_global_areas(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir))
+                if title.startswith("Source_"):
+                    # TODO: Fer
+                    # When I run the line below, an exception is raised. title it is just a temporary solution.
+                    # This problem is mentioned in the except block...
+                    # cameras.append(section["Id"])
+                    cameras_list.append(title)
+            cameras_string = ",".join(cameras_list)
+            areas.append(Area.get_global_areas(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir,
+                                               cameras_string))
             return areas
         except Exception:
             # Sources are invalid in config file. What should we do?

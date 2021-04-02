@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime
 
+from constants import ALL_AREAS
 from .base_entity import BaseEntity
 from .occupancy_rule import OccupancyRule
 from libs.utils.utils import validate_file_exists_and_is_not_empty
@@ -26,15 +27,41 @@ class Area(BaseEntity):
         self.load_occupancy_rules()
 
     @classmethod
-    def get_global_areas(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir):
-        if not os.path.exists(cls.get_config_path()):
-            
-        # Hay que ver de crear lo que hay en el path, y si no existe crearlo de wanda nara.
-        # Ver que los test crean esta carpeta: api/tests/data/mocked_data/data/processor/config/areas/
-        # Capaz fue porque habia fallado el test y no llego al rollback (Fallo xq el append de config daba algo que no retornadba anda ).
+    def get_global_areas(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
+        config_path = os.path.join(config_dir, "ALL.json")
+        json_content = {
+            "global_area_all": {
+                "ViolationThreshold": -1,
+                "NotifyEveryMinutes": -1,
+                "Emails": "",
+                "EnableSlackNotifications": "false",  # "N/A"
+                "DailyReport": "false",  # "N/A"
+                "DailyReportTime": "N/A",
+                "OccupancyThreshold": -1,
+                "Id": ALL_AREAS,
+                "Name": ALL_AREAS,
+                "Cameras": cameras_list
+            }
+        }
 
-        section = None
-        title = None
+        if not os.path.exists(config_path):
+            # Create the file with if necessary
+            with open(config_path, 'x') as outfile:
+                json.dump(json_content, outfile)
+            section = json_content["global_area_all"]
+        else:
+            # If file exists, we have to check if there is a key named: "global_area_all".
+            with open(config_path, "r+") as file:
+                file_content = json.load(file)
+
+                if file_content.get("global_area_all") is None:
+                    file_content["global_area_all"] = json_content["global_area_all"]
+                    json.dump(file_content, file)
+                    section = json_content["global_area_all"]
+                else:
+                    section = file_content.get("global_area_all")
+
+        title = "Area_ALL"
         return Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
 
     def load_occupancy_rules(self):
