@@ -13,10 +13,9 @@ class Detector:
         self.config = config
         self.device = self.config.get_section_dict("Detector")["Device"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
-        self.image_size = [int(i) for i in get_model_json_file_or_return_default_values(self.config, self.device, self.config.get_section_dict(source)["Id"])["variables"]["ImageSize"].split(",")]
-        logger.info("-----------------------------------------")
-        logger.info(source)
-        logger.info("-----------------------------------------")
+        self.image_size = [int(i) for i in get_model_json_file_or_return_default_values(
+            self.config, self.device, self.config.get_section_dict(source)["Id"])["variables"]["ImageSize"].split(",")]
+        # TODO: Have a look. Fer. Above
         self.has_classifier = "Classifier" in self.config.get_sections()
         if self.has_classifier:
             self.classifier_img_size = [

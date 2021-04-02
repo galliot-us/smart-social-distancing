@@ -11,8 +11,7 @@ MODELS_DEVICES = {
               "ssd_mobilenet_v2_pedestrian_softbio", "posenet", "pedestrian_ssd_mobilenet_v2",
               "pedestrian_ssdlite_mobilenet_v2"],  # All available models.
     "x86": ["mobilenet_ssd_v2", "openvino", "openpifpaf", "openpifpaf_tensorrt", "yolov3"],
-    "x86-gpu": ["mobilenet_ssd_v2", "openvino", "openpifpaf", "openpifpaf_tensorrt", "yolov3"],
-
+    "x86-gpu": ["mobilenet_ssd_v2", "openvino", "openpifpaf", "openpifpaf_tensorrt", "yolov3"]
 }
 
 
@@ -60,36 +59,29 @@ class MLModelDTO(SnakeModel):
         if values.get("device") == "Jetson":
             if values.get("name") not in MODELS_DEVICES["Jetson"]:
                 raise ValueError(f'The device {values.get("device")} only supports the following models:'
-                                 f'"ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio",'
-                                 f'"openpifpaf_tensorrt". ')
+                                 f' {MODELS_DEVICES["Jetson"]}. ')
 
         elif values.get("device") == "EdgeTPU":
             if values.get("name") not in MODELS_DEVICES["EdgeTPU"]:
                 raise ValueError(f'The device {values.get("device")} only supports the following models:'
-                                 f'"mobilenet_ssd_v2", "pedestrian_ssd_mobilenet_v2","pedestrian_ssdlite_mobilenet_v2",'
-                                 f'"posenet". ')
+                                 f' {MODELS_DEVICES["EdgeTPU"]}. ')
 
         elif values.get("device") == "Dummy":
             # No restrictions on this model.
             # All available models.
             if values.get("name") not in MODELS_DEVICES["Dummy"]:
-                raise ValueError('The device {values.get("device")} only supports the following models: '
-                                 '"openvino", "openpifpaf_tensorrt",'
-                                 '"mobilenet_ssd_v2", "openpifpaf", "yolov3",'
-                                 '"ssd_mobilenet_v2_coco", "ssd_mobilenet_v2_pedestrian_softbio", "posenet",'
-                                 '"pedestrian_ssd_mobilenet_v2", "pedestrian_ssdlite_mobilenet_v2".')
+                raise ValueError(f'The device {values.get("device")} only supports the following models:'
+                                 f' {MODELS_DEVICES["Dummy"]}. ')
 
         elif values.get("device") == "x86":
             if values.get("name") not in MODELS_DEVICES["x86"]:
                 raise ValueError(f'The device {values.get("device")} only supports the following models:'
-                                 f'"mobilenet_ssd_v2", "openvino","openpifpaf","openpifpaf_tensorrt"'
-                                 f'"yolov3". ')
+                                 f' {MODELS_DEVICES["x86"]}. ')
 
         elif values.get("device") == "x86-gpu":
             if values.get("name") not in MODELS_DEVICES["x86-gpu"]:
                 raise ValueError(f'The device {values.get("device")} only supports the following models:'
-                                 f'"mobilenet_ssd_v2", "openvino","openpifpaf","openpifpaf_tensorrt"'
-                                 f'"yolov3". ')
+                                 f' {MODELS_DEVICES["x86-gpu"]}. ')
 
         return values
 

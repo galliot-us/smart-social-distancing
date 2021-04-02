@@ -1,20 +1,23 @@
 import numpy as np
 import tensorrt as trt
 import pycuda.driver as cuda
-import sys 
+import sys
 import time
 import logging
 import os
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
+from libs.detectors.utils.ml_model_functions import get_model_json_file_or_return_default_values
 
-logging.getLogger().setLevel(logging.INFO)
+# logging.getLogger().setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 def allocate_buffers(engine):
     host_inputs = []
     cuda_inputs = []
-    host_outputs = [] 
+    host_outputs = []
     cuda_outputs = []
-    bindings = [] 
+    bindings = []
     for i in range(engine.num_bindings):
         binding = engine[i]
         size = trt.volume(engine.get_binding_shape(binding)) * \
@@ -31,15 +34,15 @@ def allocate_buffers(engine):
     stream = cuda.Stream()  # create a CUDA stream to run inference        
     return bindings, host_inputs, cuda_inputs, host_outputs, cuda_outputs, stream
 
+
 class Classifier():
-    
     """
     Perform image classification with the given model. The model is a tensorrt file
     which if the classifier can not find it at the path it will generate it
     from provided ONNX file.
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     """
-    
+
     def _load_engine(self):
         TRTbinPath = self.trt_bin_path
         if not os.path.exists(TRTbinPath):
@@ -47,16 +50,26 @@ class Classifier():
         with open(TRTbinPath, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
             return runtime.deserialize_cuda_engine(f.read())
 
-    def __init__(self, config):
+    def __init__(self, config, source):
         """Initialize TensorRT plugins, engine and conetxt."""
         self.model = ''
         self.fps = None
         self.config = config
         self.trt_logger = trt.Logger(trt.Logger.INFO)
         self.trt_bin_path = self.config.get_section_dict('Classifier')['ModelPath']
-        self.model_input_size = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]  # TODO: Have a look
+        self.model_input_size = [int(i) for i in
+                                 get_model_json_file_or_return_default_values(
+                                     self.config,
+                                     self.config.get_section_dict("Detector")["Device"],
+                                     self.config.get_section_dict(source)["Id"]
+                                 )["variables"]['ImageSize'].split(',')
+                                 ]  # TODO: Have a look. Checkquear. Fer
+        logger.info("-----------------------------------------")
+        logger.info(source)
+        logger.info(self.model_input_size)
+        logger.info("-----------------------------------------")
         self.device = None  # enter your Gpu id here
-        self.cuda_context = None 
+        self.cuda_context = None
         self._init_cuda_stuff()
 
     def _init_cuda_stuff(self):
@@ -71,7 +84,8 @@ class Classifier():
         self.host_outputs = host_outputs
         self.cuda_inputs = cuda_inputs
         self.cuda_outputs = cuda_outputs
-        self.stream = stream 
+        self.stream = stream
+
     def __del__(self):
         """ Free CUDA memories. """
 
@@ -79,7 +93,6 @@ class Classifier():
         del self.cuda_context
         del self.engine_context
         del self.engine
-
 
     def inference(self, resized_rgb_images):
         """
@@ -96,40 +109,40 @@ class Classifier():
         host_outputs = self.host_outputs
         cuda_inputs = self.cuda_inputs
         cuda_outputs = self.cuda_outputs
-        stream = self.stream 
+        stream = self.stream
         t_begin = time.perf_counter()
         result = []
         scores = []
-        for img in resized_rgb_images: 
+        for img in resized_rgb_images:
             img = np.expand_dims(img, axis=0)
             img = img.astype(np.float32)
 
             host_inputs[0] = np.ravel(np.zeros_like(img))
-        
-            self.cuda_context.push() 
-        
+
+            self.cuda_context.push()
+
             np.copyto(host_inputs[0], img.ravel())
             cuda.memcpy_htod_async(
                 cuda_inputs[0], host_inputs[0], stream)
-               
+
             self.engine_context.execute_async(
                 batch_size=1,
                 bindings=bindings,
                 stream_handle=stream.handle)
-             
+
             cuda.memcpy_dtoh_async(host_outputs[0], cuda_outputs[0], stream)
             stream.synchronize()
             output_dict = host_outputs[0]
             pred = list(np.argmax(host_outputs, axis=1))
-            
+
             # TODO: optimized without for
             for i, itm in enumerate(host_outputs):
-                scores.append(itm[pred[i]]) 
-            
+                scores.append(itm[pred[i]])
+
             result.append(pred[0])
             self.cuda_context.pop()
-        inference_time = float(time.perf_counter() - t_begin) 
-        if len(resized_rgb_images) != 0 :
+        inference_time = float(time.perf_counter() - t_begin)
+        if len(resized_rgb_images) != 0:
             inference_time = inference_time / len(resized_rgb_images)
-        self.fps = convert_infr_time_to_fps(inference_time)   
+        self.fps = convert_infr_time_to_fps(inference_time)
         return result, scores

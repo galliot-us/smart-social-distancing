@@ -32,7 +32,7 @@ class CvEngine:
         self.classifier = None
 
         if "Classifier" in self.config.get_sections():
-            self.classifier = Classifier(self.config)
+            self.classifier = Classifier(self.config, source)
 
         # Init post processors
         self.post_processors = []

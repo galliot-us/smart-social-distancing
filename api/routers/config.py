@@ -98,6 +98,7 @@ async def update_config_file(config: ConfigDTO, reboot_processor: Optional[bool]
 
 @config_router.get("/info", response_model=ConfigInfo)
 async def get_processor_info():
+    # Here we have to specify the camera right? Or are we asking for the default values?
     """
     Returns basic info regarding this processor
     """
