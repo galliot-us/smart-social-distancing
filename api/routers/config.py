@@ -66,7 +66,7 @@ def map_config(config, options):
 def processor_info(config):
     has_been_configured = config.get_boolean("App", "HasBeenConfigured")
     device = config.get_section_dict("Detector")["Device"]
-    if config.get_section_dict("Detector")["Name"] == "openvino":  # TODO: Have a look.
+    if config.get_section_dict("Detector")["Name"] == "openvino":  # TODO: Have a look. Should we delete this?
         device += "-openvino"
     return {
         "version": PROCESSOR_VERSION,

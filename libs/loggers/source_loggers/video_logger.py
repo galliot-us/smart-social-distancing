@@ -101,7 +101,7 @@ class VideoLogger:
                 self.config.get_section_dict('Detector')['Device'],
                 self.camera_id
             )["variables"]["ClassID"]
-        ) # TODO: have a look. Fer
+        )
         roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(self.roi_file_path)
         if roi_contour is not None:
             color = (41, 127, 255)  # #ff7f29 (255, 127, 41)

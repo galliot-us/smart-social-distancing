@@ -63,11 +63,7 @@ class Classifier():
                                      self.config.get_section_dict("Detector")["Device"],
                                      self.config.get_section_dict(source)["Id"]
                                  )["variables"]['ImageSize'].split(',')
-                                 ]  # TODO: Have a look. Checkquear. Fer
-        logger.info("-----------------------------------------")
-        logger.info(source)
-        logger.info(self.model_input_size)
-        logger.info("-----------------------------------------")
+                                 ]
         self.device = None  # enter your Gpu id here
         self.cuda_context = None
         self._init_cuda_stuff()
