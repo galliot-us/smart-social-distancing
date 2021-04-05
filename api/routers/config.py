@@ -63,6 +63,17 @@ def map_config(config, options):
     }
 
 
+def _get_available_metrics(config):
+    detector_model = config.get_section_dict("Detector")["Name"]
+    facemask_available_models = ['openpifpaf', 'openpifpaf_tensorrt', 'posenet']
+    return {
+        "social_distancing": True,
+        "facemask": detector_model in facemask_available_models and "Classifier" in config.get_sections(),
+        "occupancy": True,
+        "in_out": True,
+    }
+
+
 def processor_info(config):
     has_been_configured = config.get_boolean("App", "HasBeenConfigured")
     device = config.get_section_dict("Detector")["Device"]
@@ -71,7 +82,8 @@ def processor_info(config):
     return {
         "version": PROCESSOR_VERSION,
         "device": device,
-        "has_been_configured": has_been_configured
+        "has_been_configured": has_been_configured,
+        "metrics": _get_available_metrics(config),
     }
 
 
