@@ -26,8 +26,11 @@ class Area(BaseEntity):
             self.should_send_slack_notifications = False
         self.load_occupancy_rules()
 
+    def __repr__(self):
+        return f"Area with 'title': {self.section}."
+
     @classmethod
-    def get_global_areas(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
+    def set_global_areas(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
         config_path = os.path.join(config_dir, "ALL.json")
         json_content = {
             "global_area_all": {
@@ -40,7 +43,6 @@ class Area(BaseEntity):
                 "OccupancyThreshold": -1,
                 "Id": ALL_AREAS,
                 "Name": ALL_AREAS,
-                "Cameras": cameras_list
             }
         }
 
@@ -61,7 +63,9 @@ class Area(BaseEntity):
                 else:
                     section = file_content.get("global_area_all")
 
-        title = "Area_ALL"
+        section["Cameras"] = cameras_list
+        title = ALL_AREAS
+
         return Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
 
     def load_occupancy_rules(self):

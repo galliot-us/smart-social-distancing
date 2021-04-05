@@ -11,17 +11,10 @@ class FileSystemLogger:
 
     def __init__(self, config, area: str, logger: str):
         self.config = config
-        if area == "Area_ALL":
-            """
-            # TODO: Fer
-            KeyError: 'Area_ALL'
-            When get_section_dict is called. I have to ask what should we do when area == Area_ALL.
-            What about self.occupancy_log_directory and the update method...
-            
-            Is there any other function that breaks?
-            """
+        if area == ALL_AREAS:
             self.area_id = ALL_AREAS
-        self.area_id = self.config.get_section_dict(area)["Id"]
+        else:
+            self.area_id = self.config.get_section_dict(area)["Id"]
         self.log_directory = config.get_section_dict(logger)["LogDirectory"]
         self.occupancy_log_directory = os.path.join(self.log_directory, self.area_id, "occupancy_log")
         os.makedirs(self.occupancy_log_directory, exist_ok=True)

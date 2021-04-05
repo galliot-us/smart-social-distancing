@@ -167,14 +167,10 @@ class ConfigEngine:
                 if title.startswith("Area_"):
                     area = Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
                     areas.append(area)
-                if title.startswith("Source_"):
-                    # TODO: Fer
-                    # When I run the line below, an exception is raised. title it is just a temporary solution.
-                    # This problem is mentioned in the except block...
-                    # cameras.append(section["Id"])
-                    cameras_list.append(title)
+                elif title.startswith("Source_"):
+                    cameras_list.append(self.config[title]["Id"])
             cameras_string = ",".join(cameras_list)
-            areas.append(Area.get_global_areas(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir,
+            areas.append(Area.set_global_areas(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir,
                                                cameras_string))
             return areas
         except Exception:
