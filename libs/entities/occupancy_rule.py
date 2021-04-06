@@ -11,7 +11,9 @@ class OccupancyRule:
 
     def date_is_included(self, date: datetime):
         t = date.time()
-        return self.days[date.weekday()] and date_before(self.start_hour, t) and date_before(t, self.finish_hour, strict=True)
+        return self.days[date.weekday()] and date_before(self.start_hour, t) and date_before(t, self.finish_hour, strict=True) \
+            and not (t.hour == 0 and t.minute == 0 and t < self.start_hour)
+        # Exclude case where t == 00:00 and start isn't
 
 
 def occ_str_to_time(value: str):
@@ -23,10 +25,10 @@ def occ_str_to_time(value: str):
 
 # Friendly Occupancy Rules Date Compare :-)
 def date_before(start: time, end: time, strict=False):
-    """ Returns True iff start < end or end == 00:00 and start != 00:00 (if strict=True).
+    """ Returns True iff start < end or end == 00:00 (if strict=True).
         Otherwise returns start <= end or end == 00:00
         :-)
     """
     if strict:
-        return start < end or (end.hour == 0 and end.minute == 0 and (start.hour != 0 or start.minute != 0))
+        return start < end or (end.hour == 0 and end.minute == 0)
     return start <= end or (end.hour == 0 and end.minute == 0)

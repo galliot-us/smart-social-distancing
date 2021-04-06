@@ -21,7 +21,10 @@ def map_to_file_format(config_dto: ConfigDTO):
     config_dict["App"] = map_to_config_file_format(config_dto.app)
     config_dict["CORE"] = map_to_config_file_format(config_dto.core)
     for count, area in enumerate(config_dto.areas):
-        config_dict["Area_" + str(count)] = map_to_config_file_format(area)
+        a_cfg = map_to_config_file_format(area)
+        if "Occupancy_rules" in a_cfg:
+            del a_cfg["Occupancy_rules"]
+        config_dict["Area_" + str(count)] = a_cfg
     for count, camera in enumerate(config_dto.cameras):
         config_dict["Source_" + str(count)] = map_to_camera_file_format(camera)
     config_dict["Detector"] = map_to_config_file_format(config_dto.detector)
