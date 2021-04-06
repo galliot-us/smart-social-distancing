@@ -1,0 +1,1 @@
+{"global_area_all": {"ViolationThreshold": -1, "NotifyEveryMinutes": -1, "Emails": "", "EnableSlackNotifications": "false", "DailyReport": "false", "DailyReportTime": "N/A", "OccupancyThreshold": -1, "Id": "ALL", "Name": "ALL"}}

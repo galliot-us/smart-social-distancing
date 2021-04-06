@@ -26,9 +26,6 @@ class Area(BaseEntity):
             self.should_send_slack_notifications = False
         self.load_occupancy_rules()
 
-    def __repr__(self):
-        return f"Area with 'title': {self.section}."
-
     @classmethod
     def set_global_areas(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
         config_path = os.path.join(config_dir, "ALL.json")

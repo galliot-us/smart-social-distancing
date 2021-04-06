@@ -2,6 +2,8 @@
 import logging
 import configparser
 import threading
+
+from constants import ALL_AREAS
 from libs.notifications.slack_notifications import is_slack_configured
 from libs.utils.mailing import is_mailing_configured
 from libs.utils import config as config_utils
@@ -176,6 +178,14 @@ class ConfigEngine:
         except Exception:
             # Sources are invalid in config file. What should we do?
             raise RuntimeError("Invalid areas in config file")
+
+    def get_area_all(self):
+        areas = self.get_areas()
+        area_all = next(area for area in areas if area.id == ALL_AREAS)
+        if not area_all:
+            # Should never happen
+            return None
+        return area_all
 
     def should_send_email_notifications(self, entity):
         if "emails" in entity:

@@ -17,6 +17,7 @@ from .queue_manager import QueueManager
 from .routers.app import app_router
 from .routers.api import api_router
 from .routers.areas import areas_router
+from .routers.area_all import area_all_router
 from .routers.area_loggers import area_loggers_router
 from .routers.auth import auth_router
 from .routers.core import core_router
@@ -72,6 +73,7 @@ class ProcessorAPI:
         app.include_router(config_router, prefix="/config", tags=["Config"], dependencies=dependencies)
         app.include_router(cameras_router, prefix="/cameras", tags=["Cameras"], dependencies=dependencies)
         app.include_router(areas_router, prefix="/areas", tags=["Areas"], dependencies=dependencies)
+        app.include_router(area_all_router, prefix="/all_areas", tags=["Areas"], dependencies=dependencies)
         app.include_router(app_router, prefix="/app", tags=["App"], dependencies=dependencies)
         app.include_router(api_router, prefix="/api", tags=["Api"], dependencies=dependencies)
         app.include_router(core_router, prefix="/core", tags=["Core"], dependencies=dependencies)
