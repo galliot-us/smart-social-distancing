@@ -45,7 +45,13 @@ class TestsGetProcessorInfo:
         expected_response = {
             "version": PROCESSOR_VERSION,
             "device": device,
-            "has_been_configured": has_been_configured
+            "has_been_configured": has_been_configured,
+            "metrics": {
+                "social_distancing": True,
+                "facemask": False,
+                "occupancy": True,
+                "in_out": True,
+            }
         }
 
         assert response.status_code == 200
