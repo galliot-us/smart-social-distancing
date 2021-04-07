@@ -660,7 +660,6 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `web_hook_logger`: Allows you to configure an external endpoint to receive in real-time the object detections and violations.
     - `Endpoint`: Configures an endpoint url.
     - `Authorization`: Configures the Authorization header. For example: *Bearer <your_token>*.
-
  
 - `[AreaLogger_N]`:
 
