@@ -27,7 +27,7 @@ class Area(BaseEntity):
         self.load_occupancy_rules()
 
     @classmethod
-    def set_global_areas(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
+    def set_global_area(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
         config_path = os.path.join(config_dir, "ALL.json")
         json_content = {
             "global_area_all": {

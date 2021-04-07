@@ -65,16 +65,15 @@ async def modify_area_all(area_information: AreaNotificationConfig):
     if not os.path.exists(config_path):
         # Create the file with if necessary
         with open(config_path, 'x') as outfile:
-            json.dump(json_content, outfile)
-    else:
-        # If file exists, we have to modify the content in: "global_area_all".
-        with open(config_path, "r") as file:
-            file_content = json.load(file)
+            json.dump({"global_area_all": {}}, outfile)
 
-        file_content["global_area_all"] = json_content["global_area_all"]
+    with open(config_path, "r") as file:
+        file_content = json.load(file)
 
-        with open(config_path, "w") as file:
-            json.dump(file_content, file)
+    file_content["global_area_all"] = json_content["global_area_all"]
+
+    with open(config_path, "w") as file:
+        json.dump(file_content, file)
 
     area_all = config.get_area_all()
     json_content["global_area_all"]["Cameras"] = ",".join(area_all.cameras)

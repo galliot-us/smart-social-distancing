@@ -172,7 +172,7 @@ class ConfigEngine:
                 elif title.startswith("Source_"):
                     cameras_list.append(self.config[title]["Id"])
             cameras_string = ",".join(cameras_list)
-            areas.append(Area.set_global_areas(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir,
+            areas.append(Area.set_global_area(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir,
                                                cameras_string))
             return areas
         except Exception:
