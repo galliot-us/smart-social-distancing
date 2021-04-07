@@ -101,18 +101,7 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     success = update_config(config_dict, reboot_processor)
 
     if occupancy_rules:
-        area_config_path = get_config().get_area_config_path(new_area.id)
-        Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
-
-        if os.path.exists(area_config_path):
-            with open(area_config_path, "r") as area_file:
-                data = json.load(area_file)
-        else:
-            data = {}
-
-        with open(area_config_path, "w") as area_file:
-            data["occupancy_rules"] = occupancy_rules.to_store_json()["occupancy_rules"]
-            json.dump(data, area_file)
+        set_occupancy_rules(new_area.id, occupancy_rules)
 
     if not success:
         return handle_response(area_dict, success, status.HTTP_201_CREATED)
@@ -159,18 +148,7 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     success = update_config(config_dict, reboot_processor)
 
     if occupancy_rules:
-        area_config_path = get_config().get_area_config_path(edited_area.id)
-        Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
-
-        if os.path.exists(area_config_path):
-            with open(area_config_path, "r") as area_file:
-                data = json.load(area_file)
-        else:
-            data = {}
-
-        with open(area_config_path, "w") as area_file:
-            data["occupancy_rules"] = occupancy_rules.to_store_json()["occupancy_rules"]
-            json.dump(data, area_file)
+        set_occupancy_rules(edited_area.id, occupancy_rules)
     else:
         delete_area_occupancy_rules(area_id)
 
@@ -228,6 +206,21 @@ def get_area_occupancy_rules(area_id: str):
     with open(area_config_path, "r") as area_file:
         rules_data = json.load(area_file)
     return OccupancyRuleListDTO.from_store_json(rules_data)
+
+
+def set_occupancy_rules(area_id: str, rules):
+    area_config_path = get_config().get_area_config_path(area_id)
+    Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
+
+    if os.path.exists(area_config_path):
+        with open(area_config_path, "r") as area_file:
+            data = json.load(area_file)
+    else:
+        data = {}
+
+    with open(area_config_path, "w") as area_file:
+        data["occupancy_rules"] = rules.to_store_json()["occupancy_rules"]
+        json.dump(data, area_file)
 
 
 def delete_area_occupancy_rules(area_id: str):
