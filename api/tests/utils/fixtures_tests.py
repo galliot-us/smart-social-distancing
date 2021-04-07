@@ -1,3 +1,5 @@
+import json
+
 import pytest
 import shutil
 import os
@@ -6,12 +8,16 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from constants import ALL_AREAS
 from libs.config_engine import ConfigEngine
 from api.settings import Settings
 from api.tests.utils.common_functions import create_app_config
+from libs.utils import config as config_utils
+
 
 from .example_models import camera_template, camera_example, camera_example_2, camera_example_3, camera_example_4,\
     area_example, area_example_2
+from ...utils import get_config
 
 
 def config_rollback_base(option="JUST_CAMERAS"):
@@ -167,3 +173,20 @@ def heatmap_simulation():
     yield None
     # Deletes everything
     shutil.rmtree(heatmap_directory)
+
+
+@pytest.fixture
+def rollback_area_all_json():
+    config_directory = config_utils.get_area_config_directory(get_config())
+    config_path = os.path.join(config_directory, ALL_AREAS + ".json")
+
+    try:
+        with open(config_path, "r") as file:
+            file_content = json.load(file)
+    except Exception:
+        yield False
+    else:
+        yield True
+        with open(config_path, "w") as file:
+            json.dump(file_content, file)
+

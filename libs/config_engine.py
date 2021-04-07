@@ -182,9 +182,6 @@ class ConfigEngine:
     def get_area_all(self):
         areas = self.get_areas()
         area_all = next(area for area in areas if area.id == ALL_AREAS)
-        if not area_all:
-            # Should never happen
-            return None
         return area_all
 
     def should_send_email_notifications(self, entity):

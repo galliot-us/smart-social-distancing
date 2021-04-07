@@ -5,11 +5,11 @@ import re
 from fastapi import APIRouter, status
 from starlette.exceptions import HTTPException
 
-from api.models.area import AreaConfigDTO
+from api.models.area import AreaConfigDTO, AreaNotificationConfig
 from api.utils import get_config
 from constants import ALL_AREAS
 from libs.utils import config as config_utils
-from libs.entities.area import Area
+
 
 area_all_router = APIRouter()
 
@@ -23,7 +23,7 @@ async def get_area_all():
     area_all = config.get_area_all()
 
     if area_all is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: 'ALL' does not exist")
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=f"The area: 'ALL' does not exist")
 
     return {
         "violation_threshold": area_all.violation_threshold,
@@ -40,7 +40,7 @@ async def get_area_all():
 
 
 @area_all_router.put("", response_model=AreaConfigDTO)
-async def modify_area_all(area_information: AreaConfigDTO):
+async def modify_area_all(area_information: AreaNotificationConfig):
     """
     Edits the configuration related to the area "ALL", an area that contains all cameras.
     """
