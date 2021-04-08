@@ -10,6 +10,7 @@ class SourceLoggerDTO(OptionalSectionConfig):
     timeInterval: Optional[float] = Field(example=0.5)
     logDirectory: Optional[str] = Field(example="/repo/data/processor/static/data/sources")
     endpoint: Optional[str] = Field(example="https://my-endpoint/")
+    authorization: Optional[str] = Field(example="Bearer Token")
     screenshotsDirectory: Optional[str] = Field(example="/repo/data/processor/static/screenshots")
 
     @validator("name")
@@ -38,6 +39,7 @@ class FileSystemLoggerDTO(OptionalSectionConfig):
 
 class WebHookLogger(OptionalSectionConfig):
     endpoint: str = Field("", example="https://my-endpoint/")
+    authorization: str = Field("", example="Bearer Token")
 
 
 class SourceLoggerListDTO(SnakeModel):
