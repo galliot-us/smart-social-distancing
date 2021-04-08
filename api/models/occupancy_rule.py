@@ -50,7 +50,7 @@ class AreaOccupancyRule(SnakeModel):
         return t
 
     @validator('max_occupancy')
-    def max_occupancy_must_be_opsitive(cls, max_occupancy):
+    def max_occupancy_must_be_positive(cls, max_occupancy):
         if max_occupancy < 0:
             raise ValueError("'max_occupancy' must be > 0")
         return max_occupancy

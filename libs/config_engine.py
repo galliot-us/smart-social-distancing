@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import os
 import logging
 import configparser
 import threading
@@ -170,6 +171,9 @@ class ConfigEngine:
         except Exception:
             # Sources are invalid in config file. What should we do?
             raise RuntimeError("Invalid areas in config file")
+
+    def get_area_config_path(self, area_id):
+        return os.path.join(config_utils.get_area_config_directory(self), area_id + ".json")
 
     def should_send_email_notifications(self, entity):
         if "emails" in entity:

@@ -87,14 +87,12 @@ class BaseMetric:
     def compute_hourly_metrics(cls, config):
         if not cls.reports_folder:
             raise Exception(f"The metric {cls} doesn't have configured the folder parameter")
-        base_directory = cls.get_entity_base_directory(config)
         entities = cls.get_entities(config)
         current_hour = datetime.now().hour
         for entity in entities:
             if not cls.can_execute(config, entity):
                 continue
-            entity_directory = os.path.join(base_directory, entity["id"])
-            entity["base_directory"] = entity_directory
+            entity_directory = entity.base_directory
             log_directory = None
             if cls.entity == "source":
                 log_directory = os.path.join(entity_directory, "objects_log")

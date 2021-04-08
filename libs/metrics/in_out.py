@@ -78,7 +78,7 @@ class InOutMetric(BaseMetric):
         boundary_names = [boundary["name"] for boundary in boundaries]
         hourly_summary = [0, 0, 0, 0, 0, [boundary_names, [0] * len(boundaries), [0] * len(boundaries)]]
         summary = [copy.deepcopy(hourly_summary) for x in range(len(objects_logs))]
-        reports_directory = os.path.join(entity["base_directory"], "reports", cls.reports_folder)
+        reports_directory = os.path.join(entity.base_directory, "reports", cls.reports_folder)
         daily_csv = os.path.join(reports_directory, "report_" + str(cls.get_report_date()) + ".csv")
         latest_estimated_occupancy = _read_estimated_latest_occupancy(daily_csv)
 
@@ -105,7 +105,7 @@ class InOutMetric(BaseMetric):
         boundaries = cls.retrieve_in_out_boundaries(config, entity["id"])
         boundary_names = [boundary["name"] for boundary in boundaries]
 
-        live_csv = os.path.join(entity["base_directory"], "reports", cls.reports_folder, "live.csv")
+        live_csv = os.path.join(entity.base_directory, "reports", cls.reports_folder, "live.csv")
         latest_estimated_occupancy = _read_estimated_latest_occupancy(live_csv)
         summary = [0, 0, 0, 0, 0, [boundary_names, [0] * len(boundaries), [0] * len(boundaries)]]
         with open(today_entity_csv, "r") as log:

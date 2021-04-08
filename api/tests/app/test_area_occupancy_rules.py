@@ -11,52 +11,67 @@ class TestsOccupancyRules:
     """ Set Area Occupancy Rules, PUT /areas/occupancy-rules/:id """
     """ Delete Area Occupancy Rules, DELETE /areas/occupancy-rules/:id """
 
-    base_data = [
-        {
-            "days": [True, True, False, False, False, True, True],
-            "start_hour":"12:00",
-            "finish_hour":"00:00",
-            "max_occupancy":12
-        }, {
-            "days": [True, True, False, False, False, True, True],
-            "start_hour":"00:00",
-            "finish_hour":"11:00",
-            "max_occupancy":11
-        }
-    ]
+    base_data = {"occupancy_rules":
+        [
+            {
+                "days": [True, True, False, False, False, True, True],
+                "start_hour":"12:00",
+                "finish_hour":"00:00",
+                "max_occupancy":12
+            }, {
+                "days": [True, True, False, False, False, True, True],
+                "start_hour":"00:00",
+                "finish_hour":"11:00",
+                "max_occupancy":11
+            }
+        ],
+        "id": 5,
+        "name": "Kitchen",
+        "cameras": "0"
+    }
 
     def test_set_correct_area_occupancy_rules(self, config_rollback_areas):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=self.base_data)
+        data = deepcopy(self.base_data)
+        data["id"] = area_id
+        response = client.put(f"/areas/{area_id}", json=data)
 
-        assert response.status_code == 201
-        res = response.json()
-        assert len(self.base_data) == len(res)
-        for key in self.base_data[0].keys():
-            assert key in res[0]
-            assert res[0][key] == self.base_data[0][key]
+        assert response.status_code == 200
 
     def test_unitary_set_get_delete(self, config_rollback_areas):
         area, area_2, client, config_sample_path = config_rollback_areas
-        area_id = area['id']
+        area_id = 537
 
-        set_response = client.put(f"/areas/occupancy-rules/{area_id}", json=self.base_data)
-        get_response = client.get(f"/areas/occupancy-rules/{area_id}")
-        delete_response = client.delete(f"/areas/occupancy-rules/{area_id}")
+        data = deepcopy(self.base_data)
+        data["id"] = area_id
+        post_response = client.post(f"/areas", json=data)
+        get_response1 = client.get(f"/areas/{area_id}")
+        data["occupancy_rules"][0]["max_occupancy"] = 100
+        put_response = client.put(f"/areas/{area_id}", json=data)
+        get_response2 = client.get(f"/areas/{area_id}")
+        delete_response = client.delete(f"/areas/{area_id}")
+        get_response3 = client.get(f"/areas/{area_id}")
 
-        assert set_response.status_code == 201
-        assert get_response.status_code == 200
+        assert post_response.status_code == 201
+        assert put_response.status_code == 200
+        assert get_response1.status_code == 200
+        assert get_response2.status_code == 200
         assert delete_response.status_code == 204
+        assert get_response3.status_code == 404
 
-        assert set_response.json() == get_response.json()
+        res1 = get_response1.json()
+        res2 = get_response2.json()
+        assert res1 != res2
+        assert res1["occupancy_rules"][0]["max_occupancy"] == 12
+        assert res2["occupancy_rules"][0]["max_occupancy"] == 100
 
     def test_get_not_found(self, config_rollback_areas):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = 404
 
-        get_response = client.get(f"/areas/occupancy-rules/{area_id}")
+        get_response = client.get(f"/areas/{area_id}")
 
         assert get_response.status_code == 404
 
@@ -64,18 +79,22 @@ class TestsOccupancyRules:
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = 5
 
-        get_response = client.get(f"/areas/occupancy-rules/{area_id}")
+        data = deepcopy(self.base_data)
+        data["id"] = area_id
+        data["occupancy_rules"] = []
+        response = client.put(f"/areas/{area_id}", json=data)
+        get_response = client.get(f"/areas/{area_id}")
 
         assert get_response.status_code == 200
-        assert get_response.json() == []
+        assert get_response.json()["occupancy_rules"] == []
 
     def test_set_invalid_threshold(self, config_rollback_areas):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["max_occupancy"] = -1
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["max_occupancy"] = -1
+        response = client.put(f"/areas/{area_id}", json=data)
 
         assert response.status_code == 400
 
@@ -84,8 +103,8 @@ class TestsOccupancyRules:
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["start_hour"] = "24:60"
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["start_hour"] = "24:60"
+        response = client.put(f"/areas/{area_id}", json=data)
 
         assert response.status_code == 400
 
@@ -94,9 +113,9 @@ class TestsOccupancyRules:
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["start_hour"] = "23:00"
-        data[0]["finish_hour"] = "22:00"
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["start_hour"] = "23:00"
+        data["occupancy_rules"][0]["finish_hour"] = "22:00"
+        response = client.put(f"/areas/{area_id}", json=data)
 
         assert response.status_code == 400
 
@@ -105,11 +124,11 @@ class TestsOccupancyRules:
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["start_hour"] = "12:00"
-        data[0]["finish_hour"] = "22:00"
-        data[1]["start_hour"] = "14:00"
-        data[1]["finish_hour"] = "20:00"
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["start_hour"] = "12:00"
+        data["occupancy_rules"][0]["finish_hour"] = "22:00"
+        data["occupancy_rules"][1]["start_hour"] = "14:00"
+        data["occupancy_rules"][1]["finish_hour"] = "20:00"
+        response = client.put(f"/areas/{area_id}", json=data)
 
         assert response.status_code == 400
 
@@ -118,11 +137,11 @@ class TestsOccupancyRules:
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["start_hour"] = "12:00"
-        data[0]["finish_hour"] = "22:00"
-        data[1]["start_hour"] = "10:00"
-        data[1]["finish_hour"] = "20:00"
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["start_hour"] = "12:00"
+        data["occupancy_rules"][0]["finish_hour"] = "22:00"
+        data["occupancy_rules"][1]["start_hour"] = "10:00"
+        data["occupancy_rules"][1]["finish_hour"] = "20:00"
+        response = client.put(f"/areas/{area_id}", json=data)
 
         assert response.status_code == 400
 
@@ -131,11 +150,24 @@ class TestsOccupancyRules:
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["start_hour"] = "12:00"
-        data[0]["finish_hour"] = "22:00"
-        data[1]["start_hour"] = "20:00"
-        data[1]["finish_hour"] = "23:00"
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["start_hour"] = "12:00"
+        data["occupancy_rules"][0]["finish_hour"] = "22:00"
+        data["occupancy_rules"][1]["start_hour"] = "20:00"
+        data["occupancy_rules"][1]["finish_hour"] = "23:00"
+        response = client.put(f"/areas/{area_id}", json=data)
+
+        assert response.status_code == 400
+
+    def test_set_overlap_zero(self, config_rollback_areas):
+        area, area_2, client, config_sample_path = config_rollback_areas
+        area_id = area['id']
+
+        data = deepcopy(self.base_data)
+        data["occupancy_rules"][0]["start_hour"] = "00:00"
+        data["occupancy_rules"][0]["finish_hour"] = "14:00"
+        data["occupancy_rules"][1]["start_hour"] = "13:00"
+        data["occupancy_rules"][1]["finish_hour"] = "00:00"
+        response = client.put(f"/areas/{area_id}", json=data)
 
         assert response.status_code == 400
 
@@ -144,20 +176,20 @@ class TestsOccupancyRules:
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["start_hour"] = "12:00"
-        data[0]["finish_hour"] = "22:00"
-        data[1]["start_hour"] = "22:00"
-        data[1]["finish_hour"] = "23:00"
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["start_hour"] = "12:00"
+        data["occupancy_rules"][0]["finish_hour"] = "22:00"
+        data["occupancy_rules"][1]["start_hour"] = "22:00"
+        data["occupancy_rules"][1]["finish_hour"] = "23:00"
+        response = client.put(f"/areas/{area_id}", json=data)
 
-        assert response.status_code == 201
+        assert response.status_code == 200
 
     def test_set_wrong_days(self, config_rollback_areas):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
         data = deepcopy(self.base_data)
-        data[0]["days"] = [True, False, True, False, True]  # should be 7
-        response = client.put(f"/areas/occupancy-rules/{area_id}", json=data)
+        data["occupancy_rules"][0]["days"] = [True, False, True, False, True]  # should be 7
+        response = client.put(f"/areas/{area_id}", json=data)
 
         assert response.status_code == 400
