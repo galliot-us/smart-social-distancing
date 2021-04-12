@@ -8,8 +8,7 @@ import os
 from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 from libs.detectors.utils.ml_model_functions import get_model_json_file_or_return_default_values
 
-# logging.getLogger().setLevel(logging.INFO)
-logger = logging.getLogger(__name__)
+logging.getLogger().setLevel(logging.INFO)
 
 
 def allocate_buffers(engine):
