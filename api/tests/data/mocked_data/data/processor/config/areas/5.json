@@ -1,1 +1,0 @@
-{"occupancy_rules": [{"days": [1, 1, 0, 0, 0, 1, 1], "start_hour": "12:00", "finish_hour": "22:00", "max_occupancy": 12}, {"days": [1, 1, 0, 0, 0, 1, 1], "start_hour": "22:00", "finish_hour": "23:00", "max_occupancy": 11}]}

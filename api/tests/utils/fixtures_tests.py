@@ -190,3 +190,12 @@ def rollback_area_all_json():
         with open(config_path, "w") as file:
             json.dump(file_content, file)
 
+
+@pytest.fixture
+def rollback_area_config_path():
+    yield None
+    config_directory = config_utils.get_area_config_directory(get_config())
+    for area_id in [area_example["id"], area_example_2["id"]]:
+        config_path = os.path.join(config_directory, area_id + ".json")
+        if os.path.exists(config_path):
+            os.remove(config_path)

@@ -31,13 +31,13 @@ class Area(BaseEntity):
         config_path = os.path.join(config_dir, "ALL.json")
         json_content = {
             "global_area_all": {
-                "ViolationThreshold": -1,
-                "NotifyEveryMinutes": -1,
+                "ViolationThreshold": 0,
+                "NotifyEveryMinutes": 0,
                 "Emails": "",
                 "EnableSlackNotifications": "false",  # "N/A"
                 "DailyReport": "false",  # "N/A"
                 "DailyReportTime": "N/A",
-                "OccupancyThreshold": -1,
+                "OccupancyThreshold": 0,
                 "Id": ALL_AREAS,
                 "Name": ALL_AREAS,
             }
