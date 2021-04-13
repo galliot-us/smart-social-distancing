@@ -17,10 +17,10 @@ class Detector:
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, model_name, variables):
         self.config = config
-        # Get the model name from the config
-        self.model_name = self.config.get_section_dict('Detector')['Name']
+        self.model_name = model_name
+        self.model_variables = variables
         # Frames Per Second
         self.fps = None
         self.model_file = 'ped_ssdlite_mobilenet_v2_quantized_edgetpu.tflite'
@@ -28,7 +28,7 @@ class Detector:
 
         # Get the model .tflite file path from the config.
         # If there is no .tflite file in the path it will be downloaded automatically from base_url
-        user_model_path = self.config.get_section_dict('Detector')['ModelPath']
+        user_model_path = self.model_variables['ModelPath']
         if len(user_model_path) > 0:
             print('using %s as model' % user_model_path)
             self.model_path = user_model_path
@@ -48,8 +48,8 @@ class Detector:
         self.output_details = self.interpreter.get_output_details()
 
         # Get class id from config
-        self.class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-        self.score_threshold = float(self.config.get_section_dict('Detector')['MinScore'])
+        self.class_id = int(self.model_variables['ClassID'])
+        self.score_threshold = float(self.model_variables['MinScore'])
 
     def inference(self, resized_rgb_image):
         """

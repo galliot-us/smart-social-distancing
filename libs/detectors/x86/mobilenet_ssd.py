@@ -33,12 +33,14 @@ class Detector:
     from neuralet repository automatically.
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
+    :model_name: Name of the ML model.
+    :variables: A dict with all the variables needed for the ML model.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, model_name, variables):
         self.config = config
-        # Get the model name from the config
-        self.model_name = self.config.get_section_dict('Detector')['Name']
+        self.model_name = model_name
+        self.model_variables = variables
         # Frames Per Second
         self.fps = None
 
@@ -67,8 +69,8 @@ class Detector:
         labels = output_dict['detection_classes']
         scores = output_dict['detection_scores']
 
-        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-        score_threshold = float(self.config.get_section_dict('Detector')['MinScore'])
+        class_id = int(self.model_variables['ClassID'])
+        score_threshold = float(self.model_variables['MinScore'])
         result = []
         for i in range(boxes.shape[1]):  # number of boxes
             if labels[0, i] == class_id and scores[0, i] > score_threshold:

@@ -10,13 +10,13 @@ class Classifier:
     input image in order to get the classifier results.
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     """
-    def __init__(self, config):
+    def __init__(self, config, source):
         self.config = config
         self.classifier = None
         classifier_section = self.config.get_section_dict("Classifier")
         if classifier_section["Device"] == "Jetson":
             from .jetson.classifier import Classifier as JetClassifier
-            self.classifier = JetClassifier(self.config)
+            self.classifier = JetClassifier(self.config, source)
         elif classifier_section["Device"] == "EdgeTPU":
             from .edgetpu.classifier import Classifier as EdgeClassifier
             self.classifier = EdgeClassifier(self.config)

@@ -9,13 +9,13 @@ class Classifier:
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     """
-    def __init__(self, config):
+    def __init__(self, config, source):
         self.config = config
         self.name = self.config.get_section_dict('Classifier')['Name']
 
         if self.name == 'OFMClassifier':
             from libs.classifiers.jetson import face_mask
-            self.net = face_mask.Classifier(self.config)
+            self.net = face_mask.Classifier(self.config, source)
         else:
             raise ValueError('Not supported network named: ', self.name)
 
