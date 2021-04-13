@@ -6,15 +6,15 @@ This file includes a list of notable changes to this project.
 Released on 2021-04-13.
 
 #### Added:
-Partial (read-only) support for global Area ([#150](https://github.com/neuralet/smart-social-distancing/pull/150))
-Occupancy rules for business hours ([#154](https://github.com/neuralet/smart-social-distancing/pull/154), [#160](https://github.com/neuralet/smart-social-distancing/pull/160))
-Include processor capabilities in the config/info endpoint. ([#159](https://github.com/neuralet/smart-social-distancing/pull/159))
-Include authorization header in webhook logger ([#161](https://github.com/neuralet/smart-social-distancing/pull/161))
-Support different models per camera ([#148](https://github.com/neuralet/smart-social-distancing/pull/148))
-Estimate occupancy with In/Out metrics ([#157](https://github.com/neuralet/smart-social-distancing/pull/157))
+* Partial (read-only) support for global Area ([#150](https://github.com/neuralet/smart-social-distancing/pull/150))
+* Occupancy rules for business hours ([#154](https://github.com/neuralet/smart-social-distancing/pull/154), [#160](https://github.com/neuralet/smart-social-distancing/pull/160))
+* Include processor capabilities in the config/info endpoint ([#159](https://github.com/neuralet/smart-social-distancing/pull/159))
+* Include authorization header in webhook logger ([#161](https://github.com/neuralet/smart-social-distancing/pull/161))
+* Support different models per camera ([#148](https://github.com/neuralet/smart-social-distancing/pull/148))
+* Estimate occupancy with In/Out metrics ([#157](https://github.com/neuralet/smart-social-distancing/pull/157))
 
 #### Fixed:
-Add .keep in occupancy log directories ([#155](https://github.com/neuralet/smart-social-distancing/pull/155))
+* Add .keep in occupancy log directories ([#155](https://github.com/neuralet/smart-social-distancing/pull/155))
 
 ## [0.6.0](https://github.com/neuralet/smart-social-distancing/releases/tag/0.6.0)
 Released on 2021-03-23.
