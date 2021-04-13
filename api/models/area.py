@@ -2,6 +2,7 @@ from pydantic import Field
 from typing import List, Optional
 
 from .base import EntityConfigDTO, NotificationConfig, SnakeModel
+from .occupancy_rule import OccupancyRuleListDTO
 
 
 class AreaNotificationConfig(NotificationConfig):
@@ -10,6 +11,7 @@ class AreaNotificationConfig(NotificationConfig):
 
 class AreaConfigDTO(EntityConfigDTO, AreaNotificationConfig):
     cameras: Optional[str] = Field("", example='cam0,cam1')
+    occupancy_rules: Optional[OccupancyRuleListDTO] = Field([], example=[])
 
 
 class AreasListDTO(SnakeModel):

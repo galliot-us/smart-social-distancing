@@ -87,13 +87,12 @@ class BaseMetric:
     def compute_hourly_metrics(cls, config):
         if not cls.reports_folder:
             raise Exception(f"The metric {cls} doesn't have configured the folder parameter")
-        base_directory = cls.get_entity_base_directory(config)
         entities = cls.get_entities(config)
         current_hour = datetime.now().hour
         for entity in entities:
             if not cls.can_execute(config, entity):
                 continue
-            entity_directory = os.path.join(base_directory, entity["id"])
+            entity_directory = entity.base_directory
             log_directory = None
             if cls.entity == "source":
                 log_directory = os.path.join(entity_directory, "objects_log")
@@ -105,11 +104,7 @@ class BaseMetric:
             os.makedirs(log_directory, exist_ok=True)
             os.makedirs(reports_directory, exist_ok=True)
             time_until = datetime.combine(date.today(), time(current_hour, 0))
-            if current_hour == 0:
-                # Pending to process the latest hour from yesterday
-                report_date = date.today() - timedelta(days=1)
-            else:
-                report_date = date.today()
+            report_date = cls.get_report_date()
             entity_csv = os.path.join(log_directory, str(report_date) + ".csv")
             daily_csv = os.path.join(reports_directory, "report_" + str(report_date) + ".csv")
 
@@ -237,9 +232,9 @@ class BaseMetric:
                         results[header] += np.pad(
                             df[header].to_numpy(), (0, 24 - df[header].to_numpy().size), mode="constant"
                         )
-                    else: # It's a list
+                    else:  # It's a list
                         values = df[header].apply(ast.literal_eval).tolist()
-                        entry = np.pad(values, (0, 24 - len(values)), mode="constant").tolist()
+                        entry = np.pad(values, 0, mode="constant").tolist()
                         if is_list_recursively_empty(results[header]):
                             results[header] = entry
                         else:
@@ -276,7 +271,7 @@ class BaseMetric:
                 for header in cls.csv_headers:
                     if isinstance(entity_report_dict[key][header], numbers.Number):
                         base_results[key][header] += entity_report_dict[key][header]
-                    else: # It's a list
+                    else:  # It's a list
                         entry = ast.literal_eval(entity_report_dict[key][header])
                         if is_list_recursively_empty(base_results[key][header]):
                             base_results[key][header] = entry
@@ -360,8 +355,8 @@ class BaseMetric:
                 times.append(datetime.strptime(lastest_entry["Time"], "%Y-%m-%d %H:%M:%S"))
                 for header in live_headers:
                     if lastest_entry[header][0].isdigit():
-                        report[header] += int(lastest_entry[header])
-                    else: # It's a list
+                        report[header] += int(ast.literal_eval(lastest_entry[header]))
+                    else:  # It's a list
                         entry = ast.literal_eval(lastest_entry[header])
                         if is_list_recursively_empty(report[header]):
                             report[header] = entry
@@ -379,3 +374,11 @@ class BaseMetric:
     @classmethod
     def can_execute(cls, config, entity):
         return True
+
+    @classmethod
+    def get_report_date(cls):
+        if datetime.now().hour == 0:
+            # Pending to process the latest hour from yesterday
+            return date.today() - timedelta(days=1)
+        else:
+            return date.today()

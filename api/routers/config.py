@@ -21,7 +21,10 @@ def map_to_file_format(config_dto: ConfigDTO):
     config_dict["App"] = map_to_config_file_format(config_dto.app)
     config_dict["CORE"] = map_to_config_file_format(config_dto.core)
     for count, area in enumerate(config_dto.areas):
-        config_dict["Area_" + str(count)] = map_to_config_file_format(area)
+        a_cfg = map_to_config_file_format(area)
+        if "Occupancy_rules" in a_cfg:
+            del a_cfg["Occupancy_rules"]
+        config_dict["Area_" + str(count)] = a_cfg
     for count, camera in enumerate(config_dto.cameras):
         config_dict["Source_" + str(count)] = map_to_camera_file_format(camera)
     config_dict["Detector"] = map_to_config_file_format(config_dto.detector)
@@ -63,6 +66,17 @@ def map_config(config, options):
     }
 
 
+def _get_available_metrics(config):
+    detector_model = config.get_section_dict("Detector")["Name"]
+    facemask_available_models = ['openpifpaf', 'openpifpaf_tensorrt', 'posenet']
+    return {
+        "social_distancing": True,
+        "facemask": detector_model in facemask_available_models and "Classifier" in config.get_sections(),
+        "occupancy": True,
+        "in_out": True,
+    }
+
+
 def processor_info(config):
     has_been_configured = config.get_boolean("App", "HasBeenConfigured")
     device = config.get_section_dict("Detector")["Device"]
@@ -71,7 +85,8 @@ def processor_info(config):
     return {
         "version": PROCESSOR_VERSION,
         "device": device,
-        "has_been_configured": has_been_configured
+        "has_been_configured": has_been_configured,
+        "metrics": _get_available_metrics(config),
     }
 
 

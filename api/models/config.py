@@ -50,10 +50,18 @@ class GlobalReportingEmailsInfo(BaseModel):
         }
 
 
+class ConfigMetrics(BaseModel):
+    social_distancing: bool
+    facemask: bool
+    occupancy: bool
+    in_out: bool
+
+
 class ConfigInfo(BaseModel):
     version: str
     device: str
     has_been_configured: bool
+    metrics: ConfigMetrics
 
     class Config:
         schema_extra = {
