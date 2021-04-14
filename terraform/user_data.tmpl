@@ -1,0 +1,34 @@
+#!/bin/bash
+sudo yum update -y
+sudo amazon-linux-extras install docker -y
+sudo service docker start
+
+#docker-ec2user
+
+sudo groupadd docker
+sudo gpasswd -a ec2-user docker
+sudo usermod -aG docker ec2-user
+
+
+sudo yum install nvidia* -y
+
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
+   && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.repo | sudo tee /etc/yum.repos.d/nvidia-docker.repo
+
+sudo yum clean expire-cache
+
+sudo systemctl restart docker
+
+sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
+
+#Api
+sudo yum install git -y
+git clone https://github.com/neuralet/smart-social-distancing.git
+cd smart-social-distancing
+git fetch --tags
+git checkout $(git tag | tail -1)
+./download-x86-openpifpaf-model.sh
+
+#docker run -d -it --gpus all --restart unless-stopped --name smart-social-distancing -p 443:8000 -v $PWD/data:/repo/data -v $PWD/certs:/repo/certs -v $PWD/config-x86-gpu-tensorrt.ini:/repo/config-x86-gpu-tensorrt.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+
+#-v $PWD/certs:/repo/certs
