@@ -14,6 +14,7 @@ class ExportDataType(str, Enum):
     occupancy = "occupancy"
     social_distancing = "social-distancing"
     facemask_usage = "facemask-usage"
+    in_out = "in-out"
     all_data = "all_data"
 
 

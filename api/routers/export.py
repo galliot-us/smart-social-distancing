@@ -12,7 +12,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 from api.models.export import ExportDTO, ExportDataType
 from api.utils import extract_config, clean_up_file
-from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric
+from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ ALL_DATA = ExportDataType.all_data
 RAW_DATA = ExportDataType.raw_data
 SOCIAL_DISTANCING = ExportDataType.social_distancing
 FACEMASK_USAGE = ExportDataType.facemask_usage
+IN_OUT = ExportDataType.in_out
 OCCUPANCY = ExportDataType.occupancy
 
 
@@ -135,6 +136,17 @@ def export_camera_data_into_file(export_info: ExportDTO, camera_id: str, camera_
             export_info.from_date,
             export_info.to_date
         )
+    if ALL_DATA in export_info.data_types or IN_OUT in export_info.data_types:
+        in_out_reports_folder = f"reports/{InOutMetric.reports_folder}"
+        in_out_reports_path = os.path.join(
+            os.getenv("SourceLogDirectory"), camera_id, in_out_reports_folder)
+        export_folder_into_zip(
+            in_out_reports_path,
+            os.path.join("cameras", f"{camera_id}-{camera_name}", in_out_reports_folder),
+            zip_file,
+            export_info.from_date,
+            export_info.to_date
+        )
 
 
 def export_area_data_into_file(export_info: ExportDTO, area_id: str, area_name: str, zip_file: str) -> None:
@@ -171,7 +183,7 @@ async def export(export_info: ExportDTO, background_tasks: BackgroundTasks):
     - *Entity*: (areas or cameras).
     - *Dates*: (only include data for the specified date range).
     - *Data Type*: (the type of information that you want to export. The available values are raw_data, occupancy,
-        social-distancing, facemask-usage and all_data)
+        social-distancing, facemask-usage, in-out and all_data)
     """
     areas = get_areas_to_export(export_info)
     cameras = get_cameras_to_export(export_info, areas)
