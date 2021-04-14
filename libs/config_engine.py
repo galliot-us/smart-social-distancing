@@ -151,7 +151,8 @@ class ConfigEngine:
                     is_email_enabled = is_mailing_configured()
                     config_dir = config_utils.get_source_config_directory(self)
                     video_source_logs_dir = get_source_log_directory(self)
-                    src = VideoSource(section, title, is_email_enabled, is_slack_enabled, config_dir, video_source_logs_dir)
+                    src = VideoSource(section, title, is_email_enabled, is_slack_enabled, config_dir,
+                                      video_source_logs_dir)
                     sources.append(src)
             return sources
         except Exception:
@@ -174,7 +175,7 @@ class ConfigEngine:
                     cameras_list.append(self.config[title]["Id"])
             cameras_string = ",".join(cameras_list)
             areas.append(Area.set_global_area(is_email_enabled, is_slack_enabled, config_dir, area_logs_dir,
-                                               cameras_string))
+                                              cameras_string))
             return areas
         except Exception:
             # Sources are invalid in config file. What should we do?
@@ -201,5 +202,6 @@ class ConfigEngine:
             if is_slack_configured():
                 return True
             else:
-                self.logger.warning("Tried to enable slack notifications but slack_token.txt is either missing or unauthorized")
+                self.logger.warning(
+                    "Tried to enable slack notifications but slack_token.txt is either missing or unauthorized")
         return False

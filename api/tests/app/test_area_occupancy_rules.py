@@ -1,4 +1,9 @@
+import pytest
+import os
 from copy import deepcopy
+
+from api.utils import get_config
+from libs.utils import config as config_utils
 
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
@@ -67,6 +72,12 @@ class TestsOccupancyRules:
         assert res1 != res2
         assert res1["occupancy_rules"][0]["max_occupancy"] == 12
         assert res2["occupancy_rules"][0]["max_occupancy"] == 100
+
+        # Rollback the config file for area ID: 537
+        config_directory = config_utils.get_area_config_directory(get_config())
+        config_path = os.path.join(config_directory, str(area_id) + ".json")
+        if os.path.exists(config_path):
+            os.remove(config_path)
 
     def test_get_not_found(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas

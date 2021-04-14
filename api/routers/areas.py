@@ -1,4 +1,6 @@
+import logging
 import os
+import re
 import shutil
 import json
 from pathlib import Path
@@ -11,6 +13,7 @@ from api.models.area import AreaConfigDTO, AreasListDTO
 from constants import ALL_AREAS
 from .cameras import map_camera, get_cameras
 from api.models.occupancy_rule import OccupancyRuleListDTO
+from libs.utils import config as config_utils
 from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas, update_config, map_section_from_config,
     map_to_config_file_format, bad_request_serializer
@@ -34,24 +37,24 @@ async def list_areas():
     }
 
 
-def get_all_cameras_ids():
-    ids_list = [camera['id'] for camera in get_cameras()]
-    return ",".join(ids_list)
+def area_all_data():
+    config = get_config()
+    area_all = config.get_area_all()
 
+    if area_all is None:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=f"The area: 'ALL' does not exist")
 
-def all_cameras_area():
-    # Returns information about all the cameras in one area.
     return {
-        "violation_threshold": -1,
-        "notify_every_minutes": -1,
-        "emails": "",
-        "enable_slack_notifications": False,  # "N/A"
-        "daily_report": False,  # "N/A"
-        "daily_report_time": "N/A",
-        "occupancy_threshold": -1,
-        "id": ALL_AREAS,
-        "name": ALL_AREAS,
-        "cameras": get_all_cameras_ids()
+        "violation_threshold": area_all.violation_threshold,
+        "notify_every_minutes": area_all.notify_every_minutes,
+        "emails": ",".join(area_all.emails),
+        "enable_slack_notifications": area_all.enable_slack_notifications,
+        "daily_report": area_all.daily_report,
+        "daily_report_time": area_all.daily_report_time,
+        "occupancy_threshold": area_all.occupancy_threshold,
+        "id": area_all.id,
+        "name": area_all.name,
+        "cameras": ",".join(area_all.cameras)
     }
 
 
@@ -61,10 +64,11 @@ async def get_area(area_id: str):
     Returns the configuration related to the area <area_id>
     """
     if area_id.upper() == ALL_AREAS:
-        return all_cameras_area()
-    area = next((area for area in get_areas() if area["id"] == area_id), None)
-    if not area:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
+        area = area_all_data()
+    else:
+        area = next((area for area in get_areas() if area["id"] == area_id), None)
+        if not area:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
     area["occupancy_rules"] = get_area_occupancy_rules(area["id"])
     return area
 
@@ -74,6 +78,8 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     """
     Adds a new area to the processor.
     """
+    # TODO: We have to autogenerate the ID.
+    # TODO: Test what happens when we send invalid occupancy rules, for example: [{}] (server explodes)
     config = get_config()
     areas = config.get_areas()
     if new_area.id in [area.id for area in areas]:
@@ -97,7 +103,7 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     area_dict = map_to_config_file_format(new_area)
 
     config_dict = extract_config()
-    config_dict[f"Area_{len(areas)}"] = area_dict
+    config_dict[f"Area_{len(areas)-1}"] = area_dict
     success = update_config(config_dict, reboot_processor)
 
     if occupancy_rules:
@@ -113,16 +119,65 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     return next((area for area in get_areas() if area["id"] == area_dict["Id"]), None)
 
 
+def modify_area_all(area_information):
+    """
+    Edits the configuration related to the area "ALL", an area that contains all cameras.
+    """
+    # Doubt: We force the user to send "cameras", since the input must be AreaConfig DTO. However, I don't think
+    # this is entirely correct.
+
+    config = get_config()
+    config_directory = config_utils.get_area_config_directory(config)
+    config_path = os.path.join(config_directory, ALL_AREAS + ".json")
+
+    json_content = {
+        "global_area_all": {
+            "ViolationThreshold": area_information.violationThreshold,
+            "NotifyEveryMinutes": area_information.notifyEveryMinutes,
+            "Emails": area_information.emails,
+            "EnableSlackNotifications": str(area_information.enableSlackNotifications),
+            "DailyReport": str(area_information.dailyReport),
+            "DailyReportTime": area_information.dailyReportTime,
+            "OccupancyThreshold": area_information.occupancyThreshold,
+            "Id": ALL_AREAS,
+            "Name": ALL_AREAS,
+        }
+    }
+
+    if not os.path.exists(config_path):
+        # Create the file with if necessary
+        with open(config_path, 'x') as outfile:
+            json.dump({"global_area_all": {}}, outfile)
+
+    with open(config_path, "r") as file:
+        file_content = json.load(file)
+
+    file_content["global_area_all"] = json_content["global_area_all"]
+
+    with open(config_path, "w") as file:
+        json.dump(file_content, file)
+
+    area_all = config.get_area_all()
+    json_content["global_area_all"]["Cameras"] = ",".join(area_all.cameras)
+
+    return {re.sub(r'(?<!^)(?=[A-Z])', '_', key).lower(): value for key, value in json_content["global_area_all"].items()}
+
+
 @areas_router.put("/{area_id}", response_model=AreaConfigDTO)
 async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: Optional[bool] = True):
     """
     Edits the configuration related to the area <area_id>
     """
+    # TODO: Test what happens when we send invalid occupancy rules, for example: [{}] (server explodes)
     if area_id.upper() == ALL_AREAS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=bad_request_serializer("Area with ID: 'ALL' cannot be edited.", error_type="Invalid ID")
-        )
+        area = modify_area_all(edited_area)
+        if edited_area.occupancy_rules:
+            set_occupancy_rules(ALL_AREAS, edited_area.occupancy_rules)
+        else:
+            delete_area_occupancy_rules(ALL_AREAS)
+        area["occupancy_rules"] = get_area_occupancy_rules(ALL_AREAS)
+        return area
+
     edited_area.id = area_id
     config_dict = extract_config()
     area_names = [x for x in config_dict.keys() if x.startswith("Area_")]
@@ -154,7 +209,9 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
 
     if not success:
         return handle_response(area_dict, success)
-    return next((area for area in get_areas() if area["id"] == area_id), None)
+    area = next((area for area in get_areas() if area["id"] == area_id), None)
+    area["occupancy_rules"] = get_area_occupancy_rules(area["id"])
+    return area
 
 
 @areas_router.delete("/{area_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -163,9 +220,10 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
     Deletes the configuration related to the area <area_id>
     """
     if area_id.upper() == ALL_AREAS:
+        delete_area_occupancy_rules(ALL_AREAS)
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=bad_request_serializer("Area with ID: 'ALL' cannot be deleted.", error_type="Invalid ID")
+            status_code=status.HTTP_202_ACCEPTED,
+            detail="Area with ID: 'ALL' cannot be deleted. However, its occupancy rules were deleted."
         )
     config_dict = extract_config()
     areas_name = [x for x in config_dict.keys() if x.startswith("Area_")]
@@ -201,7 +259,7 @@ def get_area_occupancy_rules(area_id: str):
     area_config_path = area.get_config_path()
 
     if not os.path.exists(area_config_path):
-        return OccupancyRuleListDTO.parse_obj([])
+        return OccupancyRuleListDTO.parse_obj([]).__root__
 
     with open(area_config_path, "r") as area_file:
         rules_data = json.load(area_file)
@@ -209,6 +267,11 @@ def get_area_occupancy_rules(area_id: str):
 
 
 def set_occupancy_rules(area_id: str, rules):
+    """
+    Doubt:
+    I don't think these functions are called correctly in the above endpoints.
+    Rules are lists and lists do not have .to_store_json()
+    """
     area_config_path = get_config().get_area_config_path(area_id)
     Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
 
@@ -230,8 +293,10 @@ def delete_area_occupancy_rules(area_id: str):
         with open(area_config_path, "r") as area_file:
             data = json.load(area_file)
     else:
+        # Doubt: I believe the line below does not have sense at all. why are we sending a 204 status code?
         return handle_response(None, False, status.HTTP_204_NO_CONTENT)
 
     with open(area_config_path, "w") as area_file:
-        del data["occupancy_rules"]
+        if data.get("occupancy_rules") is not None:
+            del data["occupancy_rules"]
         json.dump(data, area_file)
