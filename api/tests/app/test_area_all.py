@@ -99,7 +99,6 @@ class TestsModifyAreaAll:
             "daily_report_time": "06:00",
             "occupancy_threshold": 300,
             "name": "example",  # name is a required field, but will be ignored.
-            "cameras": "50"  # cameras is a required field, but will be ignored.
         }
         response = client.put(f"/areas/{ALL_AREAS}", json=body)
 
@@ -111,9 +110,7 @@ class TestsModifyAreaAll:
     def test_edit_area_all_file_no_body(self, config_rollback_areas, rollback_area_all_json):
         area, area_2, client, config_sample_path = config_rollback_areas
         body = {
-            "cameras": "50",  # cameras is a required field, but will be ignored.
             "name": "example"  # name is a required field, but will be ignored.
-
         }
         response = client.put(f"/areas/{ALL_AREAS}", json=body)
 
@@ -137,7 +134,6 @@ class TestsModifyAreaAll:
             "occupancy_threshold": 300,
             "id": "0",
             "name": "Kitchen", # name is a required field, but will be ignored.
-            "cameras": "0,1" # cameras is a required field, but will be ignored.
         }
         response = client.put(f"/areas/{ALL_AREAS}", json=body)
 
@@ -199,7 +195,6 @@ class TestsModifyAreaAll:
                                                            key_value_dict, status_code):
         area, area_2, client, config_sample_path = config_rollback_areas
         body = {
-            "cameras": "50",  # cameras is a required field, but will be ignored.
             "name": "example"  # name is a required field, but will be ignored.
         }
         body.update(key_value_dict)
@@ -240,7 +235,6 @@ class TestsGetAndModifyAreaAll:
             "daily_report": True,
             "daily_report_time": "06:00",
             "occupancy_threshold": 300,
-            "cameras": "50",  # cameras is a required field, but will be ignored.
             "name": "example"  # name is a required field, but will be ignored.
         }
         response_3 = client.put(f"/areas/{ALL_AREAS}", json=body)
@@ -265,7 +259,6 @@ class TestsGetAndModifyAreaAll:
             "daily_report": False,
             "daily_report_time": "05:40",
             "occupancy_threshold": 250,
-            "cameras": "50",  # cameras is a required field, but will be ignored.
             "name": "example"  # name is a required field, but will be ignored.
         }
         client.put(f"/areas/{ALL_AREAS}", json=body)
@@ -281,9 +274,7 @@ class TestsGetAndModifyAreaAll:
         # Finally, we will incorrectly call the endpoint /PUT. Nothing should change
         body = {
             "occupancy_threshold": "Unacceptable value",
-            "cameras": "50",  # cameras is a required field, but will be ignored.
             "name": "example"  # name is a required field, but will be ignored.
-
         }
         response_7 = client.put(f"/areas/{ALL_AREAS}", json=body)
         assert response_7.status_code == 400

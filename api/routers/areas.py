@@ -123,20 +123,16 @@ def modify_area_all(area_information):
     """
     Edits the configuration related to the area "ALL", an area that contains all cameras.
     """
-    # Doubt: We force the user to send "cameras", since the input must be AreaConfig DTO. However, I don't think
-    # this is entirely correct.
-
     config = get_config()
-    config_directory = config_utils.get_area_config_directory(config)
-    config_path = os.path.join(config_directory, ALL_AREAS + ".json")
+    config_path = config.get_area_config_path(ALL_AREAS)
 
     json_content = {
         "global_area_all": {
             "ViolationThreshold": area_information.violationThreshold,
             "NotifyEveryMinutes": area_information.notifyEveryMinutes,
             "Emails": area_information.emails,
-            "EnableSlackNotifications": str(area_information.enableSlackNotifications),
-            "DailyReport": str(area_information.dailyReport),
+            "EnableSlackNotifications": area_information.enableSlackNotifications,
+            "DailyReport": area_information.dailyReport,
             "DailyReportTime": area_information.dailyReportTime,
             "OccupancyThreshold": area_information.occupancyThreshold,
             "Id": ALL_AREAS,
@@ -193,7 +189,8 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     camera_ids = [camera["id"] for camera in cameras]
     if not all(x in camera_ids for x in edited_area.cameras.split(",")):
         non_existent_cameras = set(edited_area.cameras.split(",")) - set(camera_ids)
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The cameras: {non_existent_cameras} do not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The cameras: {non_existent_cameras}"
+                                                                          f"do not exist")
 
     occupancy_rules = edited_area.occupancy_rules
     del edited_area.occupancy_rules
@@ -235,7 +232,7 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The area: {area_id} does not exist")
 
     config_dict.pop(f"Area_{index}")
-    config_dict = reestructure_areas((config_dict))
+    config_dict = reestructure_areas(config_dict)
 
     success = update_config(config_dict, reboot_processor)
 
@@ -267,11 +264,6 @@ def get_area_occupancy_rules(area_id: str):
 
 
 def set_occupancy_rules(area_id: str, rules):
-    """
-    Doubt:
-    I don't think these functions are called correctly in the above endpoints.
-    Rules are lists and lists do not have .to_store_json()
-    """
     area_config_path = get_config().get_area_config_path(area_id)
     Path(os.path.dirname(area_config_path)).mkdir(parents=True, exist_ok=True)
 
@@ -293,8 +285,7 @@ def delete_area_occupancy_rules(area_id: str):
         with open(area_config_path, "r") as area_file:
             data = json.load(area_file)
     else:
-        # Doubt: I believe the line below does not have sense at all. why are we sending a 204 status code?
-        return handle_response(None, False, status.HTTP_204_NO_CONTENT)
+        return handle_response(None, False)
 
     with open(area_config_path, "w") as area_file:
         if data.get("occupancy_rules") is not None:

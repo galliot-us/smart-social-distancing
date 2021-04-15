@@ -10,7 +10,7 @@ class AreaNotificationConfig(NotificationConfig):
 
 
 class AreaConfigDTO(EntityConfigDTO, AreaNotificationConfig):
-    cameras: str = Field(example='cam0,cam1')
+    cameras: Optional[str] = Field("", example='cam0,cam1')
     occupancy_rules: Optional[OccupancyRuleListDTO] = Field([], example=[])
 
 

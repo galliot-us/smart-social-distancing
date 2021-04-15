@@ -10,6 +10,14 @@ from libs.utils import config as config_utils
 from api.tests.utils.fixtures_tests import config_rollback_areas, rollback_area_config_path
 
 
+def rollback_area_config_file(area_id):
+    """area_id must be an string"""
+    config_directory = config_utils.get_area_config_directory(get_config())
+    config_path = os.path.join(config_directory, area_id + ".json")
+    if os.path.exists(config_path):
+        os.remove(config_path)
+
+
 # pytest -v api/tests/app/test_area_occupancy_rules.py::TestsOccupancyRules
 class TestsOccupancyRules:
     """ LIVE """
@@ -73,11 +81,7 @@ class TestsOccupancyRules:
         assert res1["occupancy_rules"][0]["max_occupancy"] == 12
         assert res2["occupancy_rules"][0]["max_occupancy"] == 100
 
-        # Rollback the config file for area ID: 537
-        config_directory = config_utils.get_area_config_directory(get_config())
-        config_path = os.path.join(config_directory, str(area_id) + ".json")
-        if os.path.exists(config_path):
-            os.remove(config_path)
+        rollback_area_config_file(str(area_id))
 
     def test_get_not_found(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas

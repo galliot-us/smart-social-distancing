@@ -34,8 +34,8 @@ class Area(BaseEntity):
                 "ViolationThreshold": 0,
                 "NotifyEveryMinutes": 0,
                 "Emails": "",
-                "EnableSlackNotifications": "false",  # "N/A"
-                "DailyReport": "false",  # "N/A"
+                "EnableSlackNotifications": False,  # "N/A"
+                "DailyReport": False,  # "N/A"
                 "DailyReportTime": "N/A",
                 "OccupancyThreshold": 0,
                 "Id": ALL_AREAS,
