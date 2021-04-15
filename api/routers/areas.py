@@ -79,7 +79,6 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
     Adds a new area to the processor.
     """
     # TODO: We have to autogenerate the ID.
-    # TODO: Test what happens when we send invalid occupancy rules, for example: [{}] (server explodes)
     config = get_config()
     areas = config.get_areas()
     if new_area.id in [area.id for area in areas]:
@@ -166,7 +165,6 @@ async def edit_area(area_id: str, edited_area: AreaConfigDTO, reboot_processor: 
     """
     Edits the configuration related to the area <area_id>
     """
-    # TODO: Test what happens when we send invalid occupancy rules, for example: [{}] (server explodes)
     if area_id.upper() == ALL_AREAS:
         area = modify_area_all(edited_area)
         if edited_area.occupancy_rules:
