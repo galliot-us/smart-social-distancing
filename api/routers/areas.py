@@ -260,7 +260,7 @@ def get_area_occupancy_rules(area_id: str):
     area_config_path = area.get_config_path()
 
     if not os.path.exists(area_config_path):
-        return OccupancyRuleListDTO.parse_obj([]).__root__
+        return []
 
     with open(area_config_path, "r") as area_file:
         rules_data = json.load(area_file)
