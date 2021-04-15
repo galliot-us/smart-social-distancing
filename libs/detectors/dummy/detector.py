@@ -1,6 +1,9 @@
 import numpy as np
 import time
 
+from libs.detectors.utils.ml_model_functions import get_model_json_file_or_return_default_values
+
+
 class Detector:
     """
     Detects Random bounding boxes
@@ -10,12 +13,17 @@ class Detector:
     input image in order to get the detection results.
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
+    :param source: A string that represents the camera. Ex: "Source_1".
     """
 
-    def __init__(self, config):
+    def __init__(self, config, source):
         self.config = config
-        self.name = self.config.get_section_dict('Detector')['Name']
-        self.class_id = self.config.get_section_dict('Detector')['ClassID']
+        camera_id = self.config.get_section_dict(source)["Id"]
+        device = self.config.get_section_dict("Detector")["Device"]
+        model_data = get_model_json_file_or_return_default_values(self.config, device, camera_id)
+
+        self.name = model_data["model_name"]
+        self.class_id = model_data["variables"]['ClassID']
 
     def inference(self, resized_rgb_image):
         self.fps = np.random.choice([0.5, 1, 2])

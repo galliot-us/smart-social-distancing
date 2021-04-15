@@ -9,7 +9,8 @@ from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
 from share.commands import Commands
 
-from libs.utils.loggers import get_area_log_directory, get_source_log_directory, get_screenshots_directory
+from libs.utils.loggers import get_area_log_directory, get_source_log_directory, get_screenshots_directory, \
+    get_config_source_directory, get_config_areas_directory
 from api.utils import bad_request_serializer
 
 from .dependencies import validate_token
@@ -32,6 +33,7 @@ from .routers.source_loggers import source_loggers_router
 from .routers.source_post_processors import source_post_processors_router
 from .routers.static import static_router
 from .routers.tracker import tracker_router
+from .routers.ml_models import ml_model_router
 from .settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -57,7 +59,9 @@ class ProcessorAPI:
 
     def create_fastapi_app(self):
         os.environ["SourceLogDirectory"] = get_source_log_directory(self.settings.config)
+        os.environ["SourceConfigDirectory"] = get_config_source_directory(self.settings.config)
         os.environ["AreaLogDirectory"] = get_area_log_directory(self.settings.config)
+        os.environ["AreaConfigDirectory"] = get_config_areas_directory(self.settings.config)
         os.environ["ScreenshotsDirectory"] = get_screenshots_directory(self.settings.config)
 
         os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("App")["HeatmapResolution"]
@@ -89,6 +93,7 @@ class ProcessorAPI:
         app.include_router(slack_router, prefix="/slack", tags=["Slack"], dependencies=dependencies)
         app.include_router(auth_router, prefix="/auth", tags=["Auth"])
         app.include_router(static_router, prefix="/static", dependencies=dependencies)
+        app.include_router(ml_model_router, prefix="/ml_model", tags=["ML Models"], dependencies=dependencies)
 
         @app.exception_handler(RequestValidationError)
         async def validation_exception_handler(request: Request, exc: RequestValidationError):

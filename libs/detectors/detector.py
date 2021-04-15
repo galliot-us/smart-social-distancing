@@ -2,17 +2,19 @@ import cv2 as cv
 import logging
 import numpy as np
 
+from libs.detectors.utils.ml_model_functions import get_model_json_file_or_return_default_values
+
 logger = logging.getLogger(__name__)
 
 
 class Detector:
 
-    def __init__(self, config):
+    def __init__(self, config, source):
         self.config = config
         self.device = self.config.get_section_dict("Detector")["Device"]
         self.resolution = tuple([int(i) for i in self.config.get_section_dict("App")["Resolution"].split(",")])
-        self.image_size = [int(i) for i in self.config.get_section_dict("Detector")["ImageSize"].split(",")]
-
+        self.image_size = [int(i) for i in get_model_json_file_or_return_default_values(
+            self.config, self.device, self.config.get_section_dict(source)["Id"])["variables"]["ImageSize"].split(",")]
         self.has_classifier = "Classifier" in self.config.get_sections()
         if self.has_classifier:
             self.classifier_img_size = [
@@ -20,16 +22,16 @@ class Detector:
 
         if self.device == "Jetson":
             from .jetson.detector import Detector as JetsonDetector
-            self.detector = JetsonDetector(self.config)
+            self.detector = JetsonDetector(self.config, source)
         elif self.device == "EdgeTPU":
             from .edgetpu.detector import Detector as EdgeTPUDetector
-            self.detector = EdgeTPUDetector(self.config)
+            self.detector = EdgeTPUDetector(self.config, source)
         elif self.device == "Dummy":
             from .dummy.detector import Detector as DummyDetector
-            self.detector = DummyDetector(self.config)
+            self.detector = DummyDetector(self.config, source)
         elif self.device in ["x86", "x86-gpu"]:
             from libs.detectors.x86.detector import Detector as X86Detector
-            self.detector = X86Detector(self.config)
+            self.detector = X86Detector(self.config, source)
         else:
             raise ValueError(f"Detector: Not supported device named: {self.device}")
         if self.device != "Dummy":

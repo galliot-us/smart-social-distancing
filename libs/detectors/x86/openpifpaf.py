@@ -12,17 +12,19 @@ class Detector:
     """
     Perform pose estimation with Openpifpaf model. extract pedestrian's bounding boxes from key-points.
     :param config: Is a ConfigEngine instance which provides necessary parameters.
+    :model_name: Name of the ML model.
+    :variables: A dict with all the variables needed for the ML model.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, model_name, variables):
         self.config = config
-        # Get the model name from the config
-        self.model_name = self.config.get_section_dict('Detector')['Name']
-        self.device = "cuda:0" if self.config.get_section_dict('Detector')['Device'] == "x86-gpu" else "cpu"
+        self.model_name = model_name
+        self.model_variables = variables
+        self.device = "cuda:0" if self.config.get_section_dict("Detector")["Device"] == "x86-gpu" else "cpu"
         # Frames Per Second
         self.fps = None
         self.net, self.processor = self.load_model()
-        self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
+        self.w, self.h, _ = [int(i) for i in self.model_variables['ImageSize'].split(',')]
 
     def load_model(self):
 

@@ -3,8 +3,10 @@ import numpy as np
 import os
 import shutil
 
+from libs.detectors.utils.ml_model_functions import get_model_json_file_or_return_default_values
 from libs.utils import visualization_utils
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
+
 
 class VideoLogger:
 
@@ -93,11 +95,16 @@ class VideoLogger:
         dist_threshold = post_processing_data.get("dist_threshold", 0)
 
         birds_eye_window = np.zeros(self.birds_eye_resolution[::-1] + (3,), dtype="uint8")
-        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-
+        class_id = int(
+            get_model_json_file_or_return_default_values(
+                self.config,
+                self.config.get_section_dict('Detector')['Device'],
+                self.camera_id
+            )["variables"]["ClassID"]
+        )
         roi_contour = ObjectsFilteringPostProcessor.get_roi_contour(self.roi_file_path)
         if roi_contour is not None:
-            color = (41, 127, 255) # #ff7f29 (255, 127, 41)
+            color = (41, 127, 255)  # #ff7f29 (255, 127, 41)
             visualization_utils.draw_contour(cv_image, roi_contour, color)
 
         output_dict = visualization_utils.visualization_preparation(objects, distancings, dist_threshold)

@@ -114,6 +114,8 @@ async def create_area(new_area: AreaConfigDTO, reboot_processor: Optional[bool] 
 
     area_directory = os.path.join(os.getenv("AreaLogDirectory"), new_area.id, "occupancy_log")
     Path(area_directory).mkdir(parents=True, exist_ok=True)
+    area_config_directory = os.path.join(os.getenv("AreaConfigDirectory"), new_area.id)
+    Path(area_config_directory).mkdir(parents=True, exist_ok=True)
 
     # known issue: Occupancy rules not returned
     return next((area for area in get_areas() if area["id"] == area_dict["Id"]), None)
@@ -240,6 +242,8 @@ async def delete_area(area_id: str, reboot_processor: Optional[bool] = True):
 
     area_directory = os.path.join(os.getenv("AreaLogDirectory"), area_id)
     shutil.rmtree(area_directory)
+    area_config_directory = os.path.join(os.getenv("AreaConfigDirectory"), area_id)
+    shutil.rmtree(area_config_directory)
 
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 

@@ -27,12 +27,12 @@ class CvEngine:
         self.resolution = tuple([int(i) for i in self.config.get_section_dict('App')['Resolution'].split(',')])
 
         # Init detector, tracker and classifier
-        self.detector = Detector(self.config)
+        self.detector = Detector(self.config, source)
         self.tracker = Tracker(self.config)
         self.classifier = None
 
         if "Classifier" in self.config.get_sections():
-            self.classifier = Classifier(self.config)
+            self.classifier = Classifier(self.config, source)
 
         # Init post processors
         self.post_processors = []
