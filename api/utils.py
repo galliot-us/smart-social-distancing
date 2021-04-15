@@ -72,13 +72,18 @@ def bad_request_serializer(msg, error_type="unknown error", loc=[]):
     }]
 
 
-def handle_response(response, success, status_code=status.HTTP_200_OK):
+def handle_response(response, success, status_code=status.HTTP_200_OK, decamelize=True):
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to restart video processor, unknown error on config file"
         )
-    content = humps.decamelize(response) if response else None
+
+    if decamelize:
+        content = humps.decamelize(response) if response else None
+    else:
+        content = response
+
     return JSONResponse(status_code=status_code, content=content)
 
 

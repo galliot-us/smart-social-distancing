@@ -8,6 +8,7 @@ from libs.detectors.utils.fps_calculator import convert_infr_time_to_fps
 
 from openvino.inference_engine import IECore
 
+
 class Detector:
     """
     Perform object detection with the given model. The model is a quantized tflite
@@ -15,12 +16,14 @@ class Detector:
     from neuralet repository automatically.
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
+    :model_name: Name of the ML model.
+    :variables: A dict with all the variables needed for the ML model.
     """
 
-    def __init__(self, config):
+    def __init__(self, config, model_name, variables):
         self.config = config
-        # Get the model name from the config
-        self.model_name = self.config.get_section_dict('Detector')['Name']
+        self.model_name = model_name
+        self.model_variables = variables
         # Frames Per Second
         self.fps = None
 
@@ -60,8 +63,8 @@ class Detector:
         # Calculate Frames rate (fps)
         self.fps = convert_infr_time_to_fps(inference_time)
 
-        class_id = int(self.config.get_section_dict('Detector')['ClassID'])
-        score_threshold = float(self.config.get_section_dict('Detector')['MinScore'])
+        class_id = int(self.model_variables['ClassID'])
+        score_threshold = float(self.model_variables['MinScore'])
         result = []
 
         for i, (_, label, score, x_min, y_min, x_max, y_max) in enumerate(output[0][0]):

@@ -15,18 +15,19 @@ class Detector:
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     '''
 
-    def __init__(self, config):
+    def __init__(self, config, model_name, variables):
         self.config = config
-        self.model_name = self.config.get_section_dict('Detector')['Name']
+        self.model_name = model_name
+        self.model_variables = variables
         self.fps = None
-        self.w, self.h, _ = [int(i) for i in self.config.get_section_dict('Detector')['ImageSize'].split(',')]
+        self.w, self.h, _ = [int(i) for i in self.model_variables['ImageSize'].split(',')]
         assert self.w == self.h
         self.model_file = 'yolov3.weights'
         self.model_path = '/repo/data/x86/' + self.model_file
 
         # Get the model .weight file path from the config.
         # If there is no .weight file in the path it will be downloaded automatically from base_url
-        user_model_path = self.config.get_section_dict('Detector')['ModelPath']
+        user_model_path = self.model_variables['ModelPath']
         if len(user_model_path) > 0:
             print('using %s as model' % user_model_path)
             self.model_path = user_model_path
@@ -38,7 +39,7 @@ class Detector:
                 wget.download(url, self.model_path)
 
         self.nms_threshold = 0.5
-        self.confidence = float(self.config.get_section_dict('Detector')['MinScore'])
+        self.confidence = float(self.model_variables['MinScore'])
 
         self._num_classes = 80  # the model is trained on COCO dataset which includes 80 classes
         self._CUDA = torch.cuda.is_available()
