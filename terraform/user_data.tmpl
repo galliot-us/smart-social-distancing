@@ -29,6 +29,3 @@ git fetch --tags
 git checkout $(git tag | tail -1)
 ./download-x86-openpifpaf-model.sh
 
-#docker run -d -it --gpus all --restart unless-stopped --name smart-social-distancing -p 443:8000 -v $PWD/data:/repo/data -v $PWD/certs:/repo/certs -v $PWD/config-x86-gpu-tensorrt.ini:/repo/config-x86-gpu-tensorrt.ini -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
-
-#-v $PWD/certs:/repo/certs
