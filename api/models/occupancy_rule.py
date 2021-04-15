@@ -1,4 +1,4 @@
-from pydantic import Field, validator
+from pydantic import Field, validator, root_validator
 from typing import List, Optional
 from datetime import time
 
@@ -27,25 +27,27 @@ class AreaOccupancyRule(SnakeModel):
         except:  # noqa
             return False
 
+    @root_validator(pre=True)
+    def check_hours(cls, values):
+        assert "start_hour" in values, "start_hour is a required field"
+        assert "finish_hour" in values, "finish_hour is a required field"
+        return values
+
     @validator('days')
     def days_must_be_seven(cls, days):
         if len(days) != 7:
             raise ValueError("'days' must contain 7 bool values")
         return days
 
-    @validator('start_time', always=True)
+    @validator('start_time', always=True, pre=False)
     def start_hour_must_be_valid(cls, v, values):
-        if "start_hour" not in values:
-            raise ValueError("'start_hour' is a required fields")
         t = cls._valid_time(values['start_hour'])
         if not t:
             raise ValueError("'start_hour' is not in valid format")
         return t
 
-    @validator('finish_time', always=True)
+    @validator('finish_time', always=True, pre=False)
     def finish_hour_must_be_valid(cls, v, values):
-        if "finish_hour" not in values or "start_hour" not in values:
-            raise ValueError("'finish_hour' and 'start_hour' are required fields")
         t = cls._valid_time(values["finish_hour"])
         if not t:
             raise ValueError("'finish_hour' is not in valid format")
