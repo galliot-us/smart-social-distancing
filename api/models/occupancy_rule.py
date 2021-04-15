@@ -35,6 +35,8 @@ class AreaOccupancyRule(SnakeModel):
 
     @validator('start_time', always=True)
     def start_hour_must_be_valid(cls, v, values):
+        if "start_hour" not in values:
+            raise ValueError("'start_hour' is a required fields")
         t = cls._valid_time(values['start_hour'])
         if not t:
             raise ValueError("'start_hour' is not in valid format")
@@ -42,7 +44,9 @@ class AreaOccupancyRule(SnakeModel):
 
     @validator('finish_time', always=True)
     def finish_hour_must_be_valid(cls, v, values):
-        t = cls._valid_time(values['finish_hour'])
+        if "finish_hour" not in values or "start_hour" not in values:
+            raise ValueError("'finish_hour' and 'start_hour' are required fields")
+        t = cls._valid_time(values["finish_hour"])
         if not t:
             raise ValueError("'finish_hour' is not in valid format")
         if "start_hour" in values and not date_before(occ_str_to_time(values["start_hour"]), t):
