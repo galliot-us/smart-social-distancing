@@ -1,31 +1,38 @@
-# Generics
-region = "us-east-1"
- 
-tags = [{ Project = "lanthorn",State = "Deploy EC2 with nvidia drivers and docker installed"}]
 
+#If you don't specify the values from some variables, this takes the default values described in the variable.tf file.
+#The variables region,key_name and amiid are required.
+
+# Generics
+region = 
+ 
+tags = 
 
 # Networking
-vpc = [{ name = "lanthorn_vpc", cidr_block = "10.0.0.0/16" , instance_tenancy = "default", enable_dns_hostnames = true, enable_dns_support = true}]
 
-subnet_prefix = [{ name = "lanthron_module_subnet", cidr_block = "10.0.1.0/24", availability_zone = "us-east-1a", map_public_ip_on_launch = true }]
+vpc = 
 
-security_group = [{ name = "lanthron_module_security_group" }]
+subnet_prefix = 
 
-route_table = [{ name = "lanthron_module_route_table", cidr_block = "0.0.0.0/0", ipv6_cidr_block = "::/0" }]
+security_group = 
 
-network_interface = [{ name = "lanthron_module_network_interface", private_ips = ["10.0.1.50"], device_index = 0 }]
+route_table = 
 
+network_interface = 
 
 # EC2
-ec2name = "lanthron-smart-social-distancing"
 
-key_name = "lanthornkey"
+ec2name = 
 
-size = "g4dn.xlarge"
+key_name = 
 
-root_disk = [{ volume_size = "100",volume_type = "gp2"}]
+#We recomend use g4dn.xlarge size.
+size =
 
-amiid = "ami-012e9f6aa634f84f8"
+#We recomend use [{ volume_size = "100",volume_type = "gp2"}] values.
+root_disk = 
+
+#We recomend use "ami-012e9f6aa634f84f8", this ami have ndrivia drivers and gpu.
+amiid = 
 
 # To be run after creation
-user_data_path = "user_data.tmpl"
+user_data_path = 

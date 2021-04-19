@@ -41,7 +41,6 @@ variable "ec2name" {
 }
 variable "key_name" {
   description = "key to be used by the EC2"
-  default     = "default-key_name"
 }
 variable "size" {
   description = "instance type for the EC2"
@@ -58,4 +57,5 @@ variable "amiid" {
 # To be run after creation
 variable "user_data_path" {
   description = "User data file path"
-}
+  default    = "user_data.tmpl"
+} 
