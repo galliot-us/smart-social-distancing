@@ -1,6 +1,7 @@
 import os
 import json
 from datetime import datetime
+import pathlib
 
 from constants import ALL_AREAS
 from .base_entity import BaseEntity
@@ -28,6 +29,7 @@ class Area(BaseEntity):
 
     @classmethod
     def set_global_area(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
+        pathlib.Path(config_dir).mkdir(parents=True, exist_ok=True)
         config_path = os.path.join(config_dir, "ALL.json")
         json_content = {
             "global_area_all": {
