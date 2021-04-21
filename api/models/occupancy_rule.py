@@ -93,9 +93,9 @@ class OccupancyRuleListDTO(SnakeModel):
     @classmethod
     def from_store_json(cls, json_value):
         if "occupancy_rules" not in json_value:
-            return OccupancyRuleListDTO.parse_obj([])
+            return []
         objs = [AreaOccupancyRule.parse_obj(v) for v in json_value["occupancy_rules"]]
-        return OccupancyRuleListDTO.parse_obj(objs)
+        return objs
 
 
 def do_overlap(a: AreaOccupancyRule, b: AreaOccupancyRule):

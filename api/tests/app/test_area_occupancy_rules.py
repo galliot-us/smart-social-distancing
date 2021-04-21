@@ -1,16 +1,30 @@
+import pytest
+import os
 from copy import deepcopy
+
+from api.utils import get_config
+from libs.utils import config as config_utils
 
 # The line below is absolutely necessary. Fixtures are passed as arguments to test functions. That is why IDE could
 # not recognized them.
-from api.tests.utils.fixtures_tests import config_rollback_areas
+from api.tests.utils.fixtures_tests import config_rollback_areas, rollback_area_config_path
 
 
+def rollback_area_config_file(area_id):
+    """area_id must be an string"""
+    config_directory = config_utils.get_area_config_directory(get_config())
+    config_path = os.path.join(config_directory, area_id + ".json")
+    if os.path.exists(config_path):
+        os.remove(config_path)
+
+
+# pytest -v api/tests/app/test_area_occupancy_rules.py::TestsOccupancyRules
 class TestsOccupancyRules:
     """ LIVE """
     """ Get Area Occupancy Rules, GET /areas/occupancy-rules/:id """
     """ Set Area Occupancy Rules, PUT /areas/occupancy-rules/:id """
     """ Delete Area Occupancy Rules, DELETE /areas/occupancy-rules/:id """
-
+    
     base_data = {"occupancy_rules":
         [
             {
@@ -30,7 +44,7 @@ class TestsOccupancyRules:
         "cameras": "0"
     }
 
-    def test_set_correct_area_occupancy_rules(self, config_rollback_areas):
+    def test_set_correct_area_occupancy_rules(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -40,7 +54,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 200
 
-    def test_unitary_set_get_delete(self, config_rollback_areas):
+    def test_unitary_set_get_delete(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = 537
 
@@ -67,7 +81,9 @@ class TestsOccupancyRules:
         assert res1["occupancy_rules"][0]["max_occupancy"] == 12
         assert res2["occupancy_rules"][0]["max_occupancy"] == 100
 
-    def test_get_not_found(self, config_rollback_areas):
+        rollback_area_config_file(str(area_id))
+
+    def test_get_not_found(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = 404
 
@@ -75,7 +91,7 @@ class TestsOccupancyRules:
 
         assert get_response.status_code == 404
 
-    def test_get_empty(self, config_rollback_areas):
+    def test_get_empty(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = 5
 
@@ -88,7 +104,7 @@ class TestsOccupancyRules:
         assert get_response.status_code == 200
         assert get_response.json()["occupancy_rules"] == []
 
-    def test_set_invalid_threshold(self, config_rollback_areas):
+    def test_set_invalid_threshold(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -98,7 +114,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 400
 
-    def test_set_invalid_start_hour(self, config_rollback_areas):
+    def test_set_invalid_start_hour(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -108,7 +124,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 400
 
-    def test_set_invalid_start_finish_hour(self, config_rollback_areas):
+    def test_set_invalid_start_finish_hour(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -119,7 +135,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 400
 
-    def test_set_overlap_complete(self, config_rollback_areas):
+    def test_set_overlap_complete(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -132,7 +148,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 400
 
-    def test_set_overlap_start(self, config_rollback_areas):
+    def test_set_overlap_start(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -145,7 +161,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 400
 
-    def test_set_overlap_end(self, config_rollback_areas):
+    def test_set_overlap_end(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -171,7 +187,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 400
 
-    def test_set_contiguous(self, config_rollback_areas):
+    def test_set_contiguous(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 
@@ -184,7 +200,7 @@ class TestsOccupancyRules:
 
         assert response.status_code == 200
 
-    def test_set_wrong_days(self, config_rollback_areas):
+    def test_set_wrong_days(self, config_rollback_areas, rollback_area_config_path):
         area, area_2, client, config_sample_path = config_rollback_areas
         area_id = area['id']
 

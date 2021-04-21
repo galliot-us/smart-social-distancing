@@ -19,6 +19,8 @@ def is_list_recursively_empty(lst):
 
 
 def config_to_boolean(value):
+    if isinstance(value, bool):
+        return value
     if value.lower() not in BOOLEAN_STATES:
         raise ValueError("Invalid boolean value")
     return BOOLEAN_STATES[value.lower()]

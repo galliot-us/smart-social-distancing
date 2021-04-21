@@ -4,12 +4,17 @@ import os
 from datetime import date, datetime
 from typing import List
 
+from constants import ALL_AREAS
+
 
 class FileSystemLogger:
 
     def __init__(self, config, area: str, logger: str):
         self.config = config
-        self.area_id = self.config.get_section_dict(area)["Id"]
+        if area == ALL_AREAS:
+            self.area_id = ALL_AREAS
+        else:
+            self.area_id = self.config.get_section_dict(area)["Id"]
         self.log_directory = config.get_section_dict(logger)["LogDirectory"]
         self.occupancy_log_directory = os.path.join(self.log_directory, self.area_id, "occupancy_log")
         os.makedirs(self.occupancy_log_directory, exist_ok=True)

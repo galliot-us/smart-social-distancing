@@ -1,7 +1,9 @@
 import os
 import json
 from datetime import datetime
+import pathlib
 
+from constants import ALL_AREAS
 from .base_entity import BaseEntity
 from .occupancy_rule import OccupancyRule
 from libs.utils.utils import validate_file_exists_and_is_not_empty
@@ -24,6 +26,46 @@ class Area(BaseEntity):
             self.should_send_email_notifications = False
             self.should_send_slack_notifications = False
         self.load_occupancy_rules()
+
+    @classmethod
+    def set_global_area(cls, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir, cameras_list):
+        pathlib.Path(config_dir).mkdir(parents=True, exist_ok=True)
+        config_path = os.path.join(config_dir, "ALL.json")
+        json_content = {
+            "global_area_all": {
+                "ViolationThreshold": 0,
+                "NotifyEveryMinutes": 0,
+                "Emails": "",
+                "EnableSlackNotifications": False,  # "N/A"
+                "DailyReport": False,  # "N/A"
+                "DailyReportTime": "N/A",
+                "OccupancyThreshold": 0,
+                "Id": ALL_AREAS,
+                "Name": ALL_AREAS,
+            }
+        }
+
+        if not os.path.exists(config_path):
+            # Create the file with if necessary
+            with open(config_path, 'x') as outfile:
+                json.dump(json_content, outfile)
+            section = json_content["global_area_all"]
+        else:
+            # If file exists, we have to check if there is a key named: "global_area_all".
+            with open(config_path, "r+") as file:
+                file_content = json.load(file)
+
+                if file_content.get("global_area_all") is None:
+                    file_content["global_area_all"] = json_content["global_area_all"]
+                    json.dump(file_content, file)
+                    section = json_content["global_area_all"]
+                else:
+                    section = file_content.get("global_area_all")
+
+        section["Cameras"] = cameras_list
+        title = ALL_AREAS
+
+        return Area(section, title, is_email_enabled, is_slack_enabled, config_dir, area_logs_dir)
 
     def load_occupancy_rules(self):
         self.occupancy_rules = []
