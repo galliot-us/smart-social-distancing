@@ -548,6 +548,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `Encoder`: Specifies the video encoder used by the processing pipeline.
   - `MaxProcesses`: Defines the number of processes executed in the processor. If you are using multiple cameras per processor we recommend increasing this number.
   - `DashboardURL`: Sets the url where the frontend is running. Unless you are using a custom domain, you should keep this value as https://app.lanthorn.ai/.
+  - `DashboardAuthorizationToken`:  Configures the Authorization header required to sync the processor and the dashboard.
   - `SlackChannel`: Configures the slack channel used by the notifications. The chosen slack channel must exist in the configured workspace.
   - `OccupancyAlertsMinInterval`:  Sets the desired interval (in seconds) between occupancy alerts.
   - `MaxThreadRestarts`: Defines the number of restarts allowed per thread.
