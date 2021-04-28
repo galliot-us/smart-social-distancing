@@ -12,7 +12,7 @@ provider "aws" {
 }
 
 module "module-network-linux-web" {
-    source = "github.com/xmartlabs/terraform.git?ref=module-network-linux-web/modules/module-network-linux-web"
+    source = "github.com/xmartlabs/terraform.git?ref=main/modules/module-network-linux-web"
     region = var.region
     tags = var.tags
     vpc = var.vpc
@@ -23,7 +23,7 @@ module "module-network-linux-web" {
 }
 
 module "module-ec2-linux-web"{
-    source = "github.com/xmartlabs/terraform.git?ref=module-network-linux-web/modules/module-ec2-linux-web"
+    source = "github.com/xmartlabs/terraform.git?ref=main/modules/module-ec2-linux-web"
     region = var.region
     amiid  = var.amiid
     tags= var.tags
