@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import logging
 import numbers
+from enum import Enum
 
 from collections import deque
 from datetime import date, datetime, timedelta, time
@@ -18,6 +19,11 @@ from libs.utils.loggers import get_source_log_directory, get_area_log_directory,
 from libs.utils.utils import is_list_recursively_empty, validate_file_exists_and_is_not_empty
 
 logger = logging.getLogger(__name__)
+
+
+class AggregationMode(Enum):
+    SINGLE = 1
+    BATCH = 2
 
 
 def parse_date_range(dates):
