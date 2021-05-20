@@ -26,7 +26,7 @@ class WebHookLogger(RawDataLogger):
         }
 
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,
-                    detected_objects_cout, environment_score, time_stamp, version):
+                    detected_objects_cout, environment_score, time_stamp, version, log_time):
         request_data = {
             "version": version,
             "timestamp": time_stamp,

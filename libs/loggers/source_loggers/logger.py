@@ -18,8 +18,8 @@ class Logger:
         else:
             raise ValueError('Not supported logger named: ', logger_name)
 
-    def update(self, cv_image, objects, post_processing_data, fps):
-        self.logger.update(cv_image, objects, post_processing_data, fps)
+    def update(self, cv_image, objects, post_processing_data, fps, log_time):
+        self.logger.update(cv_image, objects, post_processing_data, fps, log_time)
 
     def start_logging(self, fps):
         self.logger.start_logging(fps)

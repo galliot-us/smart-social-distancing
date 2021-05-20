@@ -16,7 +16,7 @@ class S3Logger:
     def capture_violation(self, file_name, cv_image):
         self.uploader.upload_cv_image(self.bucket_screenshots, cv_image, file_name, self.camera_id)
 
-    def update(self, cv_image, objects, post_processing_data, fps):
+    def update(self, cv_image, objects, post_processing_data, fps, log_time):
         violating_objects = post_processing_data.get("violating_objects", [])
         # Save a screenshot only if the period is greater than 0, a violation is detected, and the minimum period
         # has occured

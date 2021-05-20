@@ -2,9 +2,10 @@ import csv
 import cv2 as cv
 import logging
 import numpy as np
+from math import trunc
 import os
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from statistics import mean
 
 from libs.classifiers.classifier import Classifier
@@ -44,9 +45,18 @@ class CvEngine:
         # Init loggers
         self.loggers = []
         loggers_names = [x for x in self.config.get_sections() if x.startswith("SourceLogger_")]
+        
+        # FIXME: This logic only works if all the loggers use TimeInterval divisible by the minimum one
+        self.logging_time_interval = None
         for l_name in loggers_names:
             if self.config.get_boolean(l_name, "Enabled"):
                 self.loggers.append(Logger(self.config, source, l_name))
+                if self.config.get_section_dict(l_name).get("TimeInterval", None):
+                    logger_time_interval = float(self.config.get_section_dict(l_name).get("TimeInterval"))
+                    if not self.logging_time_interval:
+                        self.logging_time_interval = logger_time_interval
+                    else:
+                        self.logging_time_interval = min(self.logging_time_interval, logger_time_interval)
         self.running_video = False
 
         self.log_performance = self.config.get_boolean("App", "LogPerformanceMetrics")
@@ -54,7 +64,7 @@ class CvEngine:
             self.log_performance_directory = self.config.get_section_dict('App')['LogPerformanceMetricsDirectory']
             self.log_performance_headers = []
             self.last_log_time = None
-            self.reset_log_detail(set_headers=bool(self.log_performance_directory))
+            self.reset_log_detail(set_headers=bool(self.log_performance_directory))        
 
     def __process(self, cv_image):
         """
@@ -115,9 +125,18 @@ class CvEngine:
             self.log_detail["Tracker"].append(tracker_time)
         return cv_image, tmp_objects_list, post_processing_data
 
-    def process_video(self, video_uri):
+    def process_video_file(self, video_uri, video_date: str = None):
         input_cap = cv.VideoCapture(video_uri)
-        fps = max(25, input_cap.get(cv.CAP_PROP_FPS))
+        fps = input_cap.get(cv.CAP_PROP_FPS)
+        is_video_file = bool(video_date)
+        log_time = None
+        if is_video_file:
+            # It's a video file
+            total_frames = int(input_cap.get(cv.CAP_PROP_FRAME_COUNT))
+            if self.logging_time_interval:
+                self.fps_log_number = trunc(fps * self.logging_time_interval)
+            video_time = int(video_uri.split("/")[-1].split(".")[0])
+            log_time = datetime.strptime(f"{video_date} {video_time}", "%Y%m%d %H%M%S")
         if (input_cap.isOpened()):
             logger.info(f'opened video {video_uri}')
         else:
@@ -130,23 +149,44 @@ class CvEngine:
 
         for source_logger in self.loggers:
             source_logger.start_logging(fps)
-
         frame_num = 0
         while input_cap.isOpened() and self.running_video:
             _, cv_image = input_cap.read()
             if np.shape(cv_image) != ():
-                cv_image, objects, post_processing_data = self.__process(cv_image)
                 frame_num += 1
                 if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
                     self.write_performance_log()
+                if is_video_file and total_frames == frame_num:
+                    break
+                if is_video_file and frame_num % self.fps_log_number != 0:
+                    if is_video_file and total_frames == frame_num:
+                        self.running_video = False
+                    continue
+                cv_image, objects, post_processing_data = self.__process(cv_image)
+                if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
+                    logger.info(f'processed frame {frame_num} for {video_uri}')
+                    self.write_performance_log()
                 for source_logger in self.loggers:
-                    source_logger.update(cv_image, objects, post_processing_data, self.detector.fps)
+                    source_logger.update(cv_image, objects, post_processing_data, self.detector.fps,
+                                         log_time.strftime("%Y-%m-%d %H:%M:%S"))
+                if log_time:
+                    log_time = log_time + timedelta(seconds=self.logging_time_interval)
+                if is_video_file and total_frames == frame_num:
+                        self.running_video = False
         input_cap.release()
         for source_logger in self.loggers:
             source_logger.stop_logging()
         self.running_video = False
-
+    
+    def process_video(self, video_uri):
+        if os.path.isdir(video_uri):
+            for date_folder in os.listdir(video_uri):
+                for minute_file_name in sorted(os.listdir(f"{video_uri}/{date_folder}")):
+                    minute_file_video = f"{video_uri}/{date_folder}/{minute_file_name}"
+                    self.process_video_file(minute_file_video, date_folder)
+        else:
+            self.process_video_file(video_uri)
     def stop_process_video(self):
         self.running_video = False
 
