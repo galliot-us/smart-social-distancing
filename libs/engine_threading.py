@@ -54,7 +54,7 @@ class EngineThread(Thread):
                     last_restart_time = datetime.now()
                     self.engine.process_video(self.source['url'])
                     if os.path.isdir(self.source['url']):
-                        # Source it's a video. Stop the iteration
+                        # Source is a video. Stop the iteration
                         break
                 except Exception as e:
                     logging.error(e, exc_info=True)

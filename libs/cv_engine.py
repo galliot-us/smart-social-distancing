@@ -64,7 +64,7 @@ class CvEngine:
             self.log_performance_directory = self.config.get_section_dict('App')['LogPerformanceMetricsDirectory']
             self.log_performance_headers = []
             self.last_log_time = None
-            self.reset_log_detail(set_headers=bool(self.log_performance_directory))        
+            self.reset_log_detail(set_headers=bool(self.log_performance_directory))
 
     def __process(self, cv_image):
         """
@@ -131,7 +131,6 @@ class CvEngine:
         is_video_file = bool(video_date)
         log_time = None
         if is_video_file:
-            # It's a video file
             total_frames = int(input_cap.get(cv.CAP_PROP_FRAME_COUNT))
             if self.logging_time_interval:
                 self.fps_log_number = trunc(fps * self.logging_time_interval)
@@ -157,8 +156,6 @@ class CvEngine:
                 if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
                     logger.info(f'processed frame {frame_num} for {video_uri}')
                     self.write_performance_log()
-                if is_video_file and total_frames == frame_num:
-                    break
                 if is_video_file and frame_num % self.fps_log_number != 0:
                     if is_video_file and total_frames == frame_num:
                         self.running_video = False
