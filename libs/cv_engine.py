@@ -156,9 +156,9 @@ class CvEngine:
                 if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
                     logger.info(f'processing frame {frame_num} for {video_uri}')
                     self.write_performance_log()
-                if is_video_file and frame_num % self.fps_log_number != 0:
-                    if is_video_file and total_frames == frame_num:
+                if is_video_file and total_frames == frame_num:
                         self.running_video = False
+                if is_video_file and frame_num % self.fps_log_number != 0:
                     continue
                 cv_image, objects, post_processing_data = self.__process(cv_image)
                 for source_logger in self.loggers:
