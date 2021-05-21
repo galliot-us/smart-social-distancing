@@ -161,12 +161,10 @@ class CvEngine:
                         self.running_video = False
                     continue
                 cv_image, objects, post_processing_data = self.__process(cv_image)
-                if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
-                    logger.info(f'processed frame {frame_num} for {video_uri}')
-                    self.write_performance_log()
                 for source_logger in self.loggers:
+                    log_time_str = log_time.strftime("%Y-%m-%d %H:%M:%S") if log_time else None
                     source_logger.update(cv_image, objects, post_processing_data, self.detector.fps,
-                                         log_time.strftime("%Y-%m-%d %H:%M:%S"))
+                                         log_time_str)
                 if log_time:
                     log_time = log_time + timedelta(seconds=self.logging_time_interval)
                 if is_video_file and total_frames == frame_num:
