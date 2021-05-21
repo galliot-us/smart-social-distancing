@@ -154,7 +154,7 @@ class CvEngine:
             if np.shape(cv_image) != ():
                 frame_num += 1
                 if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
-                    logger.info(f'processed frame {frame_num} for {video_uri}')
+                    logger.info(f'processing frame {frame_num} for {video_uri}')
                     self.write_performance_log()
                 if is_video_file and frame_num % self.fps_log_number != 0:
                     if is_video_file and total_frames == frame_num:
