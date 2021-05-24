@@ -129,6 +129,10 @@ class CvEngine:
         input_cap = cv.VideoCapture(video_uri)
         fps = input_cap.get(cv.CAP_PROP_FPS)
         is_video_file = bool(video_date)
+        if is_video_file:
+            fps = min(15, input_cap.get(cv.CAP_PROP_FPS))
+        else:
+            fps = max(25, input_cap.get(cv.CAP_PROP_FPS))
         log_time = None
         if is_video_file:
             total_frames = int(input_cap.get(cv.CAP_PROP_FRAME_COUNT))
@@ -169,6 +173,10 @@ class CvEngine:
                     log_time = log_time + timedelta(seconds=self.logging_time_interval)
                 if is_video_file and total_frames == frame_num:
                         self.running_video = False
+            else:
+                if is_video_file:
+                    # Video ended
+                    self.running_video = False
         input_cap.release()
         for source_logger in self.loggers:
             source_logger.stop_logging()
