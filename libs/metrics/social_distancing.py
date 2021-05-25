@@ -19,7 +19,7 @@ class SocialDistancingMetric(BaseMetric):
     csv_headers = ["DetectedObjects", "NoInfringement", "LowInfringement", "HighInfringement",
                    "CriticalInfringement"]
     csv_default_values = [0, 0, 0, 0, 0]
-    aggregation_mode = AggregationMode.SINGLE
+    aggregation_mode = AggregationMode.BATCH
 
     @classmethod
     def process_metric_csv_row(cls, csv_row: Dict, objects_logs: Dict):
