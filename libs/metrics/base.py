@@ -1,4 +1,5 @@
 import ast
+import cv2 as cv
 import os
 import copy
 import csv
@@ -12,8 +13,9 @@ from datetime import date, datetime, timedelta, time
 from typing import Dict, List, Iterator
 from pandas.api.types import is_numeric_dtype
 
+from libs.utils.config import get_source_config_directory
 from libs.utils.loggers import get_source_log_directory, get_area_log_directory, get_source_logging_interval
-from libs.utils.utils import is_list_recursively_empty
+from libs.utils.utils import is_list_recursively_empty, validate_file_exists_and_is_not_empty
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +49,83 @@ class BaseMetric:
         return os.getenv("SourceLogDirectory") if cls.entity == "source" else os.getenv("AreaLogDirectory")
 
     @classmethod
+    def get_roi_file_path(cls, camera_id, config):
+        """ Returns the path to the roi_contour file """
+        return f"{get_source_config_directory(config)}/{camera_id}/roi_filtering/roi_contour.csv"
+
+    @classmethod
+    def get_roi_contour(cls, roi_file_path):
+        """ Given the path to the roi file it loads it and returns it """
+        if validate_file_exists_and_is_not_empty(roi_file_path):
+            return np.loadtxt(roi_file_path, delimiter=',', dtype=int)
+        else:
+            return None
+
+    @classmethod
+    def get_roi_contour_for_entity(cls, config, source_id):
+        if cls.entity == "area":
+            return None
+        return cls.get_roi_contour(cls.get_roi_file_path(source_id, config))
+
+    @staticmethod
+    def is_inside_roi(detected_object, roi_contour):
+        """
+        An object is inside the RoI if its middle bottom point lies inside it.
+        params:
+            detected_object: a dictionary, that has attributes of a detected object such as "id",
+            "centroid" (a tuple of the normalized centroid coordinates (cx,cy,w,h) of the box),
+            "bbox" (a tuple of the normalized (xmin,ymin,xmax,ymax) coordinate of the box),
+            "centroidReal" (a tuple of the centroid coordinates (cx,cy,w,h) of the box) and
+            "bbox_real" (a tuple of the (xmin,ymin,xmax,ymax) coordinate of the box)
+
+            roi_contour: An array of 2-tuples that compose the contour of the RoI
+        returns:
+        True of False: Depending if the objects coodinates are inside the RoI
+        """
+        corners = detected_object["bbox_real"]
+        x1, x2 = int(corners[0]), int(corners[2])
+        y1, y2 = int(corners[1]), int(corners[3])  # noqa
+        if cv.pointPolygonTest(roi_contour, (x1 + (x2-x1)/2, y2), False) >= 0:
+            return True
+        return False
+
+    @classmethod
+    def ignore_objects_outside_roi(cls, csv_row, roi_contour):
+        detections = ast.literal_eval(csv_row["Detections"])
+        detections_in_roi = []
+        for index, obj in enumerate(detections):
+            obj["index"] = index
+            if cls.is_inside_roi(obj, roi_contour):
+                detections_in_roi.append(obj)
+        violations_indexes = ast.literal_eval(csv_row["ViolationsIndexes"])
+        violations_indexes_in_roi = []
+        for index, obj in enumerate(detections_in_roi):
+            if obj["index"] in violations_indexes:
+                violations_indexes_in_roi.append(index)
+        # Update the csv fields
+        csv_row["Detections"] = str(detections_in_roi)
+        csv_row["ViolationsIndexes"] = str(violations_indexes_in_roi)
+        csv_row["DetectedObjects"] = len(detections_in_roi)
+        csv_row["ViolatingObjects"] = len(violations_indexes_in_roi)
+        return csv_row
+
+    @classmethod
     def get_entities(cls, config):
         return config.get_video_sources() if cls.entity == "source" else config.get_areas()
 
     @classmethod
-    def process_csv_row(cls, csv_row, object_logs):
+    def process_metric_csv_row(cls, csv_row, object_logs):
         """
         Extracts from the `csv_row` the required information to calculate the metric.
         The extracted information is populated into `object_logs`.
         """
         raise NotImplementedError
+
+    @classmethod
+    def process_csv_row(cls, csv_row, object_logs, roi_contour=None):
+        if roi_contour is not None:
+            csv_row = cls.ignore_objects_outside_roi(csv_row, roi_contour)
+        cls.process_metric_csv_row(csv_row, object_logs)
 
     @classmethod
     def generate_hourly_metric_data(cls, config, object_logs, entity):
@@ -68,6 +137,7 @@ class BaseMetric:
     @classmethod
     def generate_hourly_csv_data(cls, config, entity: Dict, entity_file: str, time_from: datetime,
                                  time_until: datetime):
+        roi_contour = cls.get_roi_contour_for_entity(config, entity["id"])
         if not os.path.isfile(entity_file):
             entity_type = "Camera" if cls.entity else "Area"
             logger.warn(f"The [{entity_type}: {entity['id']}] contains no recorded data for that day")
@@ -80,7 +150,7 @@ class BaseMetric:
             for row in reader:
                 row_time = datetime.strptime(row["Timestamp"], "%Y-%m-%d %H:%M:%S")
                 if time_from <= row_time < time_until:
-                    cls.process_csv_row(row, objects_logs)
+                    cls.process_csv_row(row, objects_logs, roi_contour)
             return cls.generate_hourly_metric_data(config, objects_logs, entity)
 
     @classmethod

@@ -27,7 +27,7 @@ class InOutMetric(BaseMetric):
     SEGMENTATION_MINUTES = 10
 
     @classmethod
-    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
+    def process_metric_csv_row(cls, csv_row: Dict, objects_logs: Dict):
         row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
         detections = ast.literal_eval(csv_row["Detections"])
         row_hour, row_minute = row_time.hour, row_time.minute
@@ -104,6 +104,7 @@ class InOutMetric(BaseMetric):
         """
         boundaries = cls.retrieve_in_out_boundaries(config, entity["id"])
         boundary_names = [boundary["name"] for boundary in boundaries]
+        roi_contour = cls.get_roi_contour_for_entity(config, entity["id"])
 
         live_csv = os.path.join(entity.base_directory, "reports", cls.reports_folder, "live.csv")
         latest_estimated_occupancy = _read_estimated_latest_occupancy(live_csv)
@@ -112,7 +113,7 @@ class InOutMetric(BaseMetric):
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in lastest_entries:
-                cls.process_csv_row(entry, objects_logs)
+                cls.process_csv_row(entry, objects_logs, roi_contour)
 
         hour_in, hour_out, hour_balance = [], [], []
         for hour in sorted(objects_logs):

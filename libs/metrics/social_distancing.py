@@ -21,7 +21,7 @@ class SocialDistancingMetric(BaseMetric):
     csv_default_values = [0, 0, 0, 0, 0]
 
     @classmethod
-    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
+    def process_metric_csv_row(cls, csv_row: Dict, objects_logs: Dict):
         row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
         detections = ast.literal_eval(csv_row["Detections"])
         row_hour = row_time.hour
@@ -170,11 +170,12 @@ class SocialDistancingMetric(BaseMetric):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
+        roi_contour = cls.get_roi_contour_for_entity(config, entity["id"])
         with open(today_entity_csv, "r") as log:
             objects_logs = {}
             lastest_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in lastest_entries:
-                cls.process_csv_row(entry, objects_logs)
+                cls.process_csv_row(entry, objects_logs, roi_contour)
         return np.sum(cls.generate_hourly_metric_data(config, objects_logs), axis=0)
 
     @classmethod

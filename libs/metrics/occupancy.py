@@ -10,6 +10,7 @@ from typing import Dict, Iterator, List
 from .base import BaseMetric
 from constants import OCCUPANCY
 
+
 class OccupancyMetric(BaseMetric):
 
     reports_folder = OCCUPANCY
@@ -19,7 +20,7 @@ class OccupancyMetric(BaseMetric):
     csv_default_values = [0, 0, 0, 0]
 
     @classmethod
-    def process_csv_row(cls, csv_row: Dict, objects_logs: Dict):
+    def process_metric_csv_row(cls, csv_row: Dict, objects_logs: Dict):
         row_time = datetime.strptime(csv_row["Timestamp"], "%Y-%m-%d %H:%M:%S")
         row_hour = row_time.hour
         if not objects_logs.get(row_hour):
@@ -64,11 +65,12 @@ class OccupancyMetric(BaseMetric):
         """
         Generates the live report using the `today_entity_csv` file received.
         """
+
         with open(today_entity_csv, "r") as log:
             objects_logs = {}
             last_entries = deque(csv.DictReader(log), entries_in_interval)
             for entry in last_entries:
-                cls.process_csv_row(entry, objects_logs)
+                cls.process_csv_row(entry, objects_logs, None)
             # Put the rows in the same hour
             objects_logs_merged = {
                 0: {"Occupancy": []}
