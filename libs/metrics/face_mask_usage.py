@@ -7,7 +7,7 @@ from collections import deque
 from datetime import datetime
 from typing import Dict, List, Iterator, Tuple
 
-from .base import BaseMetric
+from .base import BaseMetric, AggregationMode
 
 
 class FaceMaskUsageMetric(BaseMetric):
@@ -15,6 +15,7 @@ class FaceMaskUsageMetric(BaseMetric):
     reports_folder = "face-mask-usage"
     csv_headers = ["NoFace", "FaceWithMask", "FaceWithoutMask"]
     csv_default_values = [0, 0, 0]
+    aggregationMode = AggregationMode.BATCH
 
     @classmethod
     def process_metric_csv_row(cls, csv_row: Dict, objects_logs: Dict):
@@ -55,28 +56,46 @@ class FaceMaskUsageMetric(BaseMetric):
         no_face_detections = 0
         mask_detections = 0
         no_mask_detections = 0
-        current_status = None
-        processing_status = None
-        processing_count = 0
-        for face_label in face_labels:
-            if processing_status != face_label:
-                processing_status = face_label
-                processing_count = 0
-            processing_count += 1
-            if current_status != processing_status and processing_count >= cls.processing_count_threshold:
-                # FaceLabel was enouth time in the same state, change it
-                current_status = processing_status
-                if current_status == -1:
-                    #  Face was not detected
+        if cls.aggregationMode == AggregationMode.SINGLE:
+            if len(face_labels) < 2:
+                return 0, 0, 0
+            for face_label in face_labels:
+                if face_label == -1:
                     no_face_detections += 1
-                elif current_status == 0:
-                    # A face using mask was detected
+                elif face_label == 0:
                     mask_detections += 1
                 else:
-                    # current_status == 1
-                    # A face without mask was detected
                     no_mask_detections += 1
-        return no_face_detections, mask_detections, no_mask_detections
+            weight_factor = 5
+            if no_face_detections > weight_factor * mask_detections and no_face_detections > weight_factor * no_mask_detections:
+                return 1, 0, 0
+            elif mask_detections > no_mask_detections:
+                return 0, 1, 0
+            else:
+                return 0, 0, 1
+        else:
+            current_status = None
+            processing_status = None
+            processing_count = 0
+            for face_label in face_labels:
+                if processing_status != face_label:
+                    processing_status = face_label
+                    processing_count = 0
+                processing_count += 1
+                if current_status != processing_status and processing_count >= cls.processing_count_threshold:
+                    # FaceLabel was enouth time in the same state, change it
+                    current_status = processing_status
+                    if current_status == -1:
+                        #  Face was not detected
+                        no_face_detections += 1
+                    elif current_status == 0:
+                        # A face using mask was detected
+                        mask_detections += 1
+                    else:
+                        # current_status == 1
+                        # A face without mask was detected
+                        no_mask_detections += 1
+            return no_face_detections, mask_detections, no_mask_detections
 
     @classmethod
     def generate_daily_csv_data(cls, yesterday_hourly_file):

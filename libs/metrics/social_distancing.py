@@ -9,7 +9,7 @@ from typing import Dict, List, Iterator, Tuple
 
 from libs.utils.loggers import get_source_log_directory
 
-from .base import BaseMetric
+from .base import BaseMetric, AggregationMode
 from constants import SOCIAL_DISTANCING
 
 
@@ -19,6 +19,7 @@ class SocialDistancingMetric(BaseMetric):
     csv_headers = ["DetectedObjects", "NoInfringement", "LowInfringement", "HighInfringement",
                    "CriticalInfringement"]
     csv_default_values = [0, 0, 0, 0, 0]
+    aggregation_mode = AggregationMode.BATCH
 
     @classmethod
     def process_metric_csv_row(cls, csv_row: Dict, objects_logs: Dict):
@@ -99,15 +100,26 @@ class SocialDistancingMetric(BaseMetric):
             detected_objects += 1
             if not detection["status"] or detection["seconds"] < LOW_TRESHOLD:
                 no_infringements += 1
-            elif LOW_TRESHOLD <= detection["seconds"] < HIGH_THRESHOLD:
+            elif detection["seconds"] < HIGH_THRESHOLD:
                 low_infringements += 1
-            elif HIGH_THRESHOLD <= detection["seconds"] < CRITICAL_THRESHOLD:
+            elif detection["seconds"] < CRITICAL_THRESHOLD:
                 high_infringements += 1
             else:
                 # CRITICAL_THRESHOLD <= detection["time"]
                 critical_infringements += 1
-
-        return detected_objects, no_infringements, low_infringements, high_infringements, critical_infringements
+        if cls.aggregation_mode == AggregationMode.SINGLE:
+            if critical_infringements > 0:
+                return 1, 0, 0, 0, 1
+            elif high_infringements > 0:
+                return 1, 0, 0, 1, 0
+            elif low_infringements > 0:
+                return 1, 0, 1, 0, 0
+            elif detected_objects > 0:
+                return 1, 1, 0, 0, 0
+            else:
+                return 0, 0, 0, 0, 0
+        else:
+            return detected_objects, no_infringements, low_infringements, high_infringements, critical_infringements
 
     @classmethod
     def generate_daily_csv_data(cls, yesterday_hourly_file):
