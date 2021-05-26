@@ -127,7 +127,6 @@ class CvEngine:
 
     def process_video_file(self, video_uri, video_date: str = None):
         input_cap = cv.VideoCapture(video_uri)
-        fps = input_cap.get(cv.CAP_PROP_FPS)
         is_video_file = bool(video_date)
         if is_video_file:
             fps = min(15, input_cap.get(cv.CAP_PROP_FPS))
