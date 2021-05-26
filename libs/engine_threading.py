@@ -3,6 +3,7 @@ import logging
 import time
 
 from datetime import datetime
+from pathlib import Path
 from shutil import rmtree
 from threading import Thread
 from libs.cv_engine import CvEngine
@@ -52,6 +53,9 @@ class EngineThread(Thread):
                 try:
                     last_restart_time = datetime.now()
                     self.engine.process_video(self.source['url'])
+                    if os.path.isdir(self.source['url']):
+                        # Source is a video. Stop the iteration
+                        break
                 except Exception as e:
                     logging.error(e, exc_info=True)
                     logging.info(f"Exception processing video for source {self.source['name']}")

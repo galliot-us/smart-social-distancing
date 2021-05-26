@@ -566,6 +566,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
         - Average Anonymizer time:
   - `LogPerformanceMetricsDirectory`: When `LogPerformanceMetrics` is enabled, you can store the performance metrics into a CSV file setting the destination directory.
   - `EntityConfigDirectory`: Defines the location where the configurations of entities (such as sources and areas) are located.
+  - `PorcessAreas`: A boolean parameter to enable/disable the area processing in the processor.
 
 - `[Api]`
   - `Host`: Configures the host IP of the processor's API (inside docker). We recommend don't change that value and keep it as *0.0.0.0*.

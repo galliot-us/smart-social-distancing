@@ -32,7 +32,8 @@ class FileSystemLogger(RawDataLogger):
 
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,
                     detected_objects_cout, environment_score, time_stamp, version):
-        file_name = str(date.today())
+        
+        file_name = time_stamp[0: 10]
         file_path = os.path.join(self.objects_log_directory, file_name + ".csv")
         file_exists = os.path.isfile(file_path)
         with open(file_path, "a") as csvfile:
@@ -46,9 +47,9 @@ class FileSystemLogger(RawDataLogger):
                  "ViolatingObjects": violating_objects_count, "EnvironmentScore": environment_score,
                  "Detections": str(objects), "ViolationsIndexes": str(violating_objects_index_list)})
 
-    def update(self, cv_image, objects, post_processing_data, fps):
+    def update(self, cv_image, objects, post_processing_data, fps, log_time):
         # Save a screenshot only if the period is greater than 0, and the minimum period has occured
         if (self.screenshot_period > 0) and (time.time() > self.last_screeenshot_time + self.screenshot_period):
             self.last_screeenshot_time = time.time()
             self.save_screenshot(cv_image)
-        super().update(cv_image, objects, post_processing_data, fps)
+        super().update(cv_image, objects, post_processing_data, fps, log_time)

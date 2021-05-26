@@ -40,6 +40,9 @@ class AreaThread(Thread):
             self.engine = AreaEngine(self.config, self.area)
             restarts = 0
             max_restarts = int(self.config.get_section_dict("App")["MaxThreadRestarts"])
+            if not self.config.get_boolean("App", "ProcessAreas"):
+                # Ignore the area processing
+                return
             while True:
                 try:
                     last_restart_time = datetime.now()

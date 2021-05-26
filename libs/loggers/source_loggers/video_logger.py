@@ -87,7 +87,7 @@ class VideoLogger:
             raise RuntimeError("Could not open gstreamer output for " + feed_name)
         return out
 
-    def update(self, cv_image, objects, post_processing_data, fps):
+    def update(self, cv_image, objects, post_processing_data, fps, log_time):
         if not self.live_feed_enabled:
             return
         self.update_history(post_processing_data["tracks"])
