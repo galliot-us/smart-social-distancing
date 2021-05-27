@@ -10,6 +10,7 @@ class AppDTO(SnakeModel):
     encoder: str = Field("videoconvert ! video/x-raw,format=I420 ! x264enc speed-preset=ultrafast")
     maxProcesses: int = Field(1)
     dashboardURL: str = Field("http://0.0.0.0:8000")
+    dashboardAuthorizationToken: str = Field("", example="token")
     slackChannel: Optional[str] = Field("", example="lanthorn-notifications")
     occupancyAlertsMinInterval: int = Field(0, example=180)
     maxThreadRestarts: int = Field(5)
