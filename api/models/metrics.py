@@ -278,12 +278,20 @@ class InOutDaily(DailyReport, InOut):
 
 
 class InOutWeekly(WeeklyReport, InOut):
+    InMax: List[int]
+    OutMax: List[int]
+    InAvg: List[int]
+    OutAvg: List[int]
     class Config:
         schema_extra = {
             "example": [{
                 "weeks": ["2020-07-03 2020-07-05", "2020-07-06 2020-07-12", "2020-07-13 2020-07-19", "2020-07-20 2020-07-26"],
                 "in": [40, 420, 300, 0],
                 "out": [40, 420, 300, 0],
+                "in_max": [4, 23, 50, 0],
+                "out_max": [4, 23, 50, 0],
+                "in_avg": [4, 23, 50, 0],
+                "out_avg": [4, 23, 50, 0],
                 "estimated_max_occupancy": [40, 420, 300, 0],
                 "estimated_average_occupancy": [27.9, 376, 285.4, 0],
                 "estimated_latest_occupancy": [0, 0, 0, 0],
