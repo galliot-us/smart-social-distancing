@@ -47,6 +47,8 @@ class BaseMetric:
     entity = "source"
     # Use the `live_csv_headers` when the csv strucutre differs from the hourly/daily
     live_csv_headers = []
+    # Values ignored when returning reports
+    ignored_headers = []
 
     @classmethod
     def get_entity_base_directory(cls, config=None):
@@ -292,7 +294,8 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory()
         hours = list(range(0, 24))
         results = {}
-        for index, header in enumerate(cls.csv_headers):
+        hourly_headers = [h for h in cls.csv_headers if h not in cls.ignored_headers]
+        for index, header in enumerate(hourly_headers):
             if cls.csv_default_values[index] == 0:
                 results[header] = np.zeros(24)
             else:
@@ -303,7 +306,7 @@ class BaseMetric:
             file_path = os.path.join(reports_directory, f"report_{report_date}.csv")
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path)
-                for header in cls.csv_headers:
+                for header in hourly_headers:
                     if is_numeric_dtype(df[header]):
                         results[header] += np.pad(
                             df[header].to_numpy(), (0, 24 - df[header].to_numpy().size), mode="constant"
@@ -325,6 +328,7 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory()
         date_range = pd.date_range(start=from_date, end=to_date)
         base_results = {}
+        daily_headers = [h for h in cls.csv_headers if h not in cls.ignored_headers]
         for key in date_range:
             base_results[key.strftime('%Y-%m-%d')] = {}
             for index, header in enumerate(cls.csv_headers):
@@ -344,7 +348,7 @@ class BaseMetric:
             entity_report = entity_report.set_index('Date').T
             entity_report_dict = entity_report.to_dict()
             for key in entity_report_dict:
-                for header in cls.csv_headers:
+                for header in daily_headers:
                     if isinstance(entity_report_dict[key][header], numbers.Number):
                         base_results[key][header] += entity_report_dict[key][header]
                     else:  # It's a list
@@ -355,11 +359,11 @@ class BaseMetric:
                             base_results[key][header] = [a + b for a, b in zip(base_results[key][header], entry)]
 
         report = {"Dates": []}
-        for header in cls.csv_headers:
+        for header in daily_headers:
             report[header] = []
         for report_date in sorted(base_results):
             report["Dates"].append(report_date)
-            for header in cls.csv_headers:
+            for header in daily_headers:
                 report[header].append(base_results[report_date][header])
         return report
 
@@ -391,11 +395,12 @@ class BaseMetric:
                           from_date: date = None, to_date: date = None) -> Dict:
         weekly_report_data = cls.generate_weekly_report_data(entities, number_of_weeks, from_date, to_date)
         report = {"Weeks": []}
-        for header in cls.csv_headers:
+        weekly_headers = [h for h in cls.csv_headers if h not in cls.ignored_headers]
+        for header in weekly_headers:
             report[header] = []
         for week, week_data in weekly_report_data.items():
             report["Weeks"].append(week)
-            for header in cls.csv_headers:
+            for header in weekly_headers:
                 report[header].append(sum(week_data[header]))
         return report
 
@@ -415,6 +420,7 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory()
         report = {}
         live_headers = cls.live_csv_headers if cls.live_csv_headers else cls.csv_headers
+        live_headers = [h for h in live_headers if h not in cls.ignored_headers]
         for index, header in enumerate(live_headers):
             report[header] = copy.deepcopy(cls.csv_default_values[index])
         times = []

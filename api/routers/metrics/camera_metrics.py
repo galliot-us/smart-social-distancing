@@ -5,9 +5,10 @@ from typing import Optional
 from api.models.metrics import (
     FaceMaskDaily, FaceMaskLive, FaceMaskHourly, FaceMaskWeekly, HeatmapReport,
     SocialDistancingDaily, SocialDistancingHourly, SocialDistancingLive,
-    SocialDistancingWeekly, InOutDaily, InOutLive, InOutHourly, InOutWeekly)
+    SocialDistancingWeekly, InOutDaily, InOutLive, InOutHourly, InOutWeekly,
+    DwellTimeDaily, DwellTimeHourly, DwellTimeLive, DwellTimeWeekly)
 from api.utils import bad_request_serializer
-from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING, IN_OUT
+from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING, IN_OUT, DWELL_TIME
 from libs.metrics.utils import generate_heatmap
 
 from .metrics import (validate_camera_existence, get_live_metric, get_hourly_metric, get_daily_metric,
@@ -87,6 +88,58 @@ def get_camera_distancing_weekly_report(
     return get_weekly_metric(CAMERAS, cameras, SOCIAL_DISTANCING, from_date, to_date, weeks)
 
 
+# Dwell Time Metrics
+@metrics_router.get("/dwell-time/live", response_model=DwellTimeLive)
+def get_camera_dwell_time_live(cameras: str = ""):
+    """
+    Returns a report with live information about the dwell time of people
+    detected in the cameras <cameras>.
+    """
+    return get_live_metric(CAMERAS, cameras, DWELL_TIME)
+
+
+@metrics_router.get("/dwell-time/hourly", response_model=DwellTimeHourly)
+def get_camera_dwell_time_hourly_report(cameras: str = "", date: date = Query(date.today())):
+    """
+    Returns a hourly report (for the date specified) with information about the dwell being of people
+    detected in the cameras <cameras>.
+    """
+    return get_hourly_metric(CAMERAS, cameras, DWELL_TIME, date)
+
+
+@metrics_router.get("/dwell-time/daily", response_model=DwellTimeDaily)
+def get_camera_dwell_time_daily_report(cameras: str = "",
+                                       from_date: date = Query((date.today() - timedelta(days=3))),
+                                       to_date: date = Query(date.today())):
+    """
+    Returns a daily report (for the date range specified) with information about the dwell time of the peoples
+    detected in the cameras <cameras>.
+    """
+    return get_daily_metric(CAMERAS, cameras, DWELL_TIME, from_date, to_date)
+
+
+@metrics_router.get("/dwell-time/weekly", response_model=DwellTimeWeekly)
+def get_camera_dwell_time_weekly_report(
+        cameras: str = "",
+        weeks: int = Query(0),
+        from_date: date = Query((date.today() - timedelta(days=date.today().weekday(), weeks=4))),
+        to_date: date = Query(date.today())):
+    """
+    Returns a weekly report (for the date range specified) with information about the swell time
+    of people detected in the cameras <cameras>.
+
+    **If `weeks` is provided and is a positive number:**
+    - `from_date` and `to_date` are ignored.
+    - Report spans from `weeks*7 + 1` days ago to yesterday.
+    - Taking yesterday as the end of week.
+
+    **Else:**
+    - Report spans from `from_Date` to `to_date`.
+    - Taking Sunday as the end of week
+    """
+    return get_weekly_metric(CAMERAS, cameras, DWELL_TIME, from_date, to_date, weeks)
+
+
 # Face Mask Metrics
 @metrics_router.get("/face-mask-detections/live", response_model=FaceMaskLive)
 def get_camera_face_mask_detections_live(cameras: str = ""):
@@ -137,6 +190,7 @@ def get_camera_face_mask_detections_weekly_report(
     - Taking Sunday as the end of week
     """
     return get_weekly_metric(CAMERAS, cameras, FACEMASK_USAGE, from_date, to_date, weeks)
+
 
 # In Out Metrics
 @metrics_router.get("/in-out/live", response_model=InOutLive)

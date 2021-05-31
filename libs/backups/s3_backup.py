@@ -3,7 +3,7 @@ import os
 from datetime import date, timedelta
 
 from libs.config_engine import ConfigEngine
-from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric
+from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, DwellTimeMetric, InOutMetric
 from libs.uploaders.s3_uploader import S3Uploader
 from libs.utils.loggers import get_area_log_directory, get_source_log_directory
 
@@ -51,7 +51,7 @@ def reports_backup(config: ConfigEngine, bucket_name: str):
     for src in sources:
         source_directory = os.path.join(source_log_directory, src["id"])
         reports_directory = os.path.join(source_directory, "reports")
-        source_metrics = [FaceMaskUsageMetric, SocialDistancingMetric]
+        source_metrics = [FaceMaskUsageMetric, SocialDistancingMetric, DwellTimeMetric, InOutMetric]
         for metric in source_metrics:
             metric_folder = os.path.join(reports_directory, metric.reports_folder)
             metric_hourly_report = os.path.join(metric_folder, f"report_{yesterday}.csv")

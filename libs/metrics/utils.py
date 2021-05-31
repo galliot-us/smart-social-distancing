@@ -6,6 +6,7 @@ from .face_mask_usage import FaceMaskUsageMetric
 from .occupancy import OccupancyMetric
 from .social_distancing import SocialDistancingMetric
 from .in_out import InOutMetric
+from .dwell_time import DwellTimeMetric
 
 
 def compute_hourly_metrics(config):
@@ -13,6 +14,7 @@ def compute_hourly_metrics(config):
     FaceMaskUsageMetric.compute_hourly_metrics(config)
     OccupancyMetric.compute_hourly_metrics(config)
     InOutMetric.compute_hourly_metrics(config)
+    DwellTimeMetric.compute_hourly_metrics(config)
 
 
 def compute_daily_metrics(config):
@@ -20,6 +22,7 @@ def compute_daily_metrics(config):
     FaceMaskUsageMetric.compute_daily_metrics(config)
     OccupancyMetric.compute_daily_metrics(config)
     InOutMetric.compute_daily_metrics(config)
+    DwellTimeMetric.compute_daily_metrics(config)
 
 
 def compute_live_metrics(config, live_interval):
@@ -27,6 +30,7 @@ def compute_live_metrics(config, live_interval):
     FaceMaskUsageMetric.compute_live_metrics(config, live_interval)
     OccupancyMetric.compute_live_metrics(config, live_interval)
     InOutMetric.compute_live_metrics(config, live_interval)
+    DwellTimeMetric.compute_live_metrics(config, live_interval)
 
 
 def generate_heatmap(camera_id, from_date, to_date, report_type):

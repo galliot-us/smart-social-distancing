@@ -100,6 +100,86 @@ class SocialDistancingWeekly(WeeklyReport, SocialDistancing):
         }
 
 
+class DwellTime(SnakeModel):
+    DetectedObjects: List[int]
+    AvgDwellTime: List[float]
+    MaxDwellTime: List[int]
+    L1: List[int]
+    L2: List[int]
+    L3: List[int]
+    L4: List[int]
+    L5: List[int]
+
+
+class DwellTimeLive(LiveReport):
+    DetectedObjects: int
+    AvgDwellTime: float
+    MaxDwellTime: int
+    L1: int
+    L2: int
+    L3: int
+    L4: int
+    L5: int
+
+
+class DwellTimeHourly(HourlyReports, DwellTime):
+    class Config:
+        schema_extra = {
+            "example": [{
+                "hours": list(range(0, 23)),
+                "detected_objects": [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
+                                     0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0],
+                "l1": [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                       0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0],
+                "l2": [0, 7273, 10011, 0, 0, 7273, 10011, 0, 0, 7273, 10011, 0,
+                       0, 7273, 10011, 0, 0., 7273, 10011, 0, 0, 7273, 10011, 0],
+                "l3": [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                       0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0],
+                "l4": [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                       0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0],
+                "l5": [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                       0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0],
+                "avg_dwell_time": [0.0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0.0,
+                                   0.0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0.0],
+                "max_dwell_time": [0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0,
+                                   0, 4920, 6701, 0, 0, 4920, 6701, 0, 0, 4920, 6701, 0],
+            }]
+        }
+
+
+class DwellTimeDaily(DailyReport, DwellTime):
+    class Config:
+        schema_extra = {
+            "example": [{
+                "dates": ["2020-08-15", "2020-08-16", "2020-08-17", "2020-08-18"],
+                "detected_objects": [0, 7273, 10011, 0],
+                "l1": [0, 4920, 6701, 0],
+                "l2": [0, 7273, 10011, 0],
+                "l3": [0, 4920, 6701, 0],
+                "l4": [0, 4920, 6701, 0],
+                "l5": [0, 4920, 6701, 0],
+                "avg_dwell_time": [0.0, 4920, 6701, 0],
+                "max_dwell_time": [0, 4920, 6701, 0],
+            }]
+        }
+
+
+class DwellTimeWeekly(WeeklyReport, DwellTime):
+    class Config:
+        schema_extra = {
+            "example": [{
+                "weeks": ["2020-07-03 2020-07-05", "2020-07-06 2020-07-12", "2020-07-13 2020-07-19", "2020-07-20 2020-07-26"],
+                "l1": [0, 4920, 6701, 0],
+                "l2": [0, 7273, 10011, 0],
+                "l3": [0, 4920, 6701, 0],
+                "l4": [0, 4920, 6701, 0],
+                "l5": [0, 4920, 6701, 0],
+                "avg_dwell_time": [0.0, 4920, 6701, 0],
+                "max_dwell_time": [0, 4920, 6701, 0],
+            }]
+        }
+
+
 class FaceMask(SnakeModel):
     NoFace: List[int]
     FaceWithMask: List[int]
