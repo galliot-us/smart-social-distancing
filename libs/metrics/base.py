@@ -51,6 +51,10 @@ class BaseMetric:
     ignored_headers = []
 
     @classmethod
+    def report_headers(cls):
+        return [h for h in cls.csv_headers if h not in cls.ignored_headers]
+
+    @classmethod
     def get_entity_base_directory(cls, config=None):
         if config:
             return get_source_log_directory(config) if cls.entity == "source" else get_area_log_directory(config)
@@ -294,7 +298,7 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory()
         hours = list(range(0, 24))
         results = {}
-        hourly_headers = [h for h in cls.csv_headers if h not in cls.ignored_headers]
+        hourly_headers = cls.report_headers()
         for index, header in enumerate(hourly_headers):
             if cls.csv_default_values[index] == 0:
                 results[header] = np.zeros(24)
@@ -328,7 +332,7 @@ class BaseMetric:
         base_directory = cls.get_entity_base_directory()
         date_range = pd.date_range(start=from_date, end=to_date)
         base_results = {}
-        daily_headers = [h for h in cls.csv_headers if h not in cls.ignored_headers]
+        daily_headers = cls.report_headers()
         for key in date_range:
             base_results[key.strftime('%Y-%m-%d')] = {}
             for index, header in enumerate(cls.csv_headers):
@@ -395,7 +399,7 @@ class BaseMetric:
                           from_date: date = None, to_date: date = None) -> Dict:
         weekly_report_data = cls.generate_weekly_report_data(entities, number_of_weeks, from_date, to_date)
         report = {"Weeks": []}
-        weekly_headers = [h for h in cls.csv_headers if h not in cls.ignored_headers]
+        weekly_headers = cls.report_headers()
         for header in weekly_headers:
             report[header] = []
         for week, week_data in weekly_report_data.items():
