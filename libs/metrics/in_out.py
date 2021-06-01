@@ -178,16 +178,35 @@ class InOutMetric(BaseMetric):
                           from_date: date = None, to_date: date = None) -> Dict:
         # The In/Out metric cannot be fully aggregated using "sum"
         weekly_report_data = cls.generate_weekly_report_data(entities, number_of_weeks, from_date, to_date)
-        report = {"Weeks": []}
+        report = {
+            "Weeks": [],
+            "InMax": [],
+            "OutMax": [],
+            "InAvg": [],
+            "OutAvg": [],
+        }
         for header in cls.csv_headers:
             report[header] = []
         for week, week_data in weekly_report_data.items():
+            estimated_max_occ = max(week_data["EstimatedMaxOccupancy"]) if week_data["EstimatedMaxOccupancy"] else 0
+            estimated_avg_occ = round(mean(week_data["EstimatedAverageOccupancy"]), 2) if week_data["EstimatedAverageOccupancy"] else 0
+            estimated_latest_occ = round(week_data["EstimatedLatestOccupancy"][-1]) if week_data["EstimatedLatestOccupancy"] else 0
+            in_sum = sum(week_data["In"])
+            out_sum = sum(week_data["Out"])
+            in_max = max(week_data["In"]) if week_data["In"] else 0
+            out_max = max(week_data["Out"]) if week_data["Out"] else 0
+            in_avg = round(mean(week_data["In"]), 2) if week_data["In"] else 0
+            out_avg = round(mean(week_data["Out"]), 2) if week_data["Out"] else 0
             report["Weeks"].append(week)
-            report["In"].append(sum(week_data["In"]))
-            report["Out"].append(sum(week_data["Out"]))
-            report["EstimatedMaxOccupancy"].append(max(week_data["EstimatedMaxOccupancy"]))
-            report["EstimatedAverageOccupancy"].append(round(mean(week_data["EstimatedAverageOccupancy"]), 2))
-            report["EstimatedLatestOccupancy"].append(week_data["EstimatedLatestOccupancy"][-1])
+            report["In"].append(in_sum)
+            report["Out"].append(out_sum)
+            report["InMax"].append(in_max)
+            report["OutMax"].append(out_max)
+            report["InAvg"].append(in_avg)
+            report["OutAvg"].append(out_avg)
+            report["EstimatedMaxOccupancy"].append(estimated_max_occ)
+            report["EstimatedAverageOccupancy"].append(estimated_avg_occ)
+            report["EstimatedLatestOccupancy"].append(estimated_latest_occ)
             if is_list_recursively_empty(week_data["Summary"]):
                 boundary_name = []
                 weekly_in = []
