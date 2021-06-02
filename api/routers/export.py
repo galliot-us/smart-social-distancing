@@ -12,7 +12,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 from api.models.export import ExportDTO, ExportDataType
 from api.utils import extract_config, clean_up_file
-from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
+from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric, DwellTimeMetric
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ SOCIAL_DISTANCING = ExportDataType.social_distancing
 FACEMASK_USAGE = ExportDataType.facemask_usage
 IN_OUT = ExportDataType.in_out
 OCCUPANCY = ExportDataType.occupancy
+DWELL_TIME = ExportDataType.dwell_time
 
 
 def export_folder_into_zip(source_path, destination_path, zip_file, from_date, to_date):
@@ -121,6 +122,17 @@ def export_camera_data_into_file(export_info: ExportDTO, camera_id: str, camera_
         export_folder_into_zip(
             social_ditancing_reports_path,
             os.path.join("cameras", f"{camera_id}-{camera_name}", social_ditancing_reports_folder),
+            zip_file,
+            export_info.from_date,
+            export_info.to_date
+        )
+    if ALL_DATA in export_info.data_types or DWELL_TIME in export_info.data_types:
+        dwell_time_reports_folder = f"reports/{DwellTimeMetric.reports_folder}"
+        dwell_time_reports_path = os.path.join(
+            os.getenv("SourceLogDirectory"), camera_id, dwell_time_reports_folder)
+        export_folder_into_zip(
+            dwell_time_reports_path,
+            os.path.join("cameras", f"{camera_id}-{camera_name}", dwell_time_reports_folder),
             zip_file,
             export_info.from_date,
             export_info.to_date

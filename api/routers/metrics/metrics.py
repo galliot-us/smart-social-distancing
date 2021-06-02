@@ -1,13 +1,12 @@
 import os
-import re
 
 from datetime import date
 from fastapi import HTTPException, status
 from typing import Iterator
 
 from api.utils import bad_request_serializer, extract_config
-from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT, ALL_AREAS
-from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric
+from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT, ALL_AREAS, DWELL_TIME
+from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric, DwellTimeMetric
 
 
 CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE, IN_OUT]
@@ -92,6 +91,8 @@ def get_entities(entity: str, entities_ids: str, metric: str):
 def get_metric_class(metric: str):
     if metric == SOCIAL_DISTANCING:
         return SocialDistancingMetric
+    elif metric == DWELL_TIME:
+        return DwellTimeMetric
     elif metric == FACEMASK_USAGE:
         return FaceMaskUsageMetric
     elif metric == OCCUPANCY:
