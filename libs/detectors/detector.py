@@ -19,7 +19,11 @@ class Detector:
         if self.has_classifier:
             self.classifier_img_size = [
                 int(i) for i in self.config.get_section_dict("Classifier")["ImageSize"].split(",")]
-
+            self.classifier_min_img_size = None
+            if self.config.get_section_dict("Classifier")["MinImageSize"]:
+                self.classifier_min_img_size = [
+                    int(i) for i in self.config.get_section_dict("Classifier")["MinImageSize"].split(",")
+                ]
         if self.device == "Jetson":
             from .jetson.detector import Detector as JetsonDetector
             self.detector = JetsonDetector(self.config, source)
@@ -64,16 +68,21 @@ class Detector:
                 if face_bbox is not None:
                     xmin, xmax = np.multiply([face_bbox[1], face_bbox[3]], self.resolution[0])
                     ymin, ymax = np.multiply([face_bbox[0], face_bbox[2]], self.resolution[1])
-                    croped_face = cv_image[
-                        int(ymin):int(ymin) + (int(ymax) - int(ymin)),
-                        int(xmin):int(xmin) + (int(xmax) - int(xmin))
-                    ]
-                    # Resizing input image
-                    croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
-                    croped_face = cv.cvtColor(croped_face, cv.COLOR_BGR2RGB)
-                    # Normalizing input image to [0.0-1.0]
-                    croped_face = np.array(croped_face) / 255.0
-                    classifier_objects.append(croped_face)
+                    if (self.classifier_min_img_size
+                            and (xmax - xmin < self.classifier_min_img_size[0] or ymax - ymin < self.classifier_min_img_size[1])):
+                        # Face is too small to process it, ignore it
+                        itm["face"] = None
+                    else:
+                        croped_face = cv_image[
+                            int(ymin):int(ymin) + (int(ymax) - int(ymin)),
+                            int(xmin):int(xmin) + (int(xmax) - int(xmin))
+                        ]
+                        # Resizing input image
+                        croped_face = cv.resize(croped_face, tuple(self.classifier_img_size[:2]))
+                        croped_face = cv.cvtColor(croped_face, cv.COLOR_BGR2RGB)
+                        # Normalizing input image to [0.0-1.0]
+                        croped_face = np.array(croped_face) / 255.0
+                        classifier_objects.append(croped_face)
             # Prepare tracker input
             box = itm["bbox"]
             x0 = box[1]

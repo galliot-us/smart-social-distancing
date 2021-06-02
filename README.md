@@ -627,10 +627,11 @@ All the configurations are grouped in *sections* and some of them can vary depen
   Otherwise, you can delete or uncomment this section of the config file to save on CPU usage.
   - `Device`: Specifies the device. The available values are *Jetson*, *EdgeTPU*, *Dummy*, *x86*, *x86-gpu*
   - `Name`: Name of the facemask classifier used.
-  - `ImageSize`: Configures the moedel input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
+  - `ImageSize`: Configures the model input size. When the image has a different resolution, it is resized to fit the model ones. The available values of this parameter depends on the model chosen.
   - `ModelPath`: The same behavior as in the section `Detector`.
   - `MinScore`: Defines the facemask detection threshold. Any facemask detected by the model with a score less than the threshold will be ignored.
   - `TensorrtPrecision`: When you are using TensorRT version of Openpifpaf with GPU, Set TensorRT Precison 32 for float32 and 16 for float16 precision based on your GPU, if it supports both of them, float32 engine is more accurate and float16 is faster.
+  - `MinImageSize`: Configures the minimum input size.
 
 - `[Tracker]`:
   - `Name`: Name of the tracker used.
