@@ -26,7 +26,7 @@ class WebHookLogger(RawDataLogger):
         }
 
     def log_objects(self, objects, violating_objects, violating_objects_index_list, violating_objects_count,
-                    detected_objects_cout, environment_score, time_stamp, version, log_time):
+                    detected_objects_cout, environment_score, time_stamp, version):
         request_data = {
             "version": version,
             "timestamp": time_stamp,
@@ -45,7 +45,7 @@ class WebHookLogger(RawDataLogger):
                 "camera_id": self.camera_id,
                 "raw_data": self.pending_requests
             }
-            response = requests.put(self.web_hook_endpoint, json=request_data, headers=headers)
+            response = requests.post(self.web_hook_endpoint, json=request_data, headers=headers)
         except ConnectionError:
             logger.error(f"Connection with endpoint {self.web_hook_endpoint} can't be established")
         except Exception as e:
@@ -58,6 +58,6 @@ class WebHookLogger(RawDataLogger):
                 logger.error(f"Webhook endpoint returns status {response.status_code}")
                 logger.error(response.json())
 
-    def update(self, cv_image, objects, post_processing_data, fps):
+    def update(self, cv_image, objects, post_processing_data, fps, log_time):
         if self.web_hook_endpoint:
-            super().update(cv_image, objects, post_processing_data, fps)
+            super().update(cv_image, objects, post_processing_data, fps, log_time)

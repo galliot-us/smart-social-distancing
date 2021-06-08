@@ -28,7 +28,7 @@ class RawDataLogger:
             now = datetime.now()
             log_time = now.strftime("%Y-%m-%d %H:%M:%S")
             if time.time() - self.submited_time < self.time_interval:
-                 return
+                return
         # Process objects
         objects_formated = self.format_objects(objects)
         # Get unique objects that are in close contact
