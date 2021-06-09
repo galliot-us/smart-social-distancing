@@ -45,7 +45,7 @@ class CvEngine:
         # Init loggers
         self.loggers = []
         loggers_names = [x for x in self.config.get_sections() if x.startswith("SourceLogger_")]
-        
+
         # FIXME: This logic only works if all the loggers use TimeInterval divisible by the minimum one
         self.logging_time_interval = None
         for l_name in loggers_names:
@@ -131,7 +131,7 @@ class CvEngine:
         if is_video_file:
             fps = min(15, input_cap.get(cv.CAP_PROP_FPS))
         else:
-            fps = max(25, input_cap.get(cv.CAP_PROP_FPS))
+            fps = min(25, input_cap.get(cv.CAP_PROP_FPS))
         log_time = None
         if is_video_file:
             total_frames = int(input_cap.get(cv.CAP_PROP_FRAME_COUNT))
@@ -160,7 +160,7 @@ class CvEngine:
                     logger.info(f'processing frame {frame_num} for {video_uri}')
                     self.write_performance_log()
                 if is_video_file and total_frames == frame_num:
-                        self.running_video = False
+                    self.running_video = False
                 if is_video_file and frame_num % self.fps_log_number != 0:
                     continue
                 cv_image, objects, post_processing_data = self.__process(cv_image)
@@ -171,7 +171,7 @@ class CvEngine:
                 if log_time:
                     log_time = log_time + timedelta(seconds=self.logging_time_interval)
                 if is_video_file and total_frames == frame_num:
-                        self.running_video = False
+                    self.running_video = False
             else:
                 if is_video_file:
                     # Video ended
@@ -180,7 +180,7 @@ class CvEngine:
         for source_logger in self.loggers:
             source_logger.stop_logging()
         self.running_video = False
-    
+
     def process_video(self, video_uri):
         if os.path.isdir(video_uri):
             for date_folder in os.listdir(video_uri):
@@ -189,6 +189,7 @@ class CvEngine:
                     self.process_video_file(minute_file_video, date_folder)
         else:
             self.process_video_file(video_uri)
+
     def stop_process_video(self):
         self.running_video = False
 
