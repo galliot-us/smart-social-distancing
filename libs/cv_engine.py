@@ -153,7 +153,11 @@ class CvEngine:
             source_logger.start_logging(fps)
         frame_num = 0
         while input_cap.isOpened() and self.running_video:
-            _, cv_image = input_cap.read()
+            ret, cv_image = input_cap.read()
+            if not ret:
+                logger.warn("Failed to read capture frame. Stream ended?")
+                self.running_video = False
+                continue
             if np.shape(cv_image) != ():
                 frame_num += 1
                 if frame_num % FRAMES_LOG_BATCH_SIZE == 1:
