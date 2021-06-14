@@ -1,6 +1,7 @@
 import logging
 import requests
 
+from json.decoder import JSONDecodeError
 from requests.exceptions import ConnectionError
 from starlette import status
 
@@ -56,7 +57,11 @@ class WebHookLogger(RawDataLogger):
                 self.pending_requests = []
             else:
                 logger.error(f"Webhook endpoint returns status {response.status_code}")
-                logger.error(response.json())
+                if response.text:
+                    try:
+                        logger.error(response.json())
+                    except JSONDecodeError:
+                        logger.error(response.text)
 
     def update(self, cv_image, objects, post_processing_data, fps, log_time):
         if self.web_hook_endpoint:
