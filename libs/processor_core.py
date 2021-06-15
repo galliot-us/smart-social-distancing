@@ -117,7 +117,9 @@ class ProcessorCore:
 
     def start_processing_sources(self):
         sources = self.config.get_video_sources()
-        processes = int(self.config.get_section_dict("App")["MaxProcesses"])
+        if len(sources) == 0:
+            return []
+        processes = max(1, int(self.config.get_section_dict("App")["MaxProcesses"]))
         if len(sources) < processes:
             processes = len(sources)
         tasks_per_process = len(sources) // processes
