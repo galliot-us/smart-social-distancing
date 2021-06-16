@@ -52,7 +52,6 @@ class WebHookLogger(RawDataLogger):
                 "raw_data": self.pending_requests
             }
             response = requests.post(self.web_hook_endpoint, json=request_data, headers=headers)
-            logger.warning(response.elapsed.total_seconds())
         except ConnectionError:
             logger.error(f"Connection with endpoint {self.web_hook_endpoint} can't be established")
         except Exception as e:
