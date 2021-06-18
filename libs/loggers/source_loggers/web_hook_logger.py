@@ -1,5 +1,6 @@
 import logging
 import requests
+import time
 
 from json.decoder import JSONDecodeError
 from requests.exceptions import ConnectionError
@@ -16,6 +17,8 @@ class WebHookLogger(RawDataLogger):
         super().__init__(config, source, logger)
         self.web_hook_endpoint = config.get_section_dict(logger)["Endpoint"]
         self.web_hook_authorization = config.get_section_dict(logger)["Authorization"]
+        self.sending_interval = float(self.config.get_section_dict(logger)["SendingInterval"])  # Seconds
+        self.sent_time = 0
         self.pending_requests = []
 
     def _process_object(self, object):
@@ -41,6 +44,8 @@ class WebHookLogger(RawDataLogger):
         if self.web_hook_authorization:
             headers["Authorization"] = self.web_hook_authorization
         self.pending_requests.append(request_data)
+        if time.time() - self.sent_time < self.sending_interval:
+            return
         try:
             request_data = {
                 "camera_id": self.camera_id,
@@ -53,6 +58,7 @@ class WebHookLogger(RawDataLogger):
             logger.error(f"Unexpected error connecting with {self.web_hook_endpoint}")
             logger.error(e)
         else:
+            self.sent_time = time.time()
             if response.status_code == status.HTTP_200_OK:
                 self.pending_requests = []
             else:
