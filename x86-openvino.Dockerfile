@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libswscale-dev \
         libxext6 \
         libxrender-dev \
+        libpython3.6-dev \
         mesa-va-drivers \
         python3-dev \
         python3-numpy \
