@@ -55,7 +55,7 @@ def _get_in_out_for_camera(camera_id: str):
     ]
 
 
-@app_router.put("/dashboard-sync", status_code=status.HTTP_204_NO_CONTENT)
+@app_router.put("/dashboard-sync", status_code=status.HTTP_200_OK)
 def sync_dashboard():
     """
     Sync the processor data in the cloud dashbord
