@@ -82,7 +82,7 @@ def sync_dashboard():
         for camera in get_cameras()
     ]
     response = requests.put(endpoint_url, json=cameras, headers=headers)
-    if response.status_code != status.HTTP_204_NO_CONTENT:
+    if response.status_code != status.HTTP_200_OK:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error syncing processor with dashbord"
