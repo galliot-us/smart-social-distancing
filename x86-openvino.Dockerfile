@@ -2,7 +2,7 @@ FROM openvino/ubuntu18_runtime
 USER root
 
 # The `python3-opencv` package isn't built with gstreamer. So we need to manually build opencv.
-ARG OPENCV_VERSION=4.3.0
+ARG OPENCV_VERSION=4.5.3
 # http://amritamaz.net/blog/opencv-config
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
