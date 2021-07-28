@@ -6,10 +6,8 @@ from starlette.exceptions import HTTPException
 from typing import Optional
 
 from api.models.app import AppDTO
-from api.utils import (extract_config, get_config, handle_response, update_config,
+from api.utils import (extract_config, handle_response, update_config,
                        map_section_from_config, map_to_config_file_format)
-from libs.metrics.in_out import InOutMetric
-
 
 from .cameras import get_cameras
 
@@ -38,23 +36,6 @@ def update_app_config(app: AppDTO, reboot_processor: Optional[bool] = True):
     return map_section_from_config("App", extract_config())
 
 
-def _get_in_out_for_camera(camera_id: str):
-    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, get_config())
-    in_out_boundaries = InOutMetric.read_in_out_boundaries(in_out_file_path)
-    if not in_out_boundaries:
-        return []
-    return [
-        {
-            "name": in_out["name"],
-            "ax": in_out['in_out_boundary'][0][0],
-            "ay": in_out['in_out_boundary'][0][1],
-            "bx": in_out['in_out_boundary'][1][0],
-            "by": in_out['in_out_boundary'][1][1],
-        }
-        for in_out in in_out_boundaries["in_out_boundaries"]
-    ]
-
-
 @app_router.put("/dashboard-sync", status_code=status.HTTP_200_OK)
 def sync_dashboard():
     """
@@ -76,8 +57,7 @@ def sync_dashboard():
     cameras = [
         {
             "processor_camera_id": camera["id"],
-            "name": camera["name"],
-            "boundary_lines": _get_in_out_for_camera(camera["id"])
+            "name": camera["name"]
         }
         for camera in get_cameras()
     ]
