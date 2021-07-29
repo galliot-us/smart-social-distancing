@@ -7,7 +7,6 @@ import logging
 
 from datetime import date, timedelta
 from libs.notifications.slack_notifications import SlackService, is_slack_configured
-from libs.metrics import SocialDistancingMetric
 from libs.utils.mailing import MailService, is_mailing_configured
 from libs.utils.loggers import get_source_log_directory
 
@@ -23,7 +22,7 @@ def get_daily_report(config, entity_info, report_date):
     if entity_type == 'Camera':
         reports_directory = os.path.join(log_directory, entity_info['id'], "reports")
         daily_csv_file_paths = [
-            os.path.join(reports_directory, SocialDistancingMetric.reports_folder ,'report_' + report_date + '.csv')
+            os.path.join(reports_directory, '','report_' + report_date + '.csv')
         ]
     else:
         raise NotImplementedError

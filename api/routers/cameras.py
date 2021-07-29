@@ -23,7 +23,6 @@ from api.utils import (
 from api.models.camera import (CameraDTO, CamerasListDTO, CreateCameraDTO, ImageModel, VideoLiveFeedModel,
                                ContourRoI, InOutBoundaries)
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
-from libs.metrics.in_out import InOutMetric
 from libs.utils.utils import validate_file_exists_and_is_not_empty
 
 logger = logging.getLogger(__name__)
@@ -45,8 +44,6 @@ def map_camera(camera_name, config, options=[]):
     camera_dict["has_been_calibrated"] = validate_file_exists_and_is_not_empty(calibration_file_path)
     roi_file_path = ObjectsFilteringPostProcessor.get_roi_file_path(camera_id, settings.config)
     camera_dict["has_defined_roi"] = validate_file_exists_and_is_not_empty(roi_file_path)
-    in_out_file_path = InOutMetric.get_in_out_file_path(camera_id, settings.config)
-    camera_dict["has_in_out_border"] = validate_file_exists_and_is_not_empty(in_out_file_path)
     return camera_dict
 
 

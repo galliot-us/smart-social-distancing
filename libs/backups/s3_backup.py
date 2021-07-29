@@ -1,9 +1,8 @@
 import os
 
-from datetime import date, timedelta
+from datetime import date
 
 from libs.config_engine import ConfigEngine
-from libs.metrics import FaceMaskUsageMetric, SocialDistancingMetric, DwellTimeMetric, InOutMetric
 from libs.uploaders.s3_uploader import S3Uploader
 from libs.utils.loggers import get_source_log_directory
 
@@ -24,26 +23,3 @@ def raw_data_backup(config: ConfigEngine, bucket_name: str):
         if os.path.isfile(today_objects_csv):
             # Upload the today object files to S3
             s3_uploader.upload_file(bucket_name, today_objects_csv, f"{str(date.today())}.csv", bucket_prefix)
-
-def reports_backup(config: ConfigEngine, bucket_name: str):
-    """
-    Uploads into s3 the reports generated yesterday by the cameras.
-    """
-    s3_uploader = S3Uploader()
-    sources = config.get_video_sources()
-    source_log_directory = get_source_log_directory(config)
-    yesterday = str(date.today() - timedelta(days=1))
-    # Backup the sources yesterday reports
-    for src in sources:
-        source_directory = os.path.join(source_log_directory, src["id"])
-        reports_directory = os.path.join(source_directory, "reports")
-        source_metrics = [FaceMaskUsageMetric, SocialDistancingMetric, DwellTimeMetric, InOutMetric]
-        for metric in source_metrics:
-            metric_folder = os.path.join(reports_directory, metric.reports_folder)
-            metric_hourly_report = os.path.join(metric_folder, f"report_{yesterday}.csv")
-            metric_daily_report = os.path.join(metric_folder, "report.csv")
-            bucket_prefix = f"sources/{src['id']}/reports/{metric.reports_folder}"
-            if os.path.isfile(metric_hourly_report):
-                s3_uploader.upload_file(bucket_name, metric_hourly_report, f"report_{yesterday}.csv", bucket_prefix)
-            if os.path.isfile(metric_daily_report):
-                s3_uploader.upload_file(bucket_name, metric_daily_report, "report.csv", bucket_prefix)
