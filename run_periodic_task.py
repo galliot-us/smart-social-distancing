@@ -5,8 +5,6 @@ import time
 
 from libs.backups.s3_backup import raw_data_backup
 from libs.config_engine import ConfigEngine
-from libs.reports.notifications import (send_daily_report_notification, send_daily_global_report,
-                                        send_weekly_global_report)
 
 logger = logging.getLogger(__name__)
 
@@ -32,21 +30,6 @@ def main(config):
             schedule.every(backup_interval).minutes.do(raw_data_backup, config=config, bucket_name=bucket_name)
         else:
             raise ValueError(f"Not supported periodic task named: {task_name}")
-
-    # Schedule daily/weekly reports for sources
-    sources = config.get_video_sources()
-    for src in sources:
-        if src['daily_report']:
-            schedule.every().day.at(src['daily_report_time']).do(
-                send_daily_report_notification, config=config, entity_info=src)
-    if config.get_boolean("App", "DailyGlobalReport"):
-        schedule.every().day.at(config.get_section_dict("App")["GlobalReportTime"]).do(
-            send_daily_global_report, config=config, sources=sources
-        )
-    if config.get_boolean("App", "WeeklyGlobalReport"):
-        schedule.every(7).days.at(config.get_section_dict("App")["GlobalReportTime"]).do(
-            send_weekly_global_report, config=config, sources=sources
-        )
 
     while True:
         schedule.run_pending()

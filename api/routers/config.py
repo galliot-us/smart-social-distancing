@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter
 from typing import Optional
 
-from api.models.config import ConfigDTO, ConfigInfo, GlobalReportingEmailsInfo
+from api.models.config import ConfigDTO, ConfigInfo
 from api.utils import (
     get_config, extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format
 )
@@ -106,27 +106,3 @@ async def get_processor_info():
     Returns basic info regarding this processor
     """
     return processor_info(get_config())
-
-
-@config_router.get("/global_report", response_model=GlobalReportingEmailsInfo)
-async def get_report_info():
-    app_config = extract_config()["App"]
-    return {
-        "emails": app_config["GlobalReportingEmails"],
-        "time": app_config["GlobalReportTime"],
-        "daily": get_config().get_boolean("App", "DailyGlobalReport"),
-        "weekly": get_config().get_boolean("App", "WeeklyGlobalReport")
-    }
-
-
-@config_router.put("/global_report")
-async def update_report_info(global_report_info: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
-    global_report_info = global_report_info.dict(exclude_unset=True, exclude_none=True)
-    config_dict = extract_config()
-    key_mapping = {"GlobalReportingEmails": "emails", "GlobalReportTime": "time",
-                   "DailyGlobalReport": "daily", "WeeklyGlobalReport": "weekly"}
-    for key, value in key_mapping.items():
-        if value in global_report_info:
-            config_dict["App"][key] = str(global_report_info[value])
-    success = update_config(config_dict, reboot_processor)
-    return handle_response(config_dict, success)

@@ -4,8 +4,6 @@ import logging
 import configparser
 import threading
 
-from libs.notifications.slack_notifications import is_slack_configured
-from libs.utils.mailing import is_mailing_configured
 from libs.utils import config as config_utils
 from libs.utils.loggers import get_source_log_directory
 from libs.entities.video_source import VideoSource
@@ -145,31 +143,11 @@ class ConfigEngine:
             sources = []
             for title, section in self.config.items():
                 if title.startswith("Source_"):
-                    is_slack_enabled = self.config["App"]["SlackChannel"] and is_slack_configured()
-                    is_email_enabled = is_mailing_configured()
                     config_dir = config_utils.get_source_config_directory(self)
                     video_source_logs_dir = get_source_log_directory(self)
-                    src = VideoSource(section, title, is_email_enabled, is_slack_enabled, config_dir,
-                                      video_source_logs_dir)
+                    src = VideoSource(section, title, config_dir, video_source_logs_dir)
                     sources.append(src)
             return sources
         except Exception:
             # Sources are invalid in config file. What should we do?
             raise RuntimeError("Invalid sources in config file")
-
-    def should_send_email_notifications(self, entity):
-        if "emails" in entity:
-            if is_mailing_configured():
-                return True
-            else:
-                self.logger.warning("Tried to enable email notifications but oauth2_cred.json is missing")
-        return False
-
-    def should_send_slack_notifications(self, ent):
-        if self.config["App"]["SlackChannel"] and ent["enable_slack_notifications"]:
-            if is_slack_configured():
-                return True
-            else:
-                self.logger.warning(
-                    "Tried to enable slack notifications but slack_token.txt is either missing or unauthorized")
-        return False

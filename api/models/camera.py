@@ -4,10 +4,10 @@ import cv2 as cv
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Tuple
 
-from .base import EntityConfigDTO, NotificationConfig, SnakeModel
+from .base import EntityConfigDTO, SnakeModel
 
 
-class CameraDTO(EntityConfigDTO, NotificationConfig):
+class CameraDTO(EntityConfigDTO):
     videoPath: str = Field(example='/repo/data/softbio_vid.mp4')
     tags: Optional[str] = Field("", example='kitchen,living_room')
     image: Optional[str] = Field("", example='Base64 image')

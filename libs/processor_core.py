@@ -6,7 +6,6 @@ from share.commands import Commands
 from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
-from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
@@ -42,22 +41,6 @@ class ProcessorCore:
         self._serve()
         logging.info("processor core has been terminated.")
 
-    def _setup_scheduled_tasks(self):
-        logger.info("Setup scheduled tasks")
-        sources = self.config.get_video_sources()
-        for src in sources:
-            should_send_email_notifications = src.should_send_email_notifications
-            should_send_slack_notifications = src.should_send_slack_notifications
-            if should_send_email_notifications or should_send_slack_notifications:
-                interval = src.notify_every_minutes
-                threshold = src.violation_threshold
-                schedule.every(interval).minutes.do(
-                    run_check_violations, threshold, self.config, src, interval,
-                    should_send_email_notifications, should_send_slack_notifications
-                ).tag("notification-task")
-            else:
-                logger.info(f"should not send notification for camera {src['id']}")
-
     def _serve(self):
         logger.info("Core is listening for commands ... ")
         while True:
@@ -77,7 +60,6 @@ class ProcessorCore:
                 return
 
             self.config.reload()
-            self._setup_scheduled_tasks()
             self._tasks[Commands.PROCESS_VIDEO_CFG] = True
 
             self._start_processing()

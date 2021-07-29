@@ -23,7 +23,6 @@ from .routers.config import config_router
 from .routers.detector import detector_router
 from .routers.export import export_router
 from .routers.periodic_tasks import periodic_tasks_router
-from .routers.slack import slack_router
 from .routers.source_loggers import source_loggers_router
 from .routers.source_post_processors import source_post_processors_router
 from .routers.static import static_router
@@ -80,7 +79,6 @@ class ProcessorAPI:
         app.include_router(source_loggers_router, prefix="/source_loggers", tags=["Source Loggers"], dependencies=dependencies)
         app.include_router(periodic_tasks_router, prefix="/periodic_tasks", tags=["Periodic Tasks"], dependencies=dependencies)
         app.include_router(export_router, prefix="/export", tags=["Export"], dependencies=dependencies)
-        app.include_router(slack_router, prefix="/slack", tags=["Slack"], dependencies=dependencies)
         app.include_router(auth_router, prefix="/auth", tags=["Auth"])
         app.include_router(static_router, prefix="/static", dependencies=dependencies)
         app.include_router(ml_model_router, prefix="/ml_model", tags=["ML Models"], dependencies=dependencies)

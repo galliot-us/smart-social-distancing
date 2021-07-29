@@ -29,23 +29,6 @@ class ConfigDTO(SnakeModel):
     periodicTasks: Optional[List[PeriodicTaskDTO]] = []
 
 
-class GlobalReportingEmailsInfo(BaseModel):
-    emails: Optional[str] = Field("", example='john@email.com,doe@email.com')
-    time: Optional[str] = Field("06:00")
-    daily: Optional[bool] = Field(False, example=True)
-    weekly: Optional[bool] = Field(False, example=True)
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "emails": "john@email.com,doe@email.com",
-                "time": "06:00",
-                "daily": True,
-                "weekly": True
-            }
-        }
-
-
 class ConfigInfo(BaseModel):
     version: str
     device: str
