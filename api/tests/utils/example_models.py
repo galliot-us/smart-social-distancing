@@ -74,33 +74,3 @@ camera_example_4 = {
     "dist_method": "CenterPointsDistance",
     "live_feed_enabled": False
 }
-
-area_example = {
-    "violation_threshold": 100,
-    "notify_every_minutes": 15,
-    "emails": "Michael@email.com,Sanz@email.com",
-    "enable_slack_notifications": False,
-    "daily_report": True,
-    "daily_report_time": "11:38",
-    "occupancy_threshold": 300,
-    "id": "5",
-    "name": "Kitchen",
-    "cameras": "49,50"
-}
-
-
-area_example_2 = {
-    "violation_threshold": 100,
-    "notify_every_minutes": 15,
-    "emails": "Michael@email.com,Sanz@email.com",
-    "enable_slack_notifications": False,
-    "daily_report": True,
-    "daily_report_time": "02:12",
-    "occupancy_threshold": 300,
-    "id": "6",
-    "name": "Kitchen",
-    "cameras": "51,52"
-}
-
-
-

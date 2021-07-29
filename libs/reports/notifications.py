@@ -26,11 +26,7 @@ def get_daily_report(config, entity_info, report_date):
             os.path.join(reports_directory, SocialDistancingMetric.reports_folder ,'report_' + report_date + '.csv')
         ]
     else:
-        # entity == 'Area'
-        camera_ids = entity_info['cameras']
-        daily_csv_file_paths = [
-            os.path.join(log_directory, camera_id, f"reports/{SocialDistancingMetric.reports_folder}/report_" + report_date + ".csv")
-            for camera_id in camera_ids]
+        raise NotImplementedError
 
     for file_path in daily_csv_file_paths:
         violations_per_hour = []
@@ -61,32 +57,28 @@ def send_daily_report_notification(config, entity_info):
             slack_service.daily_report(entity_info, sum(violations_per_hour))
 
 
-def send_global_report(report_type, config, sources, areas, sources_violations_per_hour, areas_violations_per_hour):
+def send_global_report(report_type, config, sources, sources_violations_per_hour):
     emails = config.get_section_dict("App")["GlobalReportingEmails"].split(",")
     if is_mailing_configured() and emails:
         ms = MailService(config)
-        ms.send_global_report(report_type, sources, areas, sources_violations_per_hour, areas_violations_per_hour)
+        ms.send_global_report(report_type, sources, sources_violations_per_hour)
     if is_slack_configured():
         slack_service = SlackService(config)
-        slack_service.send_global_report(report_type, sources, areas, sources_violations_per_hour, areas_violations_per_hour)
+        slack_service.send_global_report(report_type, sources, sources_violations_per_hour)
 
 
-def send_daily_global_report(config, sources, areas):
+def send_daily_global_report(config, sources):
     yesterday = str(date.today() - timedelta(days=1))
     sources_violations_per_hour = [get_daily_report(config, source, yesterday) for source in sources]
-    areas_violations_per_hour = [get_daily_report(config, area, yesterday) for area in areas]
-    send_global_report('daily', config, sources, areas, sources_violations_per_hour, areas_violations_per_hour)
+    send_global_report('daily', config, sources, sources_violations_per_hour)
 
 
-def send_weekly_global_report(config, sources, areas):
+def send_weekly_global_report(config, sources):
     weekly_sources_violations_per_hour = np.zeros((len(sources), 24))
-    weekly_areas_violations_per_hour = np.zeros((len(areas), 24))
     start_week = str(date.today() - timedelta(days=8))
     yesterday = str(date.today() - timedelta(days=1))
     date_range = pd.date_range(start=start_week, end=yesterday)
     for report_date in date_range:
         weekly_sources_violations_per_hour += np.array(
             [get_daily_report(config, source, report_date.strftime('%Y-%m-%d')) for source in sources])
-        weekly_areas_violations_per_hour += np.array(
-            [get_daily_report(config, area, report_date.strftime('%Y-%m-%d')) for area in areas])
-    send_global_report('weekly', config, sources, areas, weekly_sources_violations_per_hour, weekly_areas_violations_per_hour)
+    send_global_report('weekly', config, sources, weekly_sources_violations_per_hour)

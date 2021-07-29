@@ -17,7 +17,7 @@ from libs.utils.camera_calibration import (get_camera_calibration_path, compute_
 
 from api.settings import Settings
 from api.utils import (
-    extract_config, get_config, handle_response, reestructure_areas, restart_processor,
+    extract_config, get_config, handle_response, restart_processor,
     update_config, map_section_from_config, map_to_config_file_format, bad_request_serializer
 )
 from api.models.camera import (CameraDTO, CamerasListDTO, CreateCameraDTO, ImageModel, VideoLiveFeedModel,
@@ -86,24 +86,6 @@ def get_camera_default_image_string(camera_id):
         cv.imwrite(image_path, cv_image)
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read())
-
-
-def delete_camera_from_areas(camera_id, config_dict):
-    areas = {key: config_dict[key] for key in config_dict.keys() if key.startswith("Area_")}
-    for key, area in areas.items():
-        cameras = area["Cameras"].split(",")
-        if camera_id in cameras:
-            cameras.remove(camera_id)
-            if len(cameras) == 0:
-                logger.warning(f'After removing the camera "{camera_id}", the area "{area["Id"]} - {area["Name"]}" \
-                               "was left with no cameras and deleted')
-                config_dict.pop(key)
-            else:
-                config_dict[key]["Cameras"] = ",".join(cameras)
-
-    config_dict = reestructure_areas(config_dict)
-    return config_dict
-
 
 def reestructure_cameras(config_dict):
     """Ensure that all [Source_0, Source_1, ...] are consecutive"""
@@ -239,7 +221,6 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
     """
     config_dict = extract_config()
     index = get_camera_index(config_dict, camera_id)
-    config_dict = delete_camera_from_areas(camera_id, config_dict)
     config_dict.pop(f"Source_{index}")
     config_dict = reestructure_cameras((config_dict))
     success = update_config(config_dict, reboot_processor)

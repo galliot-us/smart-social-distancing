@@ -1,9 +1,7 @@
 PROCESSOR_VERSION = "0.7.0"
 
 # Entities
-AREAS = "areas"
 CAMERAS = "cameras"
-ALL_AREAS = "ALL"
 
 # Metrics
 OCCUPANCY = "occupancy"

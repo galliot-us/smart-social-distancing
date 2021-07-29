@@ -6,7 +6,6 @@ from share.commands import Commands
 from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
-from libs.area_threading import run_area_processing
 from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
@@ -46,7 +45,6 @@ class ProcessorCore:
     def _setup_scheduled_tasks(self):
         logger.info("Setup scheduled tasks")
         sources = self.config.get_video_sources()
-        areas = self.config.get_areas()
         for src in sources:
             should_send_email_notifications = src.should_send_email_notifications
             should_send_slack_notifications = src.should_send_slack_notifications
@@ -59,19 +57,6 @@ class ProcessorCore:
                 ).tag("notification-task")
             else:
                 logger.info(f"should not send notification for camera {src['id']}")
-        for area in areas:
-            should_send_email_notifications = area.should_send_email_notifications
-            should_send_slack_notifications = area.should_send_slack_notifications
-            if should_send_email_notifications or should_send_slack_notifications:
-                interval = area.notify_every_minutes
-                violation_threshold = area.violation_threshold
-                if violation_threshold > 0:
-                    schedule.every(interval).minutes.do(
-                        run_check_violations, violation_threshold, self.config, area, interval,
-                        should_send_email_notifications, should_send_slack_notifications
-                    ).tag("notification-task")
-            else:
-                logger.info(f"should not send notification for camera {area.id}")
 
     def _serve(self):
         logger.info("Core is listening for commands ... ")
@@ -137,16 +122,8 @@ class ProcessorCore:
             engines.append((send_conn, p))
         return engines
 
-    def start_processing_areas(self):
-        recv_conn, send_conn = mp.Pipe(False)
-        p = mp.Process(target=run_area_processing, args=(self.config, recv_conn, self.config.get_areas()))
-        p.start()
-        return (send_conn, p)
-
     def _start_processing(self):
         self._engines = self.start_processing_sources()
-        area_engine = self.start_processing_areas()
-        self._engines.append(area_engine)
 
     def _stop_processing(self):
         for (conn, proc) in self._engines:

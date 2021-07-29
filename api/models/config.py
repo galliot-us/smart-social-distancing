@@ -5,8 +5,6 @@ from constants import PROCESSOR_VERSION
 
 from .app import AppDTO
 from .api import ApiDTO
-from .area import AreaConfigDTO
-from .area_logger import AreaLoggerDTO
 from .base import SnakeModel
 from .camera import CameraDTO
 from .classifier import ClassifierDTO
@@ -23,13 +21,11 @@ class ConfigDTO(SnakeModel):
     api: ApiDTO
     core: CoreDTO
     cameras: List[CameraDTO]
-    areas: Optional[List[AreaConfigDTO]] = []
     detector: DetectorDTO
     classifier: Optional[ClassifierDTO]
     tracker: TrackerDTO
     sourcePostProcessors: List[SourcePostProcessorDTO]
     sourceLoggers: List[SourceLoggerDTO]
-    areaLoggers: Optional[List[AreaLoggerDTO]] = []
     periodicTasks: Optional[List[PeriodicTaskDTO]] = []
 
 

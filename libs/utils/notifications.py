@@ -29,8 +29,7 @@ def check_violations(entity_type, threshold, config, entity_info, interval, shou
         file_paths = [os.path.join(log_dir, entity_info.id, "objects_log", today + ".csv")]
     else:
         # entity_type == 'Area'
-        camera_ids = entity_info.cameras
-        file_paths = [os.path.join(log_dir, camera_id, "objects_log", today + ".csv") for camera_id in camera_ids]
+        raise NotImplementedError
 
     for file_path in file_paths:
         violations += get_violations(file_path, interval)

@@ -20,11 +20,6 @@ def map_to_file_format(config_dto: ConfigDTO):
     config_dict = dict()
     config_dict["App"] = map_to_config_file_format(config_dto.app)
     config_dict["CORE"] = map_to_config_file_format(config_dto.core)
-    for count, area in enumerate(config_dto.areas):
-        a_cfg = map_to_config_file_format(area)
-        if "Occupancy_rules" in a_cfg:
-            del a_cfg["Occupancy_rules"]
-        config_dict["Area_" + str(count)] = a_cfg
     for count, camera in enumerate(config_dto.cameras):
         config_dict["Source_" + str(count)] = map_to_camera_file_format(camera)
     config_dict["Detector"] = map_to_config_file_format(config_dto.detector)
@@ -36,8 +31,6 @@ def map_to_file_format(config_dto: ConfigDTO):
             source_post_processor, True)
     for count, source_logger in enumerate(config_dto.sourceLoggers):
         config_dict["SourceLogger_" + str(count)] = map_to_config_file_format(source_logger, True)
-    for count, area_logger in enumerate(config_dto.areaLoggers):
-        config_dict["AreaLogger_" + str(count)] = map_to_config_file_format(area_logger, True)
     for count, periodic_task in enumerate(config_dto.periodicTasks):
         config_dict["PeriodicTask_" + str(count)] = map_to_config_file_format(periodic_task, True)
     return config_dict
@@ -45,23 +38,19 @@ def map_to_file_format(config_dto: ConfigDTO):
 
 def map_config(config, options):
     cameras_name = [x for x in config.keys() if x.startswith("Source_")]
-    areas_name = [x for x in config.keys() if x.startswith("Area_")]
     source_post_processor = [x for x in config.keys() if x.startswith("SourcePostProcessor_")]
     source_loggers = [x for x in config.keys() if x.startswith("SourceLogger_")]
-    area_loggers = [x for x in config.keys() if x.startswith("AreaLogger_")]
     periodic_tasks = [x for x in config.keys() if x.startswith("PeriodicTask_")]
     return {
         "app": map_section_from_config("App", config),
         "api": map_section_from_config("API", config),
         "core": map_section_from_config("CORE", config),
         "cameras": [map_camera(x, config, options) for x in cameras_name],
-        "areas": [map_section_from_config(x, config) for x in areas_name],
         "detector": map_section_from_config("Detector", config),
         "classifier": map_section_from_config("Classifier", config),
         "tracker": map_section_from_config("Tracker", config),
         "sourcePostProcessors": [map_section_from_config(x, config) for x in source_post_processor],
         "sourceLoggers": [map_section_from_config(x, config) for x in source_loggers],
-        "areaLoggers": [map_section_from_config(x, config) for x in area_loggers],
         "periodicTasks": [map_section_from_config(x, config) for x in periodic_tasks],
     }
 

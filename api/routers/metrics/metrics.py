@@ -5,8 +5,8 @@ from fastapi import HTTPException, status
 from typing import Iterator
 
 from api.utils import bad_request_serializer, extract_config
-from constants import AREAS, CAMERAS, FACEMASK_USAGE, OCCUPANCY, SOCIAL_DISTANCING, IN_OUT, ALL_AREAS, DWELL_TIME
-from libs.metrics import FaceMaskUsageMetric, OccupancyMetric, SocialDistancingMetric, InOutMetric, DwellTimeMetric
+from constants import CAMERAS, FACEMASK_USAGE, SOCIAL_DISTANCING, IN_OUT, DWELL_TIME
+from libs.metrics import FaceMaskUsageMetric, SocialDistancingMetric, InOutMetric, DwellTimeMetric
 
 
 CAMERAS_METRICS = [SOCIAL_DISTANCING, FACEMASK_USAGE, IN_OUT]
@@ -30,33 +30,6 @@ def validate_camera_existence(camera_id: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Camera with id '{camera_id}' does not exist")
 
 
-def get_areas(areas: str) -> Iterator[str]:
-    if ALL_AREAS in areas.upper().split(","):
-        return [ALL_AREAS]
-    if areas:
-        return areas.split(",")
-    config = extract_config(config_type=AREAS)
-    return [x["Id"] for x in config.values()]
-
-
-def get_cameras_for_areas(areas: Iterator[str]) -> Iterator[str]:
-    if areas == [ALL_AREAS]:
-        return get_all_cameras()
-    config = extract_config(config_type=AREAS)
-    cameras = []
-    for area_config in config.values():
-        if area_config["Id"] in areas:
-            cameras.extend(area_config[CAMERAS.capitalize()].split(","))
-    return cameras
-
-
-def validate_area_existence(area_id: str):
-    if area_id != ALL_AREAS:
-        dir_path = os.path.join(os.getenv("AreaLogDirectory"), area_id, "occupancy_log")
-        if not os.path.exists(dir_path):
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Area with id '{area_id}' does not exist")
-
-
 def validate_dates(from_date: date, to_date: date):
     if from_date > to_date:
         raise HTTPException(
@@ -68,7 +41,6 @@ def validate_dates(from_date: date, to_date: date):
             )
         )
 
-
 def get_entities(entity: str, entities_ids: str, metric: str):
     entities = []
     if entity == CAMERAS:
@@ -77,14 +49,7 @@ def get_entities(entity: str, entities_ids: str, metric: str):
             validate_camera_existence(e)
     else:
         # entities == AREAS
-        entities = get_areas(entities_ids)
-        for e in entities:
-            validate_area_existence(e)
-    if entity == AREAS and metric in CAMERAS_METRICS:
-        entities = get_cameras_for_areas(entities)
-    if ALL_AREAS in entities_ids.upper() and entity == AREAS and metric == OCCUPANCY:
-        # Occupancy is not a CAMERA_METRIC, it is an AREA_METRIC. So we have to return a list with all area ids.
-        entities = get_areas("")
+        raise NotImplementedError
     return entities
 
 
@@ -95,8 +60,6 @@ def get_metric_class(metric: str):
         return DwellTimeMetric
     elif metric == FACEMASK_USAGE:
         return FaceMaskUsageMetric
-    elif metric == OCCUPANCY:
-        return OccupancyMetric
     elif metric == IN_OUT:
         return InOutMetric
     else:

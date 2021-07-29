@@ -21,14 +21,10 @@ def extract_config(config_type="all"):
     sections = get_config().get_sections()
     if config_type == "cameras":
         sections = [x for x in sections if x.startswith("Source_")]
-    elif config_type == "areas":
-        sections = [x for x in sections if x.startswith("Area_")]
     elif config_type == "source_post_processors":
         sections = [x for x in sections if x.startswith("SourcePostProcessor_")]
     elif config_type == "source_loggers":
         sections = [x for x in sections if x.startswith("SourceLogger_")]
-    elif config_type == "area_loggers":
-        sections = [x for x in sections if x.startswith("AreaLogger_")]
     elif config_type == "periodic_tasks":
         sections = [x for x in sections if x.startswith("PeriodicTask_")]
     config = {}
@@ -85,17 +81,6 @@ def handle_response(response, success, status_code=status.HTTP_200_OK, decameliz
         content = response
 
     return JSONResponse(status_code=status_code, content=content)
-
-
-def reestructure_areas(config_dict):
-    """Ensure that all [Area_0, Area_1, ...] are consecutive"""
-    area_names = [x for x in config_dict.keys() if x.startswith("Area_")]
-    area_names.sort()
-    for index, area_name in enumerate(area_names):
-        if f"Area_{index}" != area_name:
-            config_dict[f"Area_{index}"] = config_dict[area_name]
-            config_dict.pop(area_name)
-    return config_dict
 
 
 def clean_up_file(filename):

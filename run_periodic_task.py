@@ -42,24 +42,19 @@ def main(config):
         else:
             raise ValueError(f"Not supported periodic task named: {task_name}")
 
-    # Schedule daily/weekly reports for sources and areas
+    # Schedule daily/weekly reports for sources
     sources = config.get_video_sources()
-    areas = config.get_areas()
     for src in sources:
         if src['daily_report']:
             schedule.every().day.at(src['daily_report_time']).do(
                 send_daily_report_notification, config=config, entity_info=src)
-    for area in areas:
-        if area.daily_report:
-            schedule.every().day.at(area.daily_report_time).do(
-                send_daily_report_notification, config=config, entity_info=area)
     if config.get_boolean("App", "DailyGlobalReport"):
         schedule.every().day.at(config.get_section_dict("App")["GlobalReportTime"]).do(
-            send_daily_global_report, config=config, sources=sources, areas=areas
+            send_daily_global_report, config=config, sources=sources
         )
     if config.get_boolean("App", "WeeklyGlobalReport"):
         schedule.every(7).days.at(config.get_section_dict("App")["GlobalReportTime"]).do(
-            send_weekly_global_report, config=config, sources=sources, areas=areas
+            send_weekly_global_report, config=config, sources=sources
         )
 
     while True:

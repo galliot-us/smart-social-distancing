@@ -15,7 +15,7 @@ from typing import Dict, List, Iterator
 from pandas.api.types import is_numeric_dtype
 
 from libs.utils.config import get_source_config_directory
-from libs.utils.loggers import get_source_log_directory, get_area_log_directory, get_source_logging_interval
+from libs.utils.loggers import get_source_log_directory, get_source_logging_interval
 from libs.utils.utils import is_list_recursively_empty, validate_file_exists_and_is_not_empty
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,6 @@ class BaseMetric:
     reports_folder = None
     csv_headers = []
     csv_default_values = []
-    # entity value can be "source" or "area"
     entity = "source"
     # Use the `live_csv_headers` when the csv strucutre differs from the hourly/daily
     live_csv_headers = []
@@ -56,9 +55,11 @@ class BaseMetric:
 
     @classmethod
     def get_entity_base_directory(cls, config=None):
+        if cls.entity != "source":
+            raise NotImplementedError
         if config:
-            return get_source_log_directory(config) if cls.entity == "source" else get_area_log_directory(config)
-        return os.getenv("SourceLogDirectory") if cls.entity == "source" else os.getenv("AreaLogDirectory")
+            return get_source_log_directory(config)
+        return os.getenv("SourceLogDirectory")
 
     @classmethod
     def get_roi_file_path(cls, camera_id, config):
@@ -76,7 +77,7 @@ class BaseMetric:
     @classmethod
     def get_roi_contour_for_entity(cls, config, source_id):
         if cls.entity == "area":
-            return None
+            raise NotImplementedError
         return cls.get_roi_contour(cls.get_roi_file_path(source_id, config))
 
     @staticmethod
@@ -123,7 +124,9 @@ class BaseMetric:
 
     @classmethod
     def get_entities(cls, config):
-        return config.get_video_sources() if cls.entity == "source" else config.get_areas()
+        if cls.entity != "source":
+            raise NotImplementedError
+        return config.get_video_sources()
 
     @classmethod
     def process_metric_csv_row(cls, csv_row, object_logs):
@@ -151,7 +154,9 @@ class BaseMetric:
                                  time_until: datetime):
         roi_contour = cls.get_roi_contour_for_entity(config, entity["id"])
         if not os.path.isfile(entity_file):
-            entity_type = "Camera" if cls.entity else "Area"
+            if not cls.entity:
+                raise NotImplementedError
+            entity_type = "Camera"
             logger.warn(f"The [{entity_type}: {entity['id']}] contains no recorded data for that day")
             return
         objects_logs = {}
@@ -179,8 +184,7 @@ class BaseMetric:
             if cls.entity == "source":
                 log_directory = os.path.join(entity_directory, "objects_log")
             else:
-                # cls.entity == "area"
-                log_directory = os.path.join(entity_directory, "occupancy_log")
+               raise NotImplementedError
             reports_directory = os.path.join(entity_directory, "reports", cls.reports_folder)
             # Create missing directories
             os.makedirs(log_directory, exist_ok=True)
@@ -201,7 +205,9 @@ class BaseMetric:
                     writer.writeheader()
             csv_data = cls.generate_hourly_csv_data(config, entity, entity_csv, time_from, time_until)
             if csv_data is None:
-                entity_type = "Camera" if cls.entity else "Area"
+                if not cls.entity:
+                    raise NotImplementedError
+                entity_type = "Camera"
                 logger.warn(f"Hourly report not generated! [{entity_type}: {entity['id']}]")
                 continue
             with open(daily_csv, "a", newline='') as csvfile:
@@ -234,7 +240,9 @@ class BaseMetric:
             hourly_csv = os.path.join(reports_directory, "report_" + yesterday + ".csv")
             report_csv = os.path.join(reports_directory, "report.csv")
             if not os.path.isfile(hourly_csv):
-                entity_type = "Camera" if cls.entity else "Area"
+                if not cls.entity:
+                    raise NotImplementedError
+                entity_type = "Camera"
                 logger.warn(f"Daily report for date {str(yesterday)} not generated! [{entity_type}: {entity['id']}]")
                 continue
             daily_data = cls.generate_daily_csv_data(hourly_csv)
@@ -272,8 +280,7 @@ class BaseMetric:
             if cls.entity == "source":
                 log_directory = os.path.join(entity_directory, "objects_log")
             else:
-                # cls.entity == "area"
-                log_directory = os.path.join(entity_directory, "occupancy_log")
+               raise NotImplementedError
             today_entity_csv = os.path.join(log_directory, str(date.today()) + ".csv")
             live_report_csv = os.path.join(reports_directory, "live.csv")
             csv_headers = cls.live_csv_headers if cls.live_csv_headers else cls.csv_headers

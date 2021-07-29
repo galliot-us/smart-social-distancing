@@ -89,17 +89,10 @@ class MailService:
         self.send_email_notification(entity_info, subject, html_string)
 
 
-    def send_global_report(self, report_type, sources, areas, sources_violations_per_hour, areas_violations_per_hour):
+    def send_global_report(self, report_type, sources, sources_violations_per_hour):
         frontend_url = self.config.get_section_dict("App")["DashboardURL"]
         with codecs.open('libs/utils/mail_global_report.html', 'r') as f:
             html_string = f.read()
-        areas_report = ""
-        for index, area in enumerate(areas):
-            areas_report += self.fill_report_table(
-                "libs/utils/_global_entity_report.html", area,
-                sum(areas_violations_per_hour[index]), areas_violations_per_hour[index]
-            )
-        html_string = html_string.replace('{global_areas_report}', areas_report)
         cameras_report = ""
         for index, source in enumerate(sources):
             cameras_report += self.fill_report_table(
