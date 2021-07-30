@@ -11,11 +11,6 @@ logger = logging.getLogger(__name__)
 
 class ExportDataType(str, Enum):
     raw_data = "raw_data"
-    occupancy = "occupancy"
-    social_distancing = "social-distancing"
-    facemask_usage = "facemask-usage"
-    in_out = "in-out"
-    dwell_time = "dwell-time"
     all_data = "all_data"
 
 
