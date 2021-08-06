@@ -1,7 +1,9 @@
 import logging
+import os
 import requests
 import time
 
+from datetime import timezone
 from json.decoder import JSONDecodeError
 from requests.exceptions import ConnectionError
 from starlette import status
@@ -38,7 +40,8 @@ class WebHookLogger(RawDataLogger):
             "violating_objects": violating_objects_count,
             "environment_score": environment_score,
             "detections": [self._process_object(o) for o in objects],
-            "violations_indexes": [int(v) for v in violating_objects_index_list]
+            "violations_indexes": [int(v) for v in violating_objects_index_list],
+            "timezone": os.environ.get("TZ", "UTC")
         }
         headers = {"content-type": "application/json"}
         if self.web_hook_authorization:
