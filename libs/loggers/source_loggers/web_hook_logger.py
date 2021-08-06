@@ -3,7 +3,6 @@ import os
 import requests
 import time
 
-from datetime import timezone
 from json.decoder import JSONDecodeError
 from requests.exceptions import ConnectionError
 from starlette import status
