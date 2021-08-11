@@ -171,8 +171,6 @@ class TestsEditCamera:
 
         camera_id = camera_sample["id"]
         body = {
-            "violation_threshold": 22,
-            "notify_every_minutes": 22,
             "id": camera_id,
             "name": "new_Kitchen",
             "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
