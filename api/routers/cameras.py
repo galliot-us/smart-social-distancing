@@ -162,7 +162,7 @@ async def get_camera(camera_id: str):
     """
     Returns the configuration related to the camera <camera_id>
     """
-    return retrieve_camera_from_id(camera_id, options=["withImage"])
+    return retrieve_camera_from_id(camera_id)
 
 
 def get_first_unused_id(cameras_ids):
