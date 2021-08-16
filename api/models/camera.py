@@ -17,6 +17,9 @@ class CameraDTO(EntityConfigDTO, NotificationConfig):
     hasDefinedRoi: bool = Field(False, example=False)
     hasInOutBorder: bool = Field(False, example=False)
 
+
+class CreateCameraDTO(CameraDTO):
+
     @validator('videoPath')
     def video_must_be_valid(cls, video_uri):
         error = False

@@ -20,7 +20,8 @@ from api.utils import (
     extract_config, get_config, handle_response, reestructure_areas, restart_processor,
     update_config, map_section_from_config, map_to_config_file_format, bad_request_serializer
 )
-from api.models.camera import CameraDTO, CamerasListDTO, ImageModel, VideoLiveFeedModel, ContourRoI, InOutBoundaries
+from api.models.camera import (CameraDTO, CamerasListDTO, CreateCameraDTO, ImageModel, VideoLiveFeedModel,
+                               ContourRoI, InOutBoundaries)
 from libs.source_post_processors.objects_filtering import ObjectsFilteringPostProcessor
 from libs.metrics.in_out import InOutMetric
 from libs.utils.utils import validate_file_exists_and_is_not_empty
@@ -162,7 +163,7 @@ async def get_camera(camera_id: str):
     """
     Returns the configuration related to the camera <camera_id>
     """
-    return retrieve_camera_from_id(camera_id, options=["withImage"])
+    return retrieve_camera_from_id(camera_id)
 
 
 def get_first_unused_id(cameras_ids):
@@ -183,7 +184,7 @@ def get_first_unused_id(cameras_ids):
 
 
 @cameras_router.post("", response_model=CameraDTO, status_code=status.HTTP_201_CREATED)
-async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] = True):
+async def create_camera(new_camera: CreateCameraDTO, reboot_processor: Optional[bool] = True):
     """
     Adds a new camera to the processor.
     """
@@ -216,7 +217,7 @@ async def create_camera(new_camera: CameraDTO, reboot_processor: Optional[bool] 
 
 
 @cameras_router.put("/{camera_id}", response_model=CameraDTO)
-async def edit_camera(camera_id: str, edited_camera: CameraDTO, reboot_processor: Optional[bool] = True):
+async def edit_camera(camera_id: str, edited_camera: CreateCameraDTO, reboot_processor: Optional[bool] = True):
     """
     Edits the configuration related to the camera <camera_id>
     """
