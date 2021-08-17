@@ -84,6 +84,7 @@ RUN apt-get update && apt install -y git autoconf automake libtool curl make g++
 
 RUN git clone https://github.com/protocolbuffers/protobuf.git \
 && cd protobuf \
+&& git checkout v3.17.3 \
 && git submodule update --init --recursive \
 && chmod +x autogen.sh \
 && ./autogen.sh \
