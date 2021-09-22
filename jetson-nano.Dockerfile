@@ -103,7 +103,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf $(which gcc) /usr/local/bin/gcc-aarch64-linux-gnu \
     && ln -sf $(which g++) /usr/local/bin/g++-aarch64-linux-gnu \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel protobuf wget pillow && pip install -r requirements.txt
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel protobuf wget pillow && pip install -r requirements.txt \
     && apt-get purge -y
     && apt-get autoremove -y
 
