@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgstreamer-plugins-base1.0-dev \
         libgstreamer1.0-dev \
         libsm6 \
+        libswscale4 \
         libswscale-dev \
         libxext6 \
         libxrender-dev \
@@ -74,7 +75,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 COPY api/requirements.txt /
 
 # Installing pycuda using already-built wheel is a lot faster
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         graphsurgeon-tf \
         libboost-python-dev \
