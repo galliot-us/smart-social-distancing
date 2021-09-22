@@ -74,7 +74,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 COPY api/requirements.txt /
 
 # Installing pycuda using already-built wheel is a lot faster
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
         build-essential \
         graphsurgeon-tf \
         libboost-python-dev \
