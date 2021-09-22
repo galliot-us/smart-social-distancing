@@ -66,9 +66,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN printf 'deb https://repo.download.nvidia.com/jetson/common r32 main\ndeb https://repo.download.nvidia.com/jetson/t210 r32 main' > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list
 
-COPY ./trusted-keys /tmp/trusted-keys
-RUN apt-key add /tmp/trusted-keys
-
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
