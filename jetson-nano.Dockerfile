@@ -107,7 +107,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get purge -y
     && apt-get autoremove -y
 
-RUN wget https://github.com/sasikiran/jetson_tx2_trt_ssd/raw/master/libflattenconcat.so -O /opt/libflattenconcat.so
+
+RUN wget https://github.com/neuralet/smart-social-distancing/raw/master/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 RUN apt update && apt install -y libtcmalloc-minimal4
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
