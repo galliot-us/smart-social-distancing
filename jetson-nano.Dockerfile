@@ -3,7 +3,7 @@
 # 1) build: docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 # 2) run: docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-jetson-nano
 
-FROM nvcr.io/nvidia/l4t-tensorflow:r32.4.4-tf1.15-py3
+FROM nvcr.io/nvidia/l4t-tensorflow:r32.6.1-tf1.15-py3
 
 
 # The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
