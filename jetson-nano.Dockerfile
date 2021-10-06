@@ -3,7 +3,7 @@
 # 1) build: docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 # 2) run: docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-jetson-nano
 
-FROM nvcr.io/nvidia/l4t-tensorflow:r32.4.4-tf1.15-py3
+FROM nvcr.io/nvidia/l4t-tensorflow:r32.5.0-tf1.15-py3
 
 
 # The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
@@ -109,7 +109,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y
 
 
-RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.6/bin/libflattenconcat.so -O /opt/libflattenconcat.so
+RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 RUN apt update && apt install -y libtcmalloc-minimal4
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"

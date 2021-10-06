@@ -127,7 +127,7 @@ git checkout $(git tag | tail -1)
 ```
 
 ###### Run on Jetson Nano
-* Works with JetPack 4.6.
+* Works with JetPack 4.5.
 
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.3:
