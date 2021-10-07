@@ -9,61 +9,61 @@ FROM nvcr.io/nvidia/l4t-tensorflow:r32.5.0-tf1.15-py3
 # The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
 # http://amritamaz.net/blog/opencv-config
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        ca-certificates \
-        cmake \
-        curl \
-        git \
-        gnupg \
-        gstreamer1.0-plugins-bad \
-        gstreamer1.0-plugins-good \
-        gstreamer1.0-plugins-ugly \
-        gstreamer1.0-vaapi \
-        libavcodec-dev \
-        libavformat-dev \
-        libgstreamer-plugins-base1.0-dev \
-        libgstreamer1.0-dev \
-        libsm6 \
-        libswscale4 \
-        libswscale-dev \
-        libxext6 \
-        libxrender-dev \
-        mesa-va-drivers \
-        nano \
-        pkg-config \
-        python3-pip \
-        vim \
-        zip \
-    && rm -rf /var/lib/apt/lists/* \
-    && cd /tmp/ \
-    && curl -L https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz \
-    && tar zxvf opencv.tar.gz && rm opencv.tar.gz \
-    && cd /tmp/opencv-${OPENCV_VERSION} \
-    && mkdir build \
-    && cd build \
-    && cmake \
-        -DBUILD_opencv_python3=yes \
-        -DPYTHON_EXECUTABLE=$(which python3) \
-        -DCMAKE_BUILD_TYPE=RELEASE \
-        -DBUILD_TESTS=OFF \
-        -DBUILD_PERF_TESTS=OFF \
-        -DBUILD_EXAMPLES=OFF \
-        -DINSTALL_TESTS=OFF \
-        -DBUILD_opencv_apps=OFF \
-        -DBUILD_DOCS=OFF \
-        ../ \
-    && make -j$(nproc) \
-    && make install \
-    && cd /tmp \
-    && rm -rf opencv-${OPENCV_VERSION} \
-    && apt-get purge -y \
-        cmake \
-        git \
-        libgstreamer-plugins-base1.0-dev \
-        libgstreamer1.0-dev \
-        libxrender-dev \
-    && apt-get autoremove -y
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#         build-essential \
+#         ca-certificates \
+#         cmake \
+#         curl \
+#         git \
+#         gnupg \
+#         gstreamer1.0-plugins-bad \
+#         gstreamer1.0-plugins-good \
+#         gstreamer1.0-plugins-ugly \
+#         gstreamer1.0-vaapi \
+#         libavcodec-dev \
+#         libavformat-dev \
+#         libgstreamer-plugins-base1.0-dev \
+#         libgstreamer1.0-dev \
+#         libsm6 \
+#         libswscale4 \
+#         libswscale-dev \
+#         libxext6 \
+#         libxrender-dev \
+#         mesa-va-drivers \
+#         nano \
+#         pkg-config \
+#         python3-pip \
+#         vim \
+#         zip \
+#     && rm -rf /var/lib/apt/lists/* \
+#     && cd /tmp/ \
+#     && curl -L https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz \
+#     && tar zxvf opencv.tar.gz && rm opencv.tar.gz \
+#     && cd /tmp/opencv-${OPENCV_VERSION} \
+#     && mkdir build \
+#     && cd build \
+#     && cmake \
+#         -DBUILD_opencv_python3=yes \
+#         -DPYTHON_EXECUTABLE=$(which python3) \
+#         -DCMAKE_BUILD_TYPE=RELEASE \
+#         -DBUILD_TESTS=OFF \
+#         -DBUILD_PERF_TESTS=OFF \
+#         -DBUILD_EXAMPLES=OFF \
+#         -DINSTALL_TESTS=OFF \
+#         -DBUILD_opencv_apps=OFF \
+#         -DBUILD_DOCS=OFF \
+#         ../ \
+#     && make -j$(nproc) \
+#     && make install \
+#     && cd /tmp \
+#     && rm -rf opencv-${OPENCV_VERSION} \
+#     && apt-get purge -y \
+#         cmake \
+#         git \
+#         libgstreamer-plugins-base1.0-dev \
+#         libgstreamer1.0-dev \
+#         libxrender-dev \
+#     && apt-get autoremove -y
 
 RUN printf 'deb https://repo.download.nvidia.com/jetson/common r32 main\ndeb https://repo.download.nvidia.com/jetson/t210 r32 main' > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list
 
@@ -103,10 +103,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf $(which gcc) /usr/local/bin/gcc-aarch64-linux-gnu \
     && ln -sf $(which g++) /usr/local/bin/g++-aarch64-linux-gnu \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel protobuf wget pillow pycuda && pip install -r requirements.txt \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 opencv-python wheel protobuf wget pillow pycuda && pip install -r requirements.txt \
     && apt-get purge -y \
     && apt-get autoremove -y
-# opencv-python
+#
 
 RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 RUN apt update && apt install -y libtcmalloc-minimal4
