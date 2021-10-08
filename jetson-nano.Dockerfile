@@ -113,7 +113,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get autoremove -y
 
 # RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
-COPY ./bin/libflattenconcat.so.6 /opt/libflattenconcat.so
+COPY ./bin/libflattenconcat.so /opt/libflattenconcat.so
 RUN apt update && apt install -y libtcmalloc-minimal4 curl build-essential nano vim pkg-config zip
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
