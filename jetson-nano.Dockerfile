@@ -114,10 +114,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 COPY ./bin/libflattenconcat.so.6 /opt/libflattenconcat.so
-RUN apt update && apt install -y libtcmalloc-minimal4 curl build-essential nano vim pkg-config zip protobuf-compiler libprotobuf-dev onnx ca-certificates nvidia-pyindex
+RUN apt update && apt install -y libtcmalloc-minimal4 curl build-essential nano vim pkg-config zip
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
-RUN apt update
+RUN apt update && apt install -y protobuf-compiler libprotobuf-dev ca-certificates nvidia-pyindex
+RUN pip install -y onnx 
 # ENV relative_path=/repo/adaptive_object_detection 
 # ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
 
