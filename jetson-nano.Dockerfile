@@ -66,6 +66,7 @@ ARG OPENCV_VERSION=4.3.0
 #     && apt-get autoremove -y
 
 RUN apt-get update && apt-get install -y python3-pip pkg-config zip gnupg
+# curl
 
 RUN python3 -m pip install --upgrade pip
 
@@ -110,18 +111,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && python3 -m pip install --upgrade pip setuptools==41.0.0 opencv-python wheel protobuf wget pillow pycuda && pip install -r requirements.txt \
     && apt-get purge -y \
     && apt-get autoremove -y
-#
 
 RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 RUN apt update && apt install -y libtcmalloc-minimal4
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
+RUN apt install curl build-essential nano vim pkg-config zip
 RUN apt update && apt install -y cmake protobuf-compiler libprotobuf-dev
 RUN pip install onnx
 # ENV relative_path=/repo/adaptive_object_detection 
 # ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
 
-RUN apt upgrade
+RUN apt upgrade -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV CONFIG_FILE=config-jetson-nano.ini
