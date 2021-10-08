@@ -118,7 +118,7 @@ RUN apt update && apt install -y libtcmalloc-minimal4 curl build-essential nano 
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
 RUN apt update && apt install -y protobuf-compiler libprotobuf-dev ca-certificates
-RUN pip install -y onnx nvidia-pyindex
+RUN pip install onnx nvidia-pyindex
 # ENV relative_path=/repo/adaptive_object_detection 
 # ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
 
