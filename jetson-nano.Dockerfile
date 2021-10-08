@@ -121,6 +121,8 @@ RUN pip install onnx
 # ENV relative_path=/repo/adaptive_object_detection 
 # ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
 
+RUN apt upgrade
+
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV CONFIG_FILE=config-jetson-nano.ini
 # ENV OPENBLAS_CORETYPE=armv8
