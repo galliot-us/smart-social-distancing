@@ -7,7 +7,7 @@ FROM nvcr.io/nvidia/l4t-tensorflow:r32.5.0-tf1.15-py3
 
 
 # The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
-ARG OPENCV_VERSION=4.3.0
+# ARG OPENCV_VERSION=4.3.0
 # http://amritamaz.net/blog/opencv-config
 # RUN apt-get update && apt-get install -y --no-install-recommends \
 #         build-essential \
@@ -108,7 +108,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf $(which gcc) /usr/local/bin/gcc-aarch64-linux-gnu \
     && ln -sf $(which g++) /usr/local/bin/g++-aarch64-linux-gnu \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 opencv-python wheel protobuf wget pillow pycuda && pip install -r requirements.txt \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel protobuf wget pillow pycuda && pip install -r requirements.txt \
     && apt-get purge -y \
     && apt-get autoremove -y
 
@@ -118,7 +118,7 @@ RUN apt update && apt install -y libtcmalloc-minimal4 curl build-essential nano 
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
 RUN apt update && apt install -y protobuf-compiler libprotobuf-dev ca-certificates
-RUN pip install onnx nvidia-pyindex
+RUN pip install onnx nvidia-pyindex opencv-python==4.3.0.38
 # ENV relative_path=/repo/adaptive_object_detection 
 # ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
 
