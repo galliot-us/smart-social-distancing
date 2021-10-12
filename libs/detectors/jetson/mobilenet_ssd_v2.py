@@ -27,9 +27,28 @@ class Detector:
 
     def _load_engine(self):
         """ Load engine file as a trt Runtime. """
-        trt_bin_path = '/repo/data/jetson/TRT_%s.bin' % self.model
-        with open(trt_bin_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
-            return runtime.deserialize_cuda_engine(f.read())
+        parent_dir = str(Path(__file__).parent.absolute())
+        base_dir = '/repo/data/jetson/'
+        # detector_class_count = len(classes)
+        logging.info("you didn't specify the model file so the COCO pretrained model will be used")
+        base_url =  "https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/"
+        model_file = "frozen_inference_graph.bin"
+        model_path = os.path.join(base_dir, model_file)
+        if not os.path.isfile(model_path):
+            logging.info('model does not exist under: {}, downloading from {}'.format(str(model_path), base_url + model_file))
+            os.makedirs(base_dir, exist_ok=True)
+            os.system("bash "+ parent_dir + "/../generate_tensorrt.bash")
+        # import pathlib
+        # if ( pathlib.Path(model_path).suffix == ".pb" ):
+        #     logging.info('model is a Tensorflow protobuf... Converting...')
+        #     os.makedirs(base_dir, exist_ok=True)
+        #     os.system("bash "+ parent_dir + "/../generate_tensorrt.bash " + str(model_path) + " " + str(detector_class_count))
+        #     model_file = "frozen_inference_graph.bin"
+        #     model_path = os.path.join(base_dir, model_file)
+
+        #trt_bin_path = '/repo/data/jetson/TRT_%s.bin' % self.model
+        #with open(trt_bin_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
+        #    return runtime.deserialize_cuda_engine(f.read())
 
     def _allocate_buffers(self):
         """
