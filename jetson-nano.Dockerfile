@@ -6,9 +6,9 @@
 FROM nvcr.io/nvidia/l4t-tensorflow:r32.5.0-tf1.15-py3
 
 
-The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
+# The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
-http://amritamaz.net/blog/opencv-config
+# http://amritamaz.net/blog/opencv-config
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         ca-certificates \
