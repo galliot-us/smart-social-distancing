@@ -6,66 +6,64 @@
 FROM nvcr.io/nvidia/l4t-tensorflow:r32.5.0-tf1.15-py3
 
 
-# The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
-# ARG OPENCV_VERSION=4.3.0
-# http://amritamaz.net/blog/opencv-config
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#         build-essential \
-#         ca-certificates \
-#         cmake \
-#         curl \
-#         git \
-#         gnupg \
-#         gstreamer1.0-plugins-bad \
-#         gstreamer1.0-plugins-good \
-#         gstreamer1.0-plugins-ugly \
-#         gstreamer1.0-vaapi \
-#         libavcodec-dev \
-#         libavformat-dev \
-#         libgstreamer-plugins-base1.0-dev \
-#         libgstreamer1.0-dev \
-#         libsm6 \
-#         libswscale4 \
-#         libswscale-dev \
-#         libxext6 \
-#         libxrender-dev \
-#         mesa-va-drivers \
-#         nano \
-#         pkg-config \
-#         python3-pip \
-#         vim \
-#         zip \
-#     && rm -rf /var/lib/apt/lists/* \
-#     && cd /tmp/ \
-#     && curl -L https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz \
-#     && tar zxvf opencv.tar.gz && rm opencv.tar.gz \
-#     && cd /tmp/opencv-${OPENCV_VERSION} \
-#     && mkdir build \
-#     && cd build \
-#     && cmake \
-#         -DBUILD_opencv_python3=yes \
-#         -DPYTHON_EXECUTABLE=$(which python3) \
-#         -DCMAKE_BUILD_TYPE=RELEASE \
-#         -DBUILD_TESTS=OFF \
-#         -DBUILD_PERF_TESTS=OFF \
-#         -DBUILD_EXAMPLES=OFF \
-#         -DINSTALL_TESTS=OFF \
-#         -DBUILD_opencv_apps=OFF \
-#         -DBUILD_DOCS=OFF \
-#         ../ \
-#     && make -j$(nproc) \
-#     && make install \
-#     && cd /tmp \
-#     && rm -rf opencv-${OPENCV_VERSION} \
-#     && apt-get purge -y \
-#         cmake \
-#         git \
-#         libgstreamer-plugins-base1.0-dev \
-#         libgstreamer1.0-dev \
-#         libxrender-dev \
-#     && apt-get autoremove -y
+The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
+ARG OPENCV_VERSION=4.3.0
+http://amritamaz.net/blog/opencv-config
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        git \
+        gnupg \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-ugly \
+        gstreamer1.0-vaapi \
+        libavcodec-dev \
+        libavformat-dev \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        libsm6 \
+        libswscale4 \
+        libswscale-dev \
+        libxext6 \
+        libxrender-dev \
+        mesa-va-drivers \
+        pkg-config \
+        python3-pip \
+        zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && cd /tmp/ \
+    && curl -L https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz \
+    && tar zxvf opencv.tar.gz && rm opencv.tar.gz \
+    && cd /tmp/opencv-${OPENCV_VERSION} \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -DBUILD_opencv_python3=yes \
+        -DPYTHON_EXECUTABLE=$(which python3) \
+        -DCMAKE_BUILD_TYPE=RELEASE \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_PERF_TESTS=OFF \
+        -DBUILD_EXAMPLES=OFF \
+        -DINSTALL_TESTS=OFF \
+        -DBUILD_opencv_apps=OFF \
+        -DBUILD_DOCS=OFF \
+        ../ \
+    && make -j$(nproc) \
+    && make install \
+    && cd /tmp \
+    && rm -rf opencv-${OPENCV_VERSION} \
+    && apt-get purge -y \
+        cmake \
+        git \
+        libgstreamer-plugins-base1.0-dev \
+        libgstreamer1.0-dev \
+        libxrender-dev \
+    && apt-get autoremove -y
 
-RUN apt-get update && apt-get install -y python3-pip pkg-config zip gnupg
+RUN apt-get update && apt-get install -y python3-pip pkg-config gnupg
 # curl
 
 RUN python3 -m pip install --upgrade pip
@@ -82,7 +80,6 @@ COPY api/requirements.txt /
 
 # Installing pycuda using already-built wheel is a lot faster
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
         graphsurgeon-tf \
         libboost-python-dev \
         libboost-thread-dev \
@@ -114,10 +111,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 COPY ./bin/libflattenconcat.so /opt/libflattenconcat.so
-RUN apt update && apt install -y libtcmalloc-minimal4 curl build-essential nano vim pkg-config zip
+RUN apt update && apt install -y libtcmalloc-minimal4 nano vim pkg-config zip
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
-RUN apt update && apt install -y protobuf-compiler libprotobuf-dev ca-certificates
+RUN apt update && apt install -y protobuf-compiler libprotobuf-dev
 RUN pip install onnx nvidia-pyindex opencv-python==4.3.0.38
 # ENV relative_path=/repo/adaptive_object_detection 
 # ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
