@@ -99,7 +99,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-scipy \
         python3-wget \
         supervisor \
-        # tensorrt \
+        tensorrt \
         tzdata \
         uff-converter-tf \
     && rm -rf /var/lib/apt/lists/* \
@@ -108,8 +108,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel protobuf wget pillow pycuda && pip install -r requirements.txt \
     && apt-get purge -y \
     && apt-get autoremove -y
-
-RUN tar -xzf /opt/tensorrt.tar.gz -C /usr/local/lib/python3.6/dist-packages/
 
 # RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 COPY ./bin/libflattenconcat.so /opt/libflattenconcat.so
