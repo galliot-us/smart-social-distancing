@@ -46,7 +46,8 @@ class Detector:
         #     model_file = "frozen_inference_graph.bin"
         #     model_path = os.path.join(base_dir, model_file)
 
-        trt_bin_path = '/repo/data/jetson/frozen_inference_graph.bin' % self.model
+        trt_bin_path = '/repo/data/jetson/frozen_inference_graph.bin'
+        # trt_bin_path = '/repo/data/jetson/TRT_%s.bin' % self.model
         with open(trt_bin_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
            return runtime.deserialize_cuda_engine(f.read())
 
