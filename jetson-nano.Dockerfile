@@ -115,7 +115,7 @@ RUN apt update && apt install -y libtcmalloc-minimal4 nano vim pkg-config zip
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
 RUN apt update && apt install -y protobuf-compiler libprotobuf-dev
-RUN pip install onnx nvidia-pyindex opencv-python==4.3.0.38
+RUN pip install onnx nvidia-pyindex
 # ENV relative_path=/repo/adaptive_object_detection 
 # ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
 
