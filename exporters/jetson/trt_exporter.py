@@ -22,7 +22,7 @@ import graphsurgeon as gs
 import numpy as np
 import add_plugin_and_preprocess_ssd_mobilenet as plugin
 
-def export_trt(pb_file, output_dir, num_classes=90, neuralet_adaptive_model=1):
+def export_trt(pb_file, output_dir, num_classes=1, neuralet_adaptive_model=1):
     """
     Exports the Tensorflow pb models to TensorRT engines.
     Args:
@@ -30,7 +30,7 @@ def export_trt(pb_file, output_dir, num_classes=90, neuralet_adaptive_model=1):
         output_dir: A directory to store the output files
         num_classes: Detector's number of classes
     """
-    lib_flatten_concat_file = "exporters/libflattenconcat.so.6"
+    lib_flatten_concat_file = "exporters/jetson/libflattenconcat.so.6"
     # initialize
     if trt.__version__[0] < '7':
         ctypes.CDLL(lib_flatten_concat_file)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--pb_file", type=str, required=True, help="the path of input pb file")
     parser.add_argument("--out_dir", type=str, required=True, help="a directory to store the output files")
     parser.add_argument("--num_classes", type=int, default=90, help="detector's number of classes")
-    parser.add_argument("--neuralet_adaptive_model", type=int, default=1, help="1 if the model is trained by Neuralet adaptive learning,0 if not")
+    parser.add_argument("--neuralet_adaptive_model", type=int, default=1, help="1 if the model is trained by Neuralet adaptive learning, 0 if not")
     args = parser.parse_args()
     pb_file = args.pb_file
     output_dir = args.out_dir

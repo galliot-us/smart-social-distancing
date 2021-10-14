@@ -30,8 +30,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxext6 \
         libxrender-dev \
         mesa-va-drivers \
+        nano \
         pkg-config \
         python3-pip \
+        vim \
         zip \
     && rm -rf /var/lib/apt/lists/* \
     && cd /tmp/ \
@@ -63,8 +65,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxrender-dev \
     && apt-get autoremove -y
 
-RUN apt-get update && apt-get install -y python3-pip pkg-config gnupg
-# curl
+RUN apt-get update
 
 RUN python3 -m pip install --upgrade pip
 
@@ -89,7 +90,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libhdf5-dev \
         python3-libnvinfer \
         python3-libnvinfer-dev \
-        pkg-config \
         python3-dev \
         python3-h5py \
         python3-matplotlib \
@@ -109,21 +109,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get purge -y \
     && apt-get autoremove -y
 
-# RUN wget https://github.com/neuralet/smart-social-distancing/blob/UpdateJetpack4.5/bin/libflattenconcat.so -O /opt/libflattenconcat.so
 COPY ./bin/libflattenconcat.so /opt/libflattenconcat.so
-RUN apt update && apt install -y libtcmalloc-minimal4 nano vim pkg-config zip
+RUN apt update && apt install -y libtcmalloc-minimal4
 
 ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
 RUN apt update && apt install -y protobuf-compiler libprotobuf-dev
 RUN pip install onnx nvidia-pyindex
-# ENV relative_path=/repo/adaptive_object_detection 
-# ENV PYTHONPATH=/repo:/repo/adaptive_object_detection
 
 RUN apt upgrade -y
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV CONFIG_FILE=config-jetson-nano.ini
-# ENV OPENBLAS_CORETYPE=armv8
 
 COPY . /repo/
 WORKDIR /repo

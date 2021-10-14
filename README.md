@@ -127,7 +127,7 @@ git checkout $(git tag | tail -1)
 ```
 
 ###### Run on Jetson Nano
-* Works with JetPack 4.5.
+* You need to have JetPack 4.5 installed on your Jetson Nano.
 
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.3:
@@ -243,7 +243,7 @@ Before running any of the images available in the Docker repository, you need to
 Alternatively you may simply pull the folder structure from this repository.
 
 ###### Run on Jetson Nano
-* You need to have JetPack 4.3 installed on your Jetson Nano.
+* You need to have JetPack 4.5 installed on your Jetson Nano.
 ```bash
 # Download TensorRT engine file built with JetPack 4.3:
 mkdir data/jetson
@@ -326,7 +326,7 @@ docker run -it -p HOST_PORT:8000 -v $PWD/data:/repo/data -v $PWD/config-x86-open
 ##### Running the processor with docker-compose
 
 ###### Run on Jetson Nano
-* You need to have JetPack 4.3 installed on your Jetson Nano.
+* You need to have JetPack 4.5 installed on your Jetson Nano.
 
 ```bash
 # 1) Download TensorRT engine file built with JetPack 4.3:
