@@ -22,4 +22,4 @@ fi
 
 
 echo "************  Generating TensorRT from: $pb_file  **************"
-python3 $relative_path/exporters/jetson/trt_exporter.py --pb_file $pb_file --out_dir $relative_path/data/jetson --neuralet_adaptive_model $adaptive_model --num_classes $num_classes
+python3 repo/$relative_path/exporters/jetson/trt_exporter.py --pb_file $pb_file --out_dir $relative_path/data/jetson --neuralet_adaptive_model $adaptive_model --num_classes $num_classes
