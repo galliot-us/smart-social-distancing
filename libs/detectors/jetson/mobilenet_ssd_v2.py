@@ -33,7 +33,7 @@ class Detector:
         logger.info(f"Parent dir is {parent_dir}")
         base_dir = '/repo/data/jetson/'
         model_file = f"TRT_{self.model}.bin"
-        model_path = f'{base_dir}/{model_file}'
+        model_path = f'{base_dir}{model_file}'
         if not os.path.isfile(model_path):
             logger.info("you didn't specify the model file so the COCO pretrained model will be used")
             base_url =  "https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/"
