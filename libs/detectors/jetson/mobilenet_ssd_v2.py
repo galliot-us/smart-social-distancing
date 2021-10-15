@@ -46,7 +46,7 @@ class Detector:
             logger.info('model is a Tensorflow protobuf... Converting...')
             os.makedirs(base_model_dir, exist_ok=True)
             detector_class_count = 1
-            os.system("bash "+ "bash " + exporters_dir + "generate_mobilenet_tensorrt.bash" + str(model_path) + " " + str(detector_class_count))
+            os.system("bash " + exporters_dir + "generate_mobilenet_tensorrt.bash" + str(model_path) + " " + str(detector_class_count))
             model_file = "frozen_inference_graph.bin"
             model_path = os.path.join(base_model_dir, model_file)
 
