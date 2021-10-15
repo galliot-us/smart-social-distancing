@@ -9,12 +9,12 @@ then
 	num_classes=$2
 
 else 
-	if [ ! -f "./repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29.tar.gz"  ]; then
+	if [ ! -f "$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29.tar.gz"  ]; then
 		echo "downloading ssd_mobilenet_v2_coco_2018_03_29 ..."
-		wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz -P ./repo$relative_path/data/jetson/
+		wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz -P /repo$relative_path/data/jetson/
 	fi
-	tar -xvf ./repo$reporelative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29.tar.gz --no-same-owner -C ./repo$relative_path/data/jetson/
-	pb_file="./repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb"
+	tar -xvf $relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29.tar.gz --no-same-owner -C $relative_path/data/jetson/
+	pb_file="$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb"
 	adaptive_model=0
 	num_classes=1
 
