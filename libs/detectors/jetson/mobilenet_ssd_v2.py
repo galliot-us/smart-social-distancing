@@ -31,22 +31,24 @@ class Detector:
         """ Load engine file as a trt Runtime. """
         parent_dir = str(pathlib.Path(__file__).parent.absolute())
         logger.info(f"Parent dir is {parent_dir}")
-        base_dir = '/repo/data/jetson/'
+        root_dir = "/repo"
+        exporters_dir = f"{root_dir}/exporters/jetson/"
+        base_model_dir = f'{root_dir}/data/jetson/'
         model_file = f"TRT_{self.model}.bin"
-        model_path = f'{base_dir}{model_file}'
+        model_path = f'{base_model_dir}{model_file}'
         if not os.path.isfile(model_path):
             logger.info("you didn't specify the model file so the COCO pretrained model will be used")
             base_url =  "https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/"
             logger.info('model does not exist under: {}, downloading from {}'.format(str(model_path), base_url + model_file))
-            os.makedirs(base_dir, exist_ok=True)
-            os.system("bash "+ base_dir + "/../generate_mobilenet_tensorrt.bash")
+            os.makedirs(base_model_dir, exist_ok=True)
+            os.system("bash " + exporters_dir + "generate_mobilenet_tensorrt.bash")
         if (pathlib.Path(model_path).suffix == ".pb"):
             logger.info('model is a Tensorflow protobuf... Converting...')
-            os.makedirs(base_dir, exist_ok=True)
+            os.makedirs(base_model_dir, exist_ok=True)
             detector_class_count = 1
-            os.system("bash "+ base_dir + "/../generate_mobilenet_tensorrt.bash " + str(model_path) + " " + str(detector_class_count))
+            os.system("bash "+ "bash " + exporters_dir + "generate_mobilenet_tensorrt.bash" + str(model_path) + " " + str(detector_class_count))
             model_file = "frozen_inference_graph.bin"
-            model_path = os.path.join(base_dir, model_file)
+            model_path = os.path.join(base_model_dir, model_file)
 
         # model_path = '/repo/data/jetson/frozen_inference_graph.bin'
         with open(model_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
