@@ -68,7 +68,6 @@ def export_trt(pb_file, output_dir, num_classes=1, neuralet_adaptive_model=1):
         config.max_workspace_size = 1 << 28
         builder.max_batch_size = 1
         config.set_flag(trt.BuilderFlag.FP16)
-        # builder.fp16_mode = True TODO: This setting got deprecated
 
         parser.register_input('Input', input_dims)
         parser.register_output('MarkOutput_0')
