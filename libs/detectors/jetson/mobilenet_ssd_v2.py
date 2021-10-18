@@ -107,7 +107,7 @@ class Detector:
 
     def __del__(self):
         """ Free CUDA memories. """
-        for mem  in self.cuda_inputs:
+        for mem in self.cuda_inputs:
             mem.free()
         for mem in self.cuda_outputs:
             mem.free
