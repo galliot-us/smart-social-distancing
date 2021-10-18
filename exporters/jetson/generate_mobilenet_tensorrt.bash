@@ -14,7 +14,9 @@ else
 		wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v2_coco_2018_03_29.tar.gz -P /repo$relative_path/data/jetson/
 	fi
 	tar -xvf /repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29.tar.gz --no-same-owner -C /repo$relative_path/data/jetson/
-	pb_file="/repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb"
+	cp "/repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb" "/repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29/TRT_ssd_mobilenet_v2_coco.pb"
+	rm "/repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29/frozen_inference_graph.pb"
+	pb_file="/repo$relative_path/data/jetson/ssd_mobilenet_v2_coco_2018_03_29/TRT_ssd_mobilenet_v2_coco.pb"
 	adaptive_model=0
 	num_classes=90
 
