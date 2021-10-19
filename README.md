@@ -618,6 +618,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `ClassID`: When you are using a multi-class detection model, you can definde the class id related to pedestrian in this parameter.
   - `MinScore`: Defines the person detection threshold. Any person detected by the model with a score less than the threshold will be ignored.
   - `TensorrtPrecision`: When you are using TensorRT version of Openpifpaf with GPU, Set TensorRT Precison 32 for float32 and 16 for float16 precision based on your GPU, if it supports both of them, float32 engine is more accurate and float16 is faster.
+  - `DeviceId`: Required to specify the device id of the coral accelerator attached to the computer. This field **is only required when you have multiple accelerators connected to the same computer**.
 
 - `[Classifier]`:
 
