@@ -4,5 +4,7 @@ services:
       - .:/repo
     ports:
       - 8300:8000
-    environment:
-      - TZ=./timezone.sh
+    # If you want use a different timezone that UTC you need to uncomment the following lines
+    # You can obtain the machine timezone calling the script ./timezone.sh
+    # environment:
+    #   - TZ=UTC
