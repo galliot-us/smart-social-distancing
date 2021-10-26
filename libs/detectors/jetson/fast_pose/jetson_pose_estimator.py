@@ -248,7 +248,7 @@ class TRTPoseEstimator:
             logging.info("Creating model using pretrained weights")
             base_url = "https://media.githubusercontent.com/media/neuralet/models/master/ONNX/fastpose/fastpose_resnet50_256_192_tf.onnx"
             logger.info('model does not exist under: {}, downloading from {}'.format(str(self.pose_model_path), base_url + pose_model_file))
-            os.makedirs(base_model_dir, exist_ok=True)
+            os.makedirs(pose_model_dir, exist_ok=True)
             os.system(f"bash {exporters_dir}generate_pose_tensorrt.bash {base_url} fp16 {self.batch_size}")
         else:
             with open(model_path, 'rb') as f:
