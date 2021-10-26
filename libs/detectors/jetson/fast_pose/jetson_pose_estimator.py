@@ -7,7 +7,7 @@ import pycuda.autoinit
 import tensorrt as trt
 import time
 
-from .import mobilenet_ssd_v2
+from mobilenet_ssd_v2 import Detector 
 from tools.bbox import box_to_center_scale, center_scale_to_box
 from tools.convert_results_format import prepare_detection_results
 from tools.pose_nms import pose_nms
@@ -61,7 +61,7 @@ class TRTPoseEstimator:
         self.load_model()
 
     def load_model(self):
-        self.detector = mobilenet_ssd_v2.Detector(self.config, "ssd_mobilenet_v2_coco", self.model_variables)
+        self.detector = Detector(self.config, "ssd_mobilenet_v2_coco", self.model_variables)
         self._init_cuda_stuff()
 
     def _batch_execute(self, context, num_detected_objects, batch_inps):
