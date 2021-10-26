@@ -13,6 +13,7 @@ from libs.detectors.jetson.fast_pose.tools.convert_results_format import prepare
 from libs.detectors.jetson.fast_pose.tools.pose_nms import pose_nms
 from libs.detectors.jetson.fast_pose.tools.transformations import im_to_tensor, get_affine_transform, get_max_pred
 
+logger = logging.getLogger(__name__)
 
 class TRTPoseEstimator:
     """
