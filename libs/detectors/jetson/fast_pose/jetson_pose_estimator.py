@@ -241,7 +241,7 @@ class TRTPoseEstimator:
         pose_model_file = f"TRT_{self.model_name}_fp_16_b{self.batch_size}.trt"
         pose_model_dir = f'{root_dir}/data/jetson/'
         self.pose_model_path = f'{pose_model_dir}{pose_model_file}'
-        if not os.path.isfile(pose_model_path):
+        if not os.path.isfile(self.pose_model_path):
             exporters_dir = f"{root_dir}/exporters/jetson/"
             logging.info('model does not exist under: {}'.format(str(model_path)))
             logging.info("Creating model using pretrained weights")
