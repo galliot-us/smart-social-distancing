@@ -243,11 +243,11 @@ class TRTPoseEstimator:
         self.pose_model_path = f'{pose_model_dir}{pose_model_file}'
         if not os.path.isfile(self.pose_model_path):
             exporters_dir = f"{root_dir}/exporters/jetson/"
-            logging.info('model does not exist under: {}'.format(str(model_path)))
+            logging.info('model does not exist under: {}'.format(str(self.pose_model_path)))
             logging.info("Creating model using pretrained weights")
-            logger.info('model does not exist under: {}, downloading from {}'.format(str(model_path), base_url + model_file))
-            os.makedirs(base_model_dir, exist_ok=True)
             base_url = "https://media.githubusercontent.com/media/neuralet/models/master/ONNX/fastpose/fastpose_resnet50_256_192_tf.onnx"
+            logger.info('model does not exist under: {}, downloading from {}'.format(str(self.pose_model_path), base_url + pose_model_file))
+            os.makedirs(base_model_dir, exist_ok=True)
             os.system(f"bash {exporters_dir}generate_pose_tensorrt.bash {base_url} fp16 {self.batch_size}")
         else:
             with open(model_path, 'rb') as f:
