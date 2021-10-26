@@ -28,7 +28,7 @@ class TRTPoseEstimator:
                  detector_input_size=(300, 300),
                  pose_input_size=(256, 192),
                  heatmap_size=(64, 48),
-                 batch_size=2, # TODO: 8? 1?
+                 batch_size=1,
                  ):
         
         self.config = config
