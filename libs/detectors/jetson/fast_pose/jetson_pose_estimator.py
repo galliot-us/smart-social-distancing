@@ -7,7 +7,7 @@ import pycuda.autoinit
 import tensorrt as trt
 import time
 
-from mobilenet_ssd_v2 import Detector 
+from detectors.jetson.mobilenet_ssd_v2 import Detector 
 from tools.bbox import box_to_center_scale, center_scale_to_box
 from tools.convert_results_format import prepare_detection_results
 from tools.pose_nms import pose_nms
