@@ -42,8 +42,6 @@ class TRTPoseEstimator:
         self.pose_input_size = pose_input_size
         self.heatmap_size = heatmap_size
         self.batch_size = batch_size
-        self.pose_model_path = pose_model_file
-        
 
         self.trt_logger = trt.Logger(trt.Logger.INFO)
         self.trt_runtime = trt.Runtime(self.trt_logger)
