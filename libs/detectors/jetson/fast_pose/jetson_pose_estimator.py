@@ -8,10 +8,10 @@ import tensorrt as trt
 import time
 
 from libs.detectors.jetson.mobilenet_ssd_v2 import Detector 
-from tools.bbox import box_to_center_scale, center_scale_to_box
-from tools.convert_results_format import prepare_detection_results
-from tools.pose_nms import pose_nms
-from tools.transformations import im_to_tensor, get_affine_transform, get_max_pred
+from libs.detectors.jetson.fast_pose.tools.bbox import box_to_center_scale, center_scale_to_box
+from libs.detectors.jetson.fast_pose.tools.convert_results_format import prepare_detection_results
+from libs.detectors.jetson.fast_pose.tools.pose_nms import pose_nms
+from libs.detectors.jetson.fast_pose.tools.transformations import im_to_tensor, get_affine_transform, get_max_pred
 
 
 class TRTPoseEstimator:
