@@ -29,8 +29,6 @@ class Detector:
 
     def _load_engine(self):
         """ Load engine file as a trt Runtime. """
-        parent_dir = str(pathlib.Path(__file__).parent.absolute())
-        logger.info(f"Parent dir is {parent_dir}")
         root_dir = "/repo"
         exporters_dir = f"{root_dir}/exporters/jetson/"
         base_model_dir = f'{root_dir}/data/jetson/'
@@ -42,7 +40,7 @@ class Detector:
             logger.info('model does not exist under: {}, downloading from {}'.format(str(model_path), base_url + model_file))
             os.makedirs(base_model_dir, exist_ok=True)
             os.system("bash " + exporters_dir + "generate_mobilenet_tensorrt.bash")
-        if (pathlib.Path(model_path).suffix == ".pb"):
+        elif (pathlib.Path(model_path).suffix == ".pb"):
             logger.info('model is a Tensorflow protobuf... Converting...')
             os.makedirs(base_model_dir, exist_ok=True)
             detector_class_count = 1
