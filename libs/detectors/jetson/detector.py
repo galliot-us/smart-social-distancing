@@ -31,7 +31,7 @@ class Detector:
         if self.name == 'ssd_mobilenet_v2_coco' or self.name == "ssd_mobilenet_v2_pedestrian_softbio":
             from . import mobilenet_ssd_v2
             self.net = mobilenet_ssd_v2.Detector(self.config, self.name, model_data["variables"])
-        elif self.name == "TRT_fast_pose":
+        elif self.name == "fast_pose":
             from .fast_pose import jetson_pose_estimator
             self.net = jetson_pose_estimator.TRTPoseEstimator(self.config, self.name, model_data["variables"])
         elif self.name == "openpifpaf_tensorrt":
