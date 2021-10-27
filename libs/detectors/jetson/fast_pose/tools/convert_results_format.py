@@ -18,7 +18,8 @@ def prepare_detection_results(detections, w, h):
     logger.info("")
     logger.info(f"Detections: {detections}")
     logger.info("")
-    people = [item for item in detections.objects if item.category == "person"]
+    people = detections
+    # people = [item for item in detections.objects if item.category == "person"] # TODO: Why should this work 
     num_of_objects = len(people)
     output = np.zeros((num_of_objects, 8), dtype=np.float32)
     output[:, 6] = 0.99
