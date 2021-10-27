@@ -84,6 +84,9 @@ class Detector:
                         croped_face = np.array(croped_face) / 255.0
                         classifier_objects.append(croped_face)
             # Prepare tracker input
+            logger.info("")
+            logger.info(f"ITM is: {itm}")
+            logger.info("")
             box = itm["bbox"]
             x0 = box[1]
             y0 = box[0]
