@@ -20,7 +20,7 @@ workspace=0
 if (( $batch_size > 1 )); then
 	workspace=4096
 else
-	workspace=2000
+	workspace=2048
 fi
 mkdir -p data/jetson
 wget $1 -O "data/jetson/model_static.onnx"

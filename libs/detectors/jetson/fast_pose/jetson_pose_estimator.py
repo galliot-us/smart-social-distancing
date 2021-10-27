@@ -250,10 +250,9 @@ class TRTPoseEstimator:
             logger.info('model does not exist under: {}, downloading from {}'.format(str(self.pose_model_path), base_url + pose_model_file))
             os.makedirs(pose_model_dir, exist_ok=True)
             os.system(f"bash {exporters_dir}generate_pose_tensorrt.bash {base_url} fp16 {self.batch_size}")
-        else:
-            with open(model_path, 'rb') as f:
-                engine_data = f.read()
-            engine = self.trt_runtime.deserialize_cuda_engine(engine_data)
+        with open(model_path, 'rb') as f:
+            engine_data = f.read()
+        engine = self.trt_runtime.deserialize_cuda_engine(engine_data)
         return engine
 
     def _init_cuda_stuff(self):
