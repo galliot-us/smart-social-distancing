@@ -71,7 +71,7 @@ class TRTPoseEstimator:
         return result_raw
 
     def inference(self, raw_image):
-        raw_detections = self.detector.inference(preprocessed_image)
+        raw_detections = self.detector.inference(raw_image)
         detections = prepare_detection_results(raw_detections, self.detector_width, self.detector_height)
 
         logger.info("")
