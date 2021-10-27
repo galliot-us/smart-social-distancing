@@ -239,8 +239,8 @@ class TRTPoseEstimator:
 
     def _load_engine(self):
         root_dir = "/repo"
-        pose_model_file = f"TRT_{self.model_name}_fp_16_b{self.batch_size}.trt"
-        pose_model_dir = f'/data/jetson/'
+        pose_model_file = f"{self.model_name}_fp_16_b{self.batch_size}.trt"
+        pose_model_dir = f'{root_dir}/data/jetson/'
         self.pose_model_path = f'{pose_model_dir}{pose_model_file}'
         logger.info("")
         logger.info(f"Model path is: {self.pose_model_path}")
