@@ -22,8 +22,9 @@ if (( $batch_size > 1 )); then
 else
 	workspace=2000
 fi
-mkdir -p models/data
-wget $1 -O "models/data/model_static.onnx"
+mkdir -p data/jetson
+wget $1 -O "data/jetson/model_static.onnx"
 
-/usr/src/tensorrt/bin/trtexec --onnx=models/data/model_static.onnx --saveEngine=models/data/$tensorrt_model_name --$precision --batch=$batch_size --workspace=$workspace
+/usr/src/tensorrt/bin/trtexec --onnx=data/jetson/model_static.onnx --saveEngine=data/jetson/$tensorrt_model_name --$precision --batch=$batch_size --workspace=$workspace
 
+rm data/jetson/model_static.onnx
