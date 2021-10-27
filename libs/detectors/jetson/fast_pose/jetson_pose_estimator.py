@@ -130,6 +130,7 @@ class TRTPoseEstimator:
         boxes, scores, ids, preds_img, preds_scores, pick_ids = \
             pose_nms(boxes, scores, ids, preds_img, preds_scores, 0)
         _result = []
+        # TODO: Change it so it works like the other pose net pose estimators. Cut face and integrate a face detector model
         for k in range(len(scores)):
             if np.ndim(preds_scores[k] == 2):
                 preds_scores[k] = preds_scores[k][:, 0].reshape([17, 1])

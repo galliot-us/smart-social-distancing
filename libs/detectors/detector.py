@@ -62,6 +62,7 @@ class Detector:
         class_ids = []
         detection_bboxes = []
         classifier_objects = []
+        # TODO: Asignar classifier
         for itm in object_list:
             if self.has_classifier and "face" in itm.keys():
                 face_bbox = itm["face"]  # [ymin, xmin, ymax, xmax]
