@@ -75,6 +75,10 @@ class TRTPoseEstimator:
         raw_detections = self.detector.inference(preprocessed_image)
         detections = prepare_detection_results(raw_detections, self.detector_width, self.detector_height)
 
+        logger.info("")
+        logger.info(f"Width: {self.detector_width}, Height: {self.detector_height}")
+        logger.info(f"Detections Prepared: {detections}")
+        logger.info("")
         resized_pose_img = cv.resize(self.raw_frame, (self.detector_width, self.detector_height))
         rgb_resized_img = cv.cvtColor(resized_pose_img, cv.COLOR_BGR2RGB)
 
