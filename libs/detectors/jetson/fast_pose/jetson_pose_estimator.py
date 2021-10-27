@@ -52,7 +52,6 @@ class TRTPoseEstimator:
         self.host_outputs = None
         self.cuda_outputs = None
         self.stream = None
-        self.raw_frame = None
         self.fps = None
 
         self.model = None
@@ -71,15 +70,14 @@ class TRTPoseEstimator:
         # result = result_raw[0:num_detected_objects,:]
         return result_raw
 
-    def inference(self, preprocessed_image): 
+    def inference(self, raw_image):
         raw_detections = self.detector.inference(preprocessed_image)
         detections = prepare_detection_results(raw_detections, self.detector_width, self.detector_height)
 
         logger.info("")
         logger.info(f"Width: {self.detector_width}, Height: {self.detector_height}")
-        logger.info(f"Detections Prepared: {detections}")
         logger.info("")
-        resized_pose_img = cv.resize(self.raw_frame, (self.detector_width, self.detector_height))
+        resized_pose_img = cv.resize(raw_image, (self.detector_width, self.detector_height))
         rgb_resized_img = cv.cvtColor(resized_pose_img, cv.COLOR_BGR2RGB)
 
         inps, cropped_boxes, boxes, scores, ids = self.transform_detections(rgb_resized_img, detections)
@@ -109,10 +107,6 @@ class TRTPoseEstimator:
                 remainder -= self.batch_size
                 start_idx += self.batch_size
         return (result, cropped_boxes, boxes, scores, ids)
-
-    def preprocess(self, raw_image):
-        self.raw_frame = raw_image
-        return self.detector.preprocess(raw_image)
 
     def post_process(self, hm, cropped_boxes, boxes, scores, ids):
         if hm is None:
