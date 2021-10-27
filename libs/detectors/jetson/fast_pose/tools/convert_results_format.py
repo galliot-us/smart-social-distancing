@@ -25,7 +25,7 @@ def prepare_detection_results(detections, w, h):
     output[:, 6] = 0.99
     for i, obj in enumerate(people):
         # bbox = np.array([obj.bbox.left, obj.bbox.top, obj.bbox.right, obj.bbox.bottom])
-        bbox = np.array([obj["bbox"][0], obj["bbox"][1], obj.bbox["bbox"][2], obj.bbox["bbox"][3])
+        bbox = np.array([obj["bbox"][0], obj["bbox"][1], obj["bbox"][2], obj["bbox"][3]])
         bbox_scaled = (bbox.astype(np.float32) * scale_factors)
         output[i, 1:5] = bbox_scaled
         output[i, [1, 3]] = np.clip(output[i, [1, 3]], 0.0, w)
