@@ -13,6 +13,11 @@ def prepare_detection_results(detections, w, h):
         (batch_index, x_min, y_min, x_max, y_max, detection_score, class_score, 0)
     """
     scale_factors = np.array([w, h, w, h]).astype(np.float32)
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("")
+    logger.info(f"Detections: {detections}")
+    logger.info("")
     people = [item for item in detections.objects if item.category == "person"]
     num_of_objects = len(people)
     output = np.zeros((num_of_objects, 8), dtype=np.float32)
