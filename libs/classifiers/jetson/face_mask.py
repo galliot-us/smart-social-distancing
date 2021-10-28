@@ -43,9 +43,16 @@ class Classifier():
     """
 
     def _load_engine(self):
+        import logging
+        logger = logging.getLogger(__name__)
         TRTbinPath = self.trt_bin_path
+        logger.info("")
+        logger.info(TRTbinPath)
+        logger.info("")
         if not os.path.exists(TRTbinPath):
+            logger.info("Entered if running bash")
             os.system('bash /repo/generate_tensorrt.bash config-jetson.ini 1')
+        logger.info("")
         with open(TRTbinPath, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
             return runtime.deserialize_cuda_engine(f.read())
 
