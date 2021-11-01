@@ -119,6 +119,10 @@ ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV CONFIG_FILE=config-jetson-nano.ini
 
+RUN apt-get update -y
+RUN apt-get install git -y
+
+# Install a higher cmake version
 RUN apt update && apt-get install -y libssl-dev && wget https://github.com/Kitware/CMake/releases/download/v3.19.1/cmake-3.19.1.tar.gz \
     && tar -xf cmake-3.19.1.tar.gz \
     && cd cmake-3.19.1 \
@@ -126,6 +130,7 @@ RUN apt update && apt-get install -y libssl-dev && wget https://github.com/Kitwa
     && make -j$(nproc) \
     && make install
 
+# Install onnx-tensorrt
 RUN git clone https://github.com/onnx/onnx-tensorrt.git \
 && cd onnx-tensorrt \
 && git checkout 7.0 \
