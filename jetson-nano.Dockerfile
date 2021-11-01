@@ -58,6 +58,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && cd /tmp \
     && rm -rf opencv-${OPENCV_VERSION} \
     && apt-get purge -y \
+        cmake \
         git \
         libgstreamer-plugins-base1.0-dev \
         libgstreamer1.0-dev \
@@ -117,6 +118,13 @@ ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV CONFIG_FILE=config-jetson-nano.ini
+
+RUN apt update && apt-get install -y libssl-dev && wget https://github.com/Kitware/CMake/releases/download/v3.19.1/cmake-3.19.1.tar.gz \
+    && tar -xf cmake-3.19.1.tar.gz \
+    && cd cmake-3.19.1 \
+    && ./bootstrap \
+    && make -j$(nproc) \
+    && make install
 
 RUN git clone https://github.com/onnx/onnx-tensorrt.git \
 && cd onnx-tensorrt \
