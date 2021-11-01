@@ -137,7 +137,8 @@ RUN git clone https://github.com/onnx/onnx-tensorrt.git \
 && git submodule update --init --recursive \
 && mkdir build
 
-RUN cd build \
+#RUN cd build \
+RUN cd onnx-tensorrt/build \
 && cmake .. -DTENSORRT_ROOT=/usr/src/tensorrt/ \
 && make VERBOSE=1 -j$(nproc) \
 && make VERBOSE=1 install && cd ../.. \
