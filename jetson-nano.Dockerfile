@@ -133,6 +133,16 @@ RUN apt-get install -y libhdf5-serial-dev hdf5-tools zlib1g-dev libjpeg8-dev lib
 
 RUN apt-get update && apt install -y git autoconf automake libtool curl make g++ unzip supervisor
 
+RUN git clone https://github.com/protocolbuffers/protobuf.git \
+&& cd protobuf \
+&& git submodule update --init --recursive \
+&& chmod +x autogen.sh \
+&& ./autogen.sh \
+&& ./configure \
+&& make -j$(nproc) \
+&& make install \
+&& ldconfig 
+
 # Install onnx-tensorrt
 RUN git clone https://github.com/onnx/onnx-tensorrt.git \
 && cd onnx-tensorrt \
