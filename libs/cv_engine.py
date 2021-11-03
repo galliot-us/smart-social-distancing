@@ -137,7 +137,7 @@ class CvEngine:
             total_frames = int(input_cap.get(cv.CAP_PROP_FRAME_COUNT))
             if self.logging_time_interval:
                 self.fps_log_number = trunc(fps * self.logging_time_interval)
-            video_time = int(video_uri.split("/")[-1].split(".")[0])
+            video_time = video_uri.split("/")[-1].split(".")[0]
             log_time = datetime.strptime(f"{video_date} {video_time}", "%Y%m%d %H%M%S")
         if (input_cap.isOpened()):
             logger.info(f'opened video {video_uri}')
