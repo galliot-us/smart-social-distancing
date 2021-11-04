@@ -1,8 +1,40 @@
 import collections
 import numpy as np
 import time
+from edgetpu.basic.basic_engine import BasicEngine
+from edgetpu.basic.edgetpu_utils import ListEdgeTpuPaths, EDGE_TPU_STATE_NONE
 from pose_engine import PoseEngine
+
 from ..utils.fps_calculator import convert_infr_time_to_fps
+
+
+class SmartSocialDistancingPoseEngine(PoseEngine):
+
+    def __init__(self, model_path, mirror=False, device_id=None):
+        if device_id:
+            BasicEngine.__init__(
+                self, model_path, device_path=ListEdgeTpuPaths(EDGE_TPU_STATE_NONE)[int(device_id.split(':')[1])]
+            )
+        else:
+            BasicEngine.__init__(self, model_path)
+        self._mirror = mirror
+
+        self._input_tensor_shape = self.get_input_tensor_shape()
+        if (self._input_tensor_shape.size != 4 or
+                self._input_tensor_shape[3] != 3 or
+                self._input_tensor_shape[0] != 1):
+            raise ValueError(
+                ('Image model should have input shape [1, height, width, 3]!'
+                 ' This model has {}.'.format(self._input_tensor_shape)))
+        _, self.image_height, self.image_width, self.image_depth = self.get_input_tensor_shape()
+
+        # The API returns all the output tensors flattened and concatenated. We
+        # have to figure out the boundaries from the tensor shapes & sizes.
+        offset = 0
+        self._output_offsets = [0]
+        for size in self.get_all_output_tensors_sizes():
+            offset += size
+            self._output_offsets.append(int(offset))
 
 
 class Detector:
@@ -19,8 +51,10 @@ class Detector:
         # Frames Per Second
         self.fps = None
         self.w, self.h, _ = [int(i) for i in self.model_variables['ImageSize'].split(',')]
-        self.engine = PoseEngine(
-            f"/project-posenet/models/mobilenet/posenet_mobilenet_v1_075_{self.h}_{self.w}_quant_decoder_edgetpu.tflite"
+        device_id = self.config.get_section_dict("Detector").get("DeviceId")
+        self.engine = SmartSocialDistancingPoseEngine(
+            f"/project-posenet/models/mobilenet/posenet_mobilenet_v1_075_{self.h}_{self.w}_quant_decoder_edgetpu.tflite",
+            device_id=device_id
         )
 
         # Get class id from config

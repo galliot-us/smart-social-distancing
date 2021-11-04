@@ -41,7 +41,13 @@ class Detector:
                 wget.download(url, self.model_path)
 
         # Load TFLite model and allocate tensors
-        self.interpreter = Interpreter(self.model_path, experimental_delegates=[load_delegate("libedgetpu.so.1")])
+        device_id = self.config.get_section_dict("Detector").get("DeviceId")
+        if device_id:
+            self.interpreter = Interpreter(
+                self.model_path, experimental_delegates=[load_delegate("libedgetpu.so.1", options={"device": device_id})]
+            )
+        else:
+            self.interpreter = Interpreter(self.model_path, experimental_delegates=[load_delegate("libedgetpu.so.1")])
         self.interpreter.allocate_tensors()
         # Get the model input and output tensor details
         self.input_details = self.interpreter.get_input_details()

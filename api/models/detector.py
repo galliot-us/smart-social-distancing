@@ -11,3 +11,4 @@ class DetectorDTO(SnakeModel):
     modelPath: Optional[str] = Field(example="/repo/data/custom-model")
     classID: str = Field(example=0)
     minScore: float = Field(0.25, example=0.5)
+    deviceId: Optional[str] = Field(example="usb:0")
