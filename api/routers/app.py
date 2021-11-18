@@ -57,7 +57,8 @@ def sync_dashboard():
     cameras = [
         {
             "processor_camera_id": camera["id"],
-            "name": camera["name"]
+            "name": camera["name"],
+            "has_been_calibrated": camera["has_been_calibrated"]
         }
         for camera in get_cameras()
     ]
