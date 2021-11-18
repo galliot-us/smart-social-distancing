@@ -12,7 +12,7 @@ from api.utils import (extract_config, handle_response, update_config,
 from .cameras import get_cameras
 
 app_router = APIRouter()
-
+dashboard_sync_router = APIRouter()
 
 @app_router.get("", response_model=AppDTO)
 def get_app_config():
@@ -36,7 +36,7 @@ def update_app_config(app: AppDTO, reboot_processor: Optional[bool] = True):
     return map_section_from_config("App", extract_config())
 
 
-@app_router.put("/dashboard-sync", status_code=status.HTTP_200_OK)
+@dashboard_sync_router.put("/dashboard-sync", status_code=status.HTTP_200_OK)
 def sync_dashboard():
     """
     Sync the processor data in the cloud dashbord
