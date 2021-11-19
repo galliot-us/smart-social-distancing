@@ -15,7 +15,7 @@ from api.utils import bad_request_serializer
 
 from .dependencies import validate_token
 from .queue_manager import QueueManager
-from .routers.app import app_router
+from .routers.app import app_router, dashboard_sync_router
 from .routers.api import api_router
 from .routers.areas import areas_router
 from .routers.area_loggers import area_loggers_router
@@ -77,6 +77,7 @@ class ProcessorAPI:
         app.include_router(cameras_router, prefix="/cameras", tags=["Cameras"], dependencies=dependencies)
         app.include_router(areas_router, prefix="/areas", tags=["Areas"], dependencies=dependencies)
         app.include_router(app_router, prefix="/app", tags=["App"], dependencies=dependencies)
+        app.include_router(dashboard_sync_router, prefix="/app", tags=["App"])
         app.include_router(api_router, prefix="/api", tags=["Api"], dependencies=dependencies)
         app.include_router(core_router, prefix="/core", tags=["Core"], dependencies=dependencies)
         app.include_router(detector_router, prefix="/detector", tags=["Detector"], dependencies=dependencies)
