@@ -8,15 +8,13 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from constants import ALL_AREAS
 from libs.config_engine import ConfigEngine
 from api.settings import Settings
 from api.tests.utils.common_functions import create_app_config
 from libs.utils import config as config_utils
 
 
-from .example_models import camera_template, camera_example, camera_example_2, camera_example_3, camera_example_4,\
-    area_example, area_example_2
+from .example_models import camera_template, camera_example, camera_example_2, camera_example_3, camera_example_4
 from ...utils import get_config
 
 
@@ -24,7 +22,7 @@ def config_rollback_base(option="JUST_CAMERAS"):
     original_path = ""
     if option == "EMPTY":
         """
-        Empty template with no camera or area.
+        Empty template with no camera.
         """
         original_path = "/repo/api/tests/data/config-x86-openvino_EMPTY.ini"
     elif option == "JUST_CAMERAS":
@@ -36,11 +34,11 @@ def config_rollback_base(option="JUST_CAMERAS"):
         original_path = "/repo/api/tests/data/config-x86-openvino_JUST_CAMERAS.ini"
     elif option == "METRICS":
         """
-        Here there are charged 4 cameras and two areas:
-            camera_example (ID: 49), Area 5
-            camera_example_2 (ID: 50), Area 5
-            camera_example_3 (ID: 51), Area 6
-            camera_example_4 (ID: 52), Area 6
+        Here there are charged 4 cameras:
+            camera_example (ID: 49)
+            camera_example_2 (ID: 50)
+            camera_example_3 (ID: 51)
+            camera_example_4 (ID: 52)
         """
         original_path = "/repo/api/tests/data/config-x86-openvino_METRICS.ini"
     config_sample_path_to_modify = "/repo/api/tests/data/config-x86-openvino_TEMPORARY.ini"
@@ -83,13 +81,6 @@ def rollback_camera_config():
 def config_rollback():
     client, config_sample_path_to_modify = config_rollback_base(option="EMPTY")
     yield client, config_sample_path_to_modify
-    os.remove(config_sample_path_to_modify)
-
-
-@pytest.fixture
-def config_rollback_areas():
-    client, config_sample_path_to_modify = config_rollback_base(option="METRICS")
-    yield area_example, area_example_2, client, config_sample_path_to_modify
     os.remove(config_sample_path_to_modify)
 
 
@@ -182,28 +173,3 @@ def heatmap_simulation():
     yield None
     # Deletes everything
     shutil.rmtree(heatmap_directory)
-
-@pytest.fixture
-def rollback_area_all_json():
-    config_directory = config_utils.get_area_config_directory(get_config())
-    config_path = os.path.join(config_directory, ALL_AREAS + ".json")
-
-    try:
-        with open(config_path, "r") as file:
-            file_content = json.load(file)
-    except Exception:
-        yield False
-    else:
-        yield True
-        with open(config_path, "w") as file:
-            json.dump(file_content, file)
-
-
-@pytest.fixture
-def rollback_area_config_path():
-    yield None
-    config_directory = config_utils.get_area_config_directory(get_config())
-    for area_id in [area_example["id"], area_example_2["id"]]:
-        config_path = os.path.join(config_directory, area_id + ".json")
-        if os.path.exists(config_path):
-            os.remove(config_path)

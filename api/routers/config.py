@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter
 from typing import Optional
 
-from api.models.config import ConfigDTO, ConfigInfo, GlobalReportingEmailsInfo
+from api.models.config import ConfigDTO, ConfigInfo
 from api.utils import (
     get_config, extract_config, handle_response, update_config, map_section_from_config, map_to_config_file_format
 )
@@ -20,11 +20,6 @@ def map_to_file_format(config_dto: ConfigDTO):
     config_dict = dict()
     config_dict["App"] = map_to_config_file_format(config_dto.app)
     config_dict["CORE"] = map_to_config_file_format(config_dto.core)
-    for count, area in enumerate(config_dto.areas):
-        a_cfg = map_to_config_file_format(area)
-        if "Occupancy_rules" in a_cfg:
-            del a_cfg["Occupancy_rules"]
-        config_dict["Area_" + str(count)] = a_cfg
     for count, camera in enumerate(config_dto.cameras):
         config_dict["Source_" + str(count)] = map_to_camera_file_format(camera)
     config_dict["Detector"] = map_to_config_file_format(config_dto.detector)
@@ -36,8 +31,6 @@ def map_to_file_format(config_dto: ConfigDTO):
             source_post_processor, True)
     for count, source_logger in enumerate(config_dto.sourceLoggers):
         config_dict["SourceLogger_" + str(count)] = map_to_config_file_format(source_logger, True)
-    for count, area_logger in enumerate(config_dto.areaLoggers):
-        config_dict["AreaLogger_" + str(count)] = map_to_config_file_format(area_logger, True)
     for count, periodic_task in enumerate(config_dto.periodicTasks):
         config_dict["PeriodicTask_" + str(count)] = map_to_config_file_format(periodic_task, True)
     return config_dict
@@ -45,23 +38,19 @@ def map_to_file_format(config_dto: ConfigDTO):
 
 def map_config(config, options):
     cameras_name = [x for x in config.keys() if x.startswith("Source_")]
-    areas_name = [x for x in config.keys() if x.startswith("Area_")]
     source_post_processor = [x for x in config.keys() if x.startswith("SourcePostProcessor_")]
     source_loggers = [x for x in config.keys() if x.startswith("SourceLogger_")]
-    area_loggers = [x for x in config.keys() if x.startswith("AreaLogger_")]
     periodic_tasks = [x for x in config.keys() if x.startswith("PeriodicTask_")]
     return {
         "app": map_section_from_config("App", config),
         "api": map_section_from_config("API", config),
         "core": map_section_from_config("CORE", config),
         "cameras": [map_camera(x, config, options) for x in cameras_name],
-        "areas": [map_section_from_config(x, config) for x in areas_name],
         "detector": map_section_from_config("Detector", config),
         "classifier": map_section_from_config("Classifier", config),
         "tracker": map_section_from_config("Tracker", config),
         "sourcePostProcessors": [map_section_from_config(x, config) for x in source_post_processor],
         "sourceLoggers": [map_section_from_config(x, config) for x in source_loggers],
-        "areaLoggers": [map_section_from_config(x, config) for x in area_loggers],
         "periodicTasks": [map_section_from_config(x, config) for x in periodic_tasks],
     }
 
@@ -117,27 +106,3 @@ async def get_processor_info():
     Returns basic info regarding this processor
     """
     return processor_info(get_config())
-
-
-@config_router.get("/global_report", response_model=GlobalReportingEmailsInfo)
-async def get_report_info():
-    app_config = extract_config()["App"]
-    return {
-        "emails": app_config["GlobalReportingEmails"],
-        "time": app_config["GlobalReportTime"],
-        "daily": get_config().get_boolean("App", "DailyGlobalReport"),
-        "weekly": get_config().get_boolean("App", "WeeklyGlobalReport")
-    }
-
-
-@config_router.put("/global_report")
-async def update_report_info(global_report_info: GlobalReportingEmailsInfo, reboot_processor: Optional[bool] = True):
-    global_report_info = global_report_info.dict(exclude_unset=True, exclude_none=True)
-    config_dict = extract_config()
-    key_mapping = {"GlobalReportingEmails": "emails", "GlobalReportTime": "time",
-                   "DailyGlobalReport": "daily", "WeeklyGlobalReport": "weekly"}
-    for key, value in key_mapping.items():
-        if value in global_report_info:
-            config_dict["App"][key] = str(global_report_info[value])
-    success = update_config(config_dict, reboot_processor)
-    return handle_response(config_dict, success)

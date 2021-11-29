@@ -11,17 +11,10 @@ logger = logging.getLogger(__name__)
 
 class ExportDataType(str, Enum):
     raw_data = "raw_data"
-    occupancy = "occupancy"
-    social_distancing = "social-distancing"
-    facemask_usage = "facemask-usage"
-    in_out = "in-out"
-    dwell_time = "dwell-time"
     all_data = "all_data"
 
 
 class ExportDTO(SnakeModel):
-    areas: Optional[List[str]] = Field([], example=["area1", "area2", "area3"])
-    all_areas: Optional[bool] = Field(False, example=True)
     cameras: Optional[List[str]] = Field([], example=["camera1", "camera2"])
     all_cameras: Optional[bool] = Field(False, example=True)
     from_date: Optional[date] = Field(None, example="2020-12-01")
@@ -44,9 +37,8 @@ class ExportDTO(SnakeModel):
 
     @root_validator
     def validate_entities(cls, values):
-        if not any([values.get("areas"), values.get("all_areas"), values.get("cameras"),
-                    values.get("all_cameras")]):
-            logger.info("No cameras or areas were provided.")
-            raise ValueError("No cameras or areas were provided. You need to provide unless one camera or "
-                             "area to call the export endpoint.")
+        if not any([values.get("cameras"), values.get("all_cameras")]):
+            logger.info("No cameras were provided.")
+            raise ValueError("No cameras were provided. You need to provide unless one camera "
+                             "to call the export endpoint.")
         return values

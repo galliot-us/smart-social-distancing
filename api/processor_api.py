@@ -9,16 +9,12 @@ from fastapi.responses import JSONResponse
 from fastapi.openapi.utils import get_openapi
 from share.commands import Commands
 
-from libs.utils.loggers import get_area_log_directory, get_source_log_directory, get_screenshots_directory, \
-    get_config_source_directory, get_config_areas_directory
-from api.utils import bad_request_serializer
+from libs.utils.loggers import get_source_log_directory, get_screenshots_directory, get_config_source_directory
 
 from .dependencies import validate_token
 from .queue_manager import QueueManager
 from .routers.app import app_router, dashboard_sync_router
 from .routers.api import api_router
-from .routers.areas import areas_router
-from .routers.area_loggers import area_loggers_router
 from .routers.auth import auth_router
 from .routers.core import core_router
 from .routers.cameras import cameras_router
@@ -26,9 +22,7 @@ from .routers.classifier import classifier_router
 from .routers.config import config_router
 from .routers.detector import detector_router
 from .routers.export import export_router
-from .routers.metrics import area_metrics_router, camera_metrics_router
 from .routers.periodic_tasks import periodic_tasks_router
-from .routers.slack import slack_router
 from .routers.source_loggers import source_loggers_router
 from .routers.source_post_processors import source_post_processors_router
 from .routers.static import static_router
@@ -60,8 +54,6 @@ class ProcessorAPI:
     def create_fastapi_app(self):
         os.environ["SourceLogDirectory"] = get_source_log_directory(self.settings.config)
         os.environ["SourceConfigDirectory"] = get_config_source_directory(self.settings.config)
-        os.environ["AreaLogDirectory"] = get_area_log_directory(self.settings.config)
-        os.environ["AreaConfigDirectory"] = get_config_areas_directory(self.settings.config)
         os.environ["ScreenshotsDirectory"] = get_screenshots_directory(self.settings.config)
 
         os.environ["HeatmapResolution"] = self.settings.config.get_section_dict("App")["HeatmapResolution"]
@@ -75,7 +67,6 @@ class ProcessorAPI:
 
         app.include_router(config_router, prefix="/config", tags=["Config"], dependencies=dependencies)
         app.include_router(cameras_router, prefix="/cameras", tags=["Cameras"], dependencies=dependencies)
-        app.include_router(areas_router, prefix="/areas", tags=["Areas"], dependencies=dependencies)
         app.include_router(app_router, prefix="/app", tags=["App"], dependencies=dependencies)
         app.include_router(dashboard_sync_router, prefix="/app", tags=["App"])
         app.include_router(api_router, prefix="/api", tags=["Api"], dependencies=dependencies)
@@ -86,12 +77,8 @@ class ProcessorAPI:
         app.include_router(source_post_processors_router, prefix="/source_post_processors",
                            tags=["Source Post Processors"], dependencies=dependencies)
         app.include_router(source_loggers_router, prefix="/source_loggers", tags=["Source Loggers"], dependencies=dependencies)
-        app.include_router(area_loggers_router, prefix="/area_loggers", tags=["Area Loggers"], dependencies=dependencies)
         app.include_router(periodic_tasks_router, prefix="/periodic_tasks", tags=["Periodic Tasks"], dependencies=dependencies)
-        app.include_router(area_metrics_router, prefix="/metrics/areas", tags=["Metrics"], dependencies=dependencies)
-        app.include_router(camera_metrics_router, prefix="/metrics/cameras", tags=["Metrics"], dependencies=dependencies)
         app.include_router(export_router, prefix="/export", tags=["Export"], dependencies=dependencies)
-        app.include_router(slack_router, prefix="/slack", tags=["Slack"], dependencies=dependencies)
         app.include_router(auth_router, prefix="/auth", tags=["Auth"])
         app.include_router(static_router, prefix="/static", dependencies=dependencies)
         app.include_router(ml_model_router, prefix="/ml_model", tags=["ML Models"], dependencies=dependencies)

@@ -171,12 +171,6 @@ class TestsEditCamera:
 
         camera_id = camera_sample["id"]
         body = {
-            "violation_threshold": 22,
-            "notify_every_minutes": 22,
-            "emails": "new_john@email.com,new_doe@email.com",
-            "enable_slack_notifications": True,
-            "daily_report": False,
-            "daily_report_time": "11:22",
             "id": camera_id,
             "name": "new_Kitchen",
             "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
@@ -199,12 +193,6 @@ class TestsEditCamera:
 
         camera_id = "Non-existent ID"
         body = {
-            "violation_threshold": 22,
-            "notify_every_minutes": 22,
-            "emails": "new_john@email.com,new_doe@email.com",
-            "enable_slack_notifications": True,
-            "daily_report": False,
-            "daily_report_time": "11:22",
             "id": camera_id,
             "name": "new_Kitchen",
             "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
@@ -225,12 +213,6 @@ class TestsEditCamera:
 
         camera_id = camera_sample["id"]
         body = {
-            "violation_threshold": 22,
-            "notify_every_minutes": 22,
-            "emails": "new_john@email.com,new_doe@email.com",
-            "enable_slack_notifications": True,
-            "daily_report": False,
-            "daily_report_time": "11:22",
             "id": camera_id,
             "name": "new_Kitchen",
             "video_path": "WRONG_PATH",
@@ -252,12 +234,6 @@ class TestsEditCamera:
 
         camera_id = camera_sample["id"]
         body_1 = {
-            "violation_threshold": 22,
-            "notify_every_minutes": 22,
-            "emails": "new_john@email.com,new_doe@email.com",
-            "enable_slack_notifications": True,
-            "daily_report": False,
-            "daily_report_time": "11:22",
             "id": camera_id,
             "name": "new_Kitchen",
             "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
@@ -268,12 +244,6 @@ class TestsEditCamera:
         }
 
         body_2 = {
-            "violation_threshold": 33,
-            "notify_every_minutes": 33,
-            "emails": "new_new_john@email.com,new_new_doe@email.com",
-            "enable_slack_notifications": False,
-            "daily_report": False,
-            "daily_report_time": "10:33",
             "id": camera_id,
             "name": "new_new_Kitchen",
             "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",
@@ -320,12 +290,6 @@ class TestsEditCamera:
 
         # Video path is correctly setted
         body = {
-            "violation_threshold": 33,
-            "notify_every_minutes": 33,
-            "emails": "",
-            "enable_slack_notifications": False,
-            "daily_report": False,
-            "daily_report_time": "",
             "id": camera_id,
             "name": "",
             "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",

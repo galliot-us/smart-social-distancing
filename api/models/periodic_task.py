@@ -11,13 +11,9 @@ class PeriodicTaskDTO(OptionalSectionConfig):
 
     @validator("name")
     def validate_name(cls, value):
-        if value not in ["metrics", "s3_backup"]:
+        if value not in ["s3_backup"]:
             raise ValueError(f"Not supported periodic task named: {value}")
         return value
-
-
-class MetricsTaksDTO(PeriodicTaskDTO):
-    liveInterval: int = Field(example=10)
 
 
 class S3Backup(PeriodicTaskDTO):
@@ -31,8 +27,6 @@ class PeriodicTaskListDTO(SnakeModel):
 
 def validate_periodic_task(task: PeriodicTaskDTO):
     task_model = None
-    if task.name == "metrics":
-        task_model = MetricsTaksDTO
-    elif task.name == "s3_backup":
+    if task.name == "s3_backup":
         task_model = S3Backup
     task_model(**task.dict())

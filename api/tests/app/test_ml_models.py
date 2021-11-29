@@ -355,12 +355,6 @@ class TestsModifyMLModel:
         # Create the camera
 
         camera_template = {
-            "violation_threshold": 100,
-            "notify_every_minutes": 15,
-            "emails": "john@email.com,doe@email.com",
-            "enable_slack_notifications": False,
-            "daily_report": True,
-            "daily_report_time": "06:00",
             "id": "200",
             "name": "Kitchen",
             "video_path": "/repo/api/tests/data/mocked_data/data/softbio_vid.mp4",

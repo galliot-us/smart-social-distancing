@@ -22,16 +22,17 @@
 
 ## Introduction
 
-Smart Distancing is an open-source application to quantify social distancing measures using edge computer vision systems. Since all computation runs on the device, it requires minimal setup and minimizes privacy and security concerns. It can be used in retail, workplaces, schools, construction sites, healthcare facilities, factories, etc.
+Smart Distancing is an open-source application to quantify social distancing, facemask usage and occupancy measures using edge computer vision systems. Since all video computation runs on the device, it requires minimal setup and minimizes privacy and security concerns. It can be used in retail, workplaces, schools, construction sites, healthcare facilities, factories, etc.
 
 <div align="center">
   <img  width="100%" src="demo.gif">
 </div>
 
-You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 or Google's Coral Edge-TPU. This application measures social distancing rates and gives proper notifications each time someone ignores social distancing rules. By generating and analyzing data, this solution outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus.
+You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 or Google's Coral Edge-TPU. This application measures social distancing rates and detects if someone ignores social distancing rules.
+
+Also, you can connect multiple processors to Lanthorn's cloud dashboard and generate interesting reports or emit notifications that will help you to analyze your data and outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus.
 
 If you want to understand more about the architecture you can read the following [post](https://neuralet.com/article/smart-social-distancing/).
-
 
 Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to covid19project@neuralet.com if you have any questions.
 
@@ -446,6 +447,8 @@ Please note that the bash script may require permissions to execute (run `chmod 
 
 If you are running the processor directly from the Docker Hub repository, remember to copy/paste the script in the execution folder before adding the flag ``` -e TZ=`./timezone.sh` ```.
 
+If you are using the Lanthorn cloud dashboard for processing the metrics, remember to put **all the processors in the same time zone**, otherwise, the aggregated results will display wrong results.
+
 #### Persisting changes
 
 We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`) if you are building the docker image. If you are using the already built one we recommend creating a directory named `data` and mount it (`-v $PWD/data:/repo/data`).
@@ -519,6 +522,7 @@ Please note that:
 
 If you want to integrate an IP camera that uses a private protocol, you should check with the camera provider if the device supports exporting its stream in a public protocol.
 For example, [WYZE](https://wyze.com/) doesn't support RTSP as default, but [you have the possibility of installing a firmware that supports it](https://wyzelabs.zendesk.com/hc/en-us/articles/360026245231-Wyze-Cam-RTSP).
+
 Same goes for [Google Nest Cameras](https://developers.google.com/nest/device-access/traits/device/camera-live-stream), although here a token must be kept alive to access the RTSP stream
 
 ### Change the default configuration
@@ -547,10 +551,8 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `Resolution`: Specifies the image resolution that the whole processor will use. If you are using a single camera we recommend using that resolution.
   - `Encoder`: Specifies the video encoder used by the processing pipeline.
   - `MaxProcesses`: Defines the number of processes executed in the processor. If you are using multiple cameras per processor we recommend increasing this number.
-  - `DashboardURL`: Sets the url where the frontend is running. Unless you are using a custom domain, you should keep this value as https://app.lanthorn.ai/.
+  - `DashboardURL`: Sets the url where the cloud dashboard is running. Unless you are using a custom domain, you should keep this value as https://app.lanthorn.ai/.
   - `DashboardAuthorizationToken`:  Configures the Authorization header required to sync the processor and the dashboard.
-  - `SlackChannel`: Configures the slack channel used by the notifications. The chosen slack channel must exist in the configured workspace.
-  - `OccupancyAlertsMinInterval`:  Sets the desired interval (in seconds) between occupancy alerts.
   - `MaxThreadRestarts`: Defines the number of restarts allowed per thread.
   - `HeatmapResolution`: Sets the resolution used by the heatmap report.
   - `LogPerformanceMetrics`: A boolean parameter to enable/disable the logging of "Performance Metrics" in the default processor log.
@@ -581,19 +583,6 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `QueuePort`: Sets the port of the *QueueManager* (inside docker).
   - `QueueAuthKey`: Configures the auth key required to interact with the *QueueManager*.
 
-- `[Area_N]`:
-
-  A single processor can manage multiple areas and all of them must be configured in the config file. You can generate this configuration in 3 different ways: directly in the config file, using the [UI](https://app.lanthorn.ai) or using the API.
-  - `Id`: A string parameter to identify each area. This value must be *unique*.
-  - `Name`: A string parameter to name each area. Although you can repeat the same name in multiple areas, we recommend don't do that.
-  - `Cameras`: Configures the cameras (using the *ids*) included in the area. If you are configuring multiple cameras you should write the ids separated by commas. Each area should have at least one camera.
-  - `NotifyEveryMinutes` and `ViolationThreshold`: Defines the *period of time* and *number of social distancing violations* desired to send notifications. For example, if you want to notify when *occurs more than 10 violations every 15 minutes*, you must set `NotifyEveryMinutes` in 15 and `ViolationThreshold` in 10.
-  - `Emails`: Defines the emails list to receive the notification. Multiple emails can be written separating them by commas.
-  - `EnableSlackNotifications`: A boolean parameter to enable/disable the Slack integration for notifications and daily reports. We recommend not editing this parameter directly and manage it from the [UI](https://app.lanthorn.ai) to configure your workspace correctly.
-  - `OccupancyThreshold`: Defines the occupancy violation threshold. For example, if you want to notify when *there is more than 20 persons in the area* you must set `OccupancyThreshold` in 20.
-  - `DailyReport`: When the parameter is set in *True*, the information of the previous day is sent in a summary report.
-  - `DailyReportTime`: If the daily report is enabled, you can choose the time to receive the report. By default, the report is sent at 06:00.
-
 - `[Source_N]`:
 
   In the config files, we use the *source* sections to specifies the camera's configurations. Similarly to the areas, a single processor can manage multiple cameras and all of them must be configured in the config file. You can generate this configuration in 3 different ways: directly in the config file, using the [UI](https://app.lanthorn.ai) or using the API.
@@ -602,11 +591,6 @@ All the configurations are grouped in *sections* and some of them can vary depen
   - `Name`: A string parameter to name each area. Although you can repeat the same name in multiple cameras, we recommend don't do that.
   - `VideoPath`: Sets the path or url required to get the camera's video stream.
   - `Tags`: List of tags (separated by commas). This field only has an informative propose, change that value doesn't affect the processor behavior.
-  - `NotifyEveryMinutes` and `ViolationThreshold`: Defines the *period of time* and *number of social distancing violations* desired to send notifications. For example, if you want to notify when *occurs more than 10 violations every 15 minutes*, you must set `NotifyEveryMinutes` in 15 and `ViolationThreshold` in 10.
-  - `Emails`: Defines the emails list to receive the notification. Multiple emails can be written separating them by commas.
-  - `EnableSlackNotifications`: A boolean parameter to enable/disable the Slack integration for notifications and daily reports. We recommend not editing this parameter directly and manage it from the [UI](https://app.lanthorn.ai) to configure your workspace correctly.
-  - `DailyReport`: When the parameter is set in *True*, the information of the previous day is sent in a summary report.
-  - `DailyReportTime`: If the daily report is enabled, you can choose the time to receive the report. By default, the report is sent at 06:00.
   - `DistMethod`: Configures the chosen distance method used by the processor to detect the violations. There are three different values: CalibratedDistance, CenterPointsDistance and FourCornerPointsDistance. If you want to use *CalibratedDistance* you will need to calibrate the camera from the [UI](https://app.lanthorn.ai).
   - `LiveFeedEnabled`: A boolean parameter that enables/disables the video live feed for the source.
 
@@ -666,18 +650,10 @@ All the configurations are grouped in *sections* and some of them can vary depen
     - `Endpoint`: Configures an endpoint url.
     - `Authorization`: Configures the Authorization header. For example: *Bearer <your_token>*.
     - `SendingInterval`: Configures the desired time interval (in seconds) to send data into the configured endpoint.
- 
-- `[AreaLogger_N]`:
-
-  Similar to the section *SourceLogger_N* (for areas instead of cameras), we support multiple loggers (right now only 1, but we plan to include new ones in the future) that you enable/disable uncommenting/commenting them or with the *Enabled* flag.
-  - `file_system_logger`: Stores the occupancy data in a folder inside the processor.
-    - `LogDirectory`: Defines the location where the generated files will be stored.
 
 - `[PeriodicTask_N]`:
 
-  The processor also supports the execution of periodic tasks to generate reports, accumulate metrics, backup your files, etc. For now, we support the *metrics* and *s3_backup* tasks. You can enable/disable these functionalities uncommenting/commenting the section or with the *Enabled* flag.
-  - `metrics`: Generates different reports (hourly, daily and live) with information about the social distancing infractions, facemask usage and occupancy in your cameras and areas. You need to have it enabled to see data in the [UI](https://app.lanthorn.ai) dashboard or use the `/metrics` endpoints.
-      - `LiveInterval`: Expressed in minutes. Defines the time interval desired to generate live information.
+  The processor also supports the execution of periodic tasks. For now, we only support the *s3_backup* task. You can enable/disable thus functionality uncommenting/commenting the section or with the *Enabled* flag.
   - `s3_backup`: Back up into an S3 bucket all the generated data (raw data and reports). To enable the functionality you need to configure the aws credentials following the steps explained in the section [Configuring AWS credentials](#configuring-aws-credentials).
       - `BackupInterval`: Expressed in minutes. Defines the time interval desired to back up the raw data.
       - `BackupS3Bucket`: Configures the S3 Bucket used to store the backups.
@@ -686,6 +662,7 @@ All the configurations are grouped in *sections* and some of them can vary depen
 #### Use different models per camera
 By default, all video streams are processing running against the same ML model.
 When a processing threads starts running it verifies if a configuration .json file exists in the path: /repo/data/processor/config/sources/<camera_id>/ml_models/model_<device>.json
+
 If no custom configuration is detected, a file will be generated using the default values from the `[Detector]` section, documented above. 
 These JSONs contain the configuration of which ML Model is used for processing said stream, and can be modified either manually or using the endpoint  `/ml_model` documented below. Please note that models that differ in their location or name regarding the `./download_` scripts must specify their location in the field `file_path`.
 
@@ -696,7 +673,6 @@ After you run the processor on your node, you can use the exposed API to control
 The available endpoints are grouped in the following subapis:
 - `/config`: provides a pair of endpoint to retrieve and overwrite the current configuration file.
 - `/cameras`: provides endpoints to execute all the CRUD operations required by cameras. These endpoints are very useful to edit the camera's configuration without restarting the docker process. Additionally, this subapi exposes the calibration endpoints.
-- `/areas`: provides endpoints to execute all the CRUD operations required by areas.
 - `/app`: provides endpoints to retrieve and update the `App` section in the configuration file.
 - `/api`: provides endpoints to retrieve the `API` section in the configuration file.
 - `/core`: provides endpoints to retrieve and update the `CORE` section in the configuration file.
@@ -705,11 +681,8 @@ The available endpoints are grouped in the following subapis:
 - `/tracker`: provides endpoints to retrieve and update the `Tracker` section in the configuration file.
 - `/source_post_processors`: provides endpoints to retrieve and update the `SourcePostProcessor_N` sections in the configuration file. You can use that endpoint to enable/disable a post processor step, change a parameter, etc.
 - `/source_loggers`: provides endpoints to retrieve and update the `SourceLoggers_N` sections in the configuration file. You can use that endpoint to enable/disable a logger, change a parameter, etc.
-- `/area_loggers`: provides endpoints to retrieve and update the `AreaLoggers_N` sections in the configuration file. You can use that endpoint to enable/disable a post processor step, change a parameter, etc.
 - `/periodict_tasks`: provides endpoints to retrieve and update the `PeriodicTask_N` sections in the configuration file. You can use that endpoint to enable/disable the metrics generation.
-- `/metrics`: a set of endpoints to retrieve the data generated by the metrics periodic task.
 - `/export`: an endpoint to export (in zip format) all the data generated by the processor.
-- `/slack`: a set of endpoints required to configure Slack correctly in the processor. We recommend to use these endpoints from the [UI](https://app.lanthorn.ai) instead of calling them directly.
 - `/auth`: a set of endpoints required to configure OAuth2 in the processors' endpoints.
 - `/ml_model`: an endpoint to edit the ML model and its parameters, that is used to process certain camera's video feed.
  
@@ -722,23 +695,24 @@ The complete list of endpoints, with a short description and the signature speci
 
  ***NOTE*** Most of the endpoints update the config file given in the Dockerfile. If you don't have this file mounted (see section [Persisting changes](#persisting-changes)), these changes will be inside your container and will be lost after stopping it.
 
+
 ### Interacting with the processors' generated information
 
 #### Generated information
 The generated information can be split into 3 categories:
-  - `Raw data`: This is the most basic level of information. It only includes the results of the detector, classifier, tracker, and any configured post-processor step.
-  - `Metrics data`: **Only written if you have enabled the metrics periodic task** (see [section](#change-the-default-configuration)). These include metrics related to occupancy, social-distancing, and facemask usage; aggregated by hour and day.
-  - `Notifications`: Situations that require an immediate response (such as surpassing the maximum occupancy threshold for an area) and need to be notified ASAP. The currently supported notification channels are email and slack.
+  - `Raw data`: This is the most basic level of information. It only includes the results of the detector, classifier, tracker, and any configured post-processor step. All the video information generated (such as the live feed) is **stored inside the edge device and is never sent outside it**. 
+  - `Metrics data`: **Generated in Lanthorn's cloud dashboard, only generated if you register a processor in your account.**. These include metrics related to occupancy, social-distancing, and facemask usage; aggregated by hour and day. When you enabled that functionality, some raw data needs to be sent from your device to our cloud engine. However, **only numeric and statistical data is sent. No video or personal information is sent from your device to Lanthorn's servers.**
+  - `Notifications`: Situations that require an immediate response (such as surpassing the maximum occupancy threshold for an area) and need to be notified ASAP. The currently supported notification channels are email and slack. Same that the metrics, this feature is supported by Lanthorn's cloud engine.
 
 #### Accessing and storing the information
-All of the information that is generated by the processor is stored (by default) inside the edge device for security reasons. However, the processor provides features to easily export or backup the data to another system if required.
+Most of the information that is generated by the processor is stored (by default) inside the edge device for security reasons. However, the processor provides features to easily export or backup the data to another system if required.
 
 ##### Storing the raw data
-The raw data storage is managed by the `SourceLogger` and `AreaLogger` steps. By default, only the `video_logger` and the `file_system_logger` are enabled. As both steps store the data inside the processor (by default the folder `/repo/data/processor/static/`), we strongly recommend mounting that folder to keep the data safe when the process is restarted ([Persisting changes](#persisting-changes)).
+
+The raw data storage is managed by the `SourceLogger` step. By default, only the `video_logger` and the `file_system_logger` are enabled. As both steps store the data inside the processor (by default the folder `/repo/data/processor/static/`), we strongly recommend mounting that folder to keep the data safe when the process is restarted ([Persisting changes](#persisting-changes)).
 Moreover, we recommend keeping active these steps because the [frontend](https://app.lanthorn.ai) and the metrics need them.
 
-If you need to store (or process) the raw data in *real-time* outside the processor, you can activate the `web_hook_logger` and implement an endpoint that handles these events.
-The `web_hook_logger` step is configured to send an event (a PUT request) using the following format:
+If you need to use the raw data to feed the lanthorn cloud dashboard, you need to activate the `web_hook_logger` and sync your processor with our servers. All the videos are processed inside the edge device, there is *no video information* sent to the dashboard cloud instance. The only information that the webhook logger sends is anonymous data following the format:
 
 ```
 {
@@ -752,16 +726,9 @@ The `web_hook_logger` step is configured to send an event (a PUT request) using 
         }
 ```
 
-You only need to implement an endpoint that matches the previous signature; configure its URL in the config file and the integration will be done. We recommend this approach if you want to integrate "Smart social distancing" with another existing system with real-time data.
+If you want to create your dashboard with the processed data, you only need to implement an endpoint that matches the previous signature; configure its URL in the config file and the integration will be done. This approach is also useful if you want to integrate "Smart social distancing" with another existing system with real-time data.
 
 Another alternative is to activate the periodic task `s3_backup`. This task will back up all the generated data (raw data and metrics) inside the configured S3 bucket, according to the time interval defined by the `BackupInterval` parameter. Before enabling this feature remember to configure AWS following the steps defined in the section [Configuring AWS credentials](#configuring-aws-credentials).
-
-##### Accessing the metrics data
-The data of aggregated metrics is stored in a set of CSV files inside the device. For now, we don't have implemented any mechanism to store these files outside the processor (the `web_hook_logger` only sends "raw data" events).
-However, if you enable the `s3_backup` task, the previous day's metrics files will be backed up at AWS at the beginning of the day.
-
-You can easily visualize the metrics information in the dashboard exposed in the [frontend](https://app.lanthorn.ai).
-In addition, you can retrieve the same information through the API (see the metrics section in the API documentation exposed in http://<PROCESSOR_HOST>:<PROCESSOR_PORT>/docs#/Metrics).
 
 ##### Exporting the data
 In addition to the previous features, the processor exposes an endpoint to export in zip format all the generated data.
