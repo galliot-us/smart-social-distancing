@@ -3,7 +3,6 @@ from queue import Queue
 from multiprocessing.managers import BaseManager
 import logging
 from share.commands import Commands
-from queue import Empty
 import schedule
 from libs.engine_threading import run_video_processing
 from libs.area_threading import run_area_processing
@@ -11,6 +10,7 @@ from libs.utils.notifications import run_check_violations
 
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
+
 
 class QueueManager(BaseManager):
     pass
@@ -74,15 +74,18 @@ class ProcessorCore:
                 logger.info(f"should not send notification for camera {area.id}")
 
     def _serve(self):
-        logger.info("Core is listening for commands ... ")
-        while True:
-            try:
-                cmd_code = self._cmd_queue.get(timeout=10)
-                logger.info("command received: " + str(cmd_code))
-                self._handle_command(cmd_code)
-            except Empty:
-                # Run pending tasks
-                schedule.run_pending()
+        logger.info("Starting process")
+
+        self._start_processing()
+
+        # while True:
+        #     try:
+        #         cmd_code = self._cmd_queue.get(timeout=10)
+        #         logger.info("command received: " + str(cmd_code))
+        #         self._handle_command(cmd_code)
+        #     except Empty:
+        #         # Run pending tasks
+        #         schedule.run_pending()
 
     def _handle_command(self, cmd_code):
         if cmd_code == Commands.PROCESS_VIDEO_CFG:
@@ -145,8 +148,8 @@ class ProcessorCore:
 
     def _start_processing(self):
         self._engines = self.start_processing_sources()
-        area_engine = self.start_processing_areas()
-        self._engines.append(area_engine)
+        # area_engine = self.start_processing_areas()
+        # self._engines.append(area_engine)
 
     def _stop_processing(self):
         for (conn, proc) in self._engines:

@@ -1,19 +1,19 @@
 #!/usr/bin/python3
 import argparse
-from multiprocessing import Process
-import threading
 from libs.config_engine import ConfigEngine
 import logging
 
 logger = logging.getLogger(__name__)
 
+
 def start_core(config):
     from libs.processor_core import ProcessorCore
     core = ProcessorCore(config)
-    
+
     logger.info("Core Started.")
     core.start()
     logger.info("Core Terminated.")
+
 
 def main(config):
     logging.basicConfig(level=logging.INFO)
