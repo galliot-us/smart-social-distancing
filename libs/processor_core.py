@@ -76,7 +76,7 @@ class ProcessorCore:
 
     def _serve(self):
 
-        if self.config.get_section_dict("App")["HistoricalDataMode"]:
+        if self.config.get_boolean("App", "HistoricalDataMode"):
             logger.info("Starting historical data processing")
             self.start_processing_historical_data()
         else:
@@ -155,8 +155,8 @@ class ProcessorCore:
 
     def _start_processing(self):
         self._engines = self.start_processing_sources()
-        # area_engine = self.start_processing_areas()
-        # self._engines.append(area_engine)
+        area_engine = self.start_processing_areas()
+        self._engines.append(area_engine)
 
     def _stop_processing(self):
         for (conn, proc) in self._engines:
