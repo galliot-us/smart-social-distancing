@@ -12,7 +12,7 @@ from libs.cv_engine import CvEngine
 logger = logging.getLogger(__name__)
 
 
-def run_video_processing(config, pipe, sources):
+def run_video_processing(config, pipe, sources, historical_data_mode: bool = False):
     pid = os.getpid()
     logger.info(f"[{pid}] taking on {len(sources)} cameras")
     threads = []
@@ -21,21 +21,23 @@ def run_video_processing(config, pipe, sources):
         engine.start()
         threads.append(engine)
 
-    # Wait for a signal to die
-    pipe.recv()
-    logger.info(f"[{pid}] will stop cameras and die")
-    for t in threads:
-        t.stop()
+    if not historical_data_mode:
+        # Wait for a signal to die
+        pipe.recv()
 
-    for src in sources:
-        logger.info("Clean up video output")
-        playlist_path = os.path.join('/repo/data/processor/static/gstreamer/', src['id'])
-        birdseye_path = os.path.join('/repo/data/processor/static/gstreamer/', src['id'] + '-birdseye')
-        if os.path.exists(playlist_path):
-            rmtree(playlist_path)
-        if os.path.exists(birdseye_path):
-            rmtree(birdseye_path)
-    logger.info(f"[{pid}] Goodbye!")
+        logger.info(f"[{pid}] will stop cameras and die")
+        for t in threads:
+            t.stop()
+
+        for src in sources:
+            logger.info("Clean up video output")
+            playlist_path = os.path.join('/repo/data/processor/static/gstreamer/', src['id'])
+            birdseye_path = os.path.join('/repo/data/processor/static/gstreamer/', src['id'] + '-birdseye')
+            if os.path.exists(playlist_path):
+                rmtree(playlist_path)
+            if os.path.exists(birdseye_path):
+                rmtree(birdseye_path)
+        logger.info(f"[{pid}] Goodbye!")
 
 
 class EngineThread(Thread):
@@ -55,8 +57,8 @@ class EngineThread(Thread):
                     last_restart_time = datetime.now()
                     self.engine.process_video(self.source['url'])
                     if os.path.isdir(self.source['url']):
-                        logging.info("SE TERMINARON LOS VIDEOS")
-                        sys.exit()
+                        logging.info("Finished processing")
+                        break
                 except Exception as e:
                     logging.error(e, exc_info=True)
                     logging.info(f"Exception processing video for source {self.source['name']}")
@@ -69,6 +71,7 @@ class EngineThread(Thread):
                     time.sleep(5)
                     logging.info("Restarting the video processing")
                     restarts += 1
+            sys.exit()
         except Exception as e:
             logging.error(e, exc_info=True)
             raise e
