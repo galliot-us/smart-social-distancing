@@ -80,7 +80,7 @@ class ProcessorCore:
             logger.info("Starting historical data processing")
             self.start_processing_historical_data()
         else:
-            logger.info("Starting process")
+            logger.info("Core is listening for commands ... ")
             while True:
                 try:
                     cmd_code = self._cmd_queue.get(timeout=10)
