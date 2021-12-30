@@ -457,9 +457,9 @@ If you'd like to process historical data (videos stored on the device instead of
 - Run the `/repo/run_historical_metrics.sh` script on the `docker run` command.
 
 Example using `x86`:
-
-    docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64 /repo/run_historical_metrics.sh
-
+```bash
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64 /repo/run_historical_metrics.sh
+```
 ### Configuring AWS credentials
 
 Some of the implemented features allow you to upload files into an S3 bucket. To do that you need to provide the envs `AWS_BUCKET_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. An easy way to do that is to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
