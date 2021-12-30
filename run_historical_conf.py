@@ -26,31 +26,31 @@ def new_camera(camera, camera_index, config_file):
         new_config.write(add_configfile)
     add_configfile.close()  
 
+def edit_camera(camera, camera_index, config_file):
+    config.set(f'Source_{camera_index}', 'VideoPath', f'/repo/data/historical_data/videos/{camera}')
+    config.set(f'Source_{camera_index}', 'Tags', f'tags_{camera}')
+    config.set(f'Source_{camera_index}', 'Name', f'name_{camera}')
+
+    with open(config_file, 'w') as configfile:
+        config.write(configfile)
+    configfile.close()
+
 
 if __name__ == '__main__':
     config = RawConfigParser(allow_no_value=True)
-    config.read('config-x86.ini')
+    ini_file = 'config-x86.ini'
+    config.read(ini_file)
     list_cameras = os.listdir('data/historical_data/')
     if len(list_cameras) > 1:
         for i, camera in enumerate(list_cameras):
             if i == 0:
-                config.set(f'Source_{0}', 'VideoPath', f'/repo/data/historical_data/videos/{camera}')
-
-                with open('config-x86.ini', 'w') as configfile:
-                    config.write(configfile)
-                configfile.close()
+                edit_camera(camera, i, ini_file)
             elif i > 0:
-                new_camera(camera, i, 'config-x86.ini')
+                new_camera(camera, i, ini_file)
     elif len(list_cameras) == 1:
         if 'Source_0' in config.sections():
-            config.set('Source_0', 'VideoPath', f'/repo/data/historical_data/videos/{list_cameras[0]}')
-
-            print(config.get('Source_0', 'VideoPath'))
-
-            with open('config-x86.ini', 'w') as edit_configfile:
-                config.write(edit_configfile)
-            edit_configfile.close()
+            edit_camera(list_cameras[0], 0, ini_file)
         else:
-            new_camera(list_cameras[0], 0, 'config-x86.ini')
+            new_camera(list_cameras[0], 0, ini_file)
     
     
