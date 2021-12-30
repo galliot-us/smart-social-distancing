@@ -2,6 +2,7 @@ import logging
 import humps
 import os
 import shutil
+import time
 
 from fastapi import status, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -9,6 +10,8 @@ from fastapi.responses import JSONResponse
 from share.commands import Commands
 
 from .settings import Settings
+
+MAX_PROCESSOR_RESTARTS = 5
 
 logger = logging.getLogger(__name__)
 
@@ -41,16 +44,26 @@ def extract_config(config_type="all"):
 def restart_processor():
     from .queue_manager import QueueManager
     logger.info("Restarting video processor...")
-    queue_manager = QueueManager()
-    queue_manager.cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
-    stopped = queue_manager.result_queue.get()
-    if stopped:
-        queue_manager.cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
-        started = queue_manager.result_queue.get()
-        if not started:
-            logger.info("Failed to restart video processor...")
-            return False
-    return True
+    restarts = 0
+    while True:
+        try:
+            queue_manager = QueueManager()
+            queue_manager.cmd_queue.put(Commands.STOP_PROCESS_VIDEO)
+            stopped = queue_manager.result_queue.get()
+            if stopped:
+                queue_manager.cmd_queue.put(Commands.PROCESS_VIDEO_CFG)
+                started = queue_manager.result_queue.get()
+                if not started:
+                    logger.info("Failed to restart video processor...")
+                    return False
+            return True
+        except:
+            restarts += 1
+            if restarts == MAX_PROCESSOR_RESTARTS:
+                # Exception raised when processor was restarted
+                return False
+            time.sleep(1)
+            logger.info("Unexpected error restarting the processor. Retrying...")
 
 
 def update_config(config_dict, reboot_processor):
