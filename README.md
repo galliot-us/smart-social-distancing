@@ -434,7 +434,7 @@ docker-compose -f docker-compose.yml -f docker-compose-x86-openvino.yml up
 ### Optional Parameters
 
 This is a list of optional parameters for the `docker run` commands.
-They are included in the examples of the [Run the processor](#run-the-processor) section.
+They are included in the examples of the [Run the processor](#running-the-processor) section.
 
 #### Logging in the system's timezone
 
@@ -450,6 +450,16 @@ If you are running the processor directly from the Docker Hub repository, rememb
 
 We recommend adding the projects folder as a mounted volume (`-v "$PWD":/repo`) if you are building the docker image. If you are using the already built one we recommend creating a directory named `data` and mount it (`-v $PWD/data:/repo/data`).
 
+#### Processing historical data
+
+If you'd like to process historical data (videos stored on the device instead of a stream), you must follow two steps:
+- Enable the `HistoricalDataMode` parameter on the device's `config-*.ini` file (see [Change the default configuration](#change-the-default-configuration))
+- Run the `/repo/run_historical_metrics.sh` script on the `docker run` command.
+
+Example using `x86`:
+```bash
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64 /repo/run_historical_metrics.sh
+```
 ### Configuring AWS credentials
 
 Some of the implemented features allow you to upload files into an S3 bucket. To do that you need to provide the envs `AWS_BUCKET_REGION`, `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. An easy way to do that is to create a `.env` file (following the template `.env.example`) and pass the flag ```--env-file .env ``` when you run the processor.
@@ -543,6 +553,7 @@ If you choose this option, make sure to mount the config file as a volume to kee
 All the configurations are grouped in *sections* and some of them can vary depending on the chosen device.
 
 - `[App]`
+  - `HistoricalDataMode`: A boolean parameter that determines wheter to process historical data instead of a video stream.
   - `HasBeenConfigured`: A boolean parameter that states whether the *config.ini* was set up or not.
   - `Resolution`: Specifies the image resolution that the whole processor will use. If you are using a single camera we recommend using that resolution.
   - `Encoder`: Specifies the video encoder used by the processing pipeline.

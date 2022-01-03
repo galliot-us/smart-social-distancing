@@ -12,6 +12,7 @@ from libs.utils.notifications import run_check_violations
 logger = logging.getLogger(__name__)
 logging.getLogger().setLevel(logging.INFO)
 
+
 class QueueManager(BaseManager):
     pass
 
@@ -74,15 +75,20 @@ class ProcessorCore:
                 logger.info(f"should not send notification for camera {area.id}")
 
     def _serve(self):
-        logger.info("Core is listening for commands ... ")
-        while True:
-            try:
-                cmd_code = self._cmd_queue.get(timeout=10)
-                logger.info("command received: " + str(cmd_code))
-                self._handle_command(cmd_code)
-            except Empty:
-                # Run pending tasks
-                schedule.run_pending()
+
+        if self.config.get_boolean("App", "HistoricalDataMode"):
+            logger.info("Starting historical data processing")
+            self.start_processing_historical_data()
+        else:
+            logger.info("Core is listening for commands ... ")
+            while True:
+                try:
+                    cmd_code = self._cmd_queue.get(timeout=10)
+                    logger.info("command received: " + str(cmd_code))
+                    self._handle_command(cmd_code)
+                except Empty:
+                    # Run pending tasks
+                    schedule.run_pending()
 
     def _handle_command(self, cmd_code):
         if cmd_code == Commands.PROCESS_VIDEO_CFG:
@@ -114,6 +120,10 @@ class ProcessorCore:
         else:
             logger.warning("Invalid core command " + str(cmd_code))
             self._result_queue.put("invalid_cmd_code")
+
+    def start_processing_historical_data(self):
+        sources = self.config.get_video_sources()
+        run_video_processing(self.config, None, sources, True)
 
     def start_processing_sources(self):
         sources = self.config.get_video_sources()
