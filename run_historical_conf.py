@@ -1,4 +1,5 @@
-from configparser import ConfigParser, RawConfigParser
+from configparser import RawConfigParser
+import argparse
 import io
 import os
 
@@ -26,31 +27,26 @@ def new_camera(camera, camera_index, config_file):
         new_config.write(add_configfile)
     add_configfile.close()  
 
-def edit_camera(camera, camera_index, config_file):
-    config.set(f'Source_{camera_index}', 'VideoPath', f'/repo/data/historical_data/videos/{camera}')
-    config.set(f'Source_{camera_index}', 'Tags', f'tags_{camera}')
-    config.set(f'Source_{camera_index}', 'Name', f'name_{camera}')
+def delete_camera(config_file):
+    config.read(config_file)
+    for section in config.sections():
+        if 'Source_' in section:
+            config.remove_section(section)
 
-    with open(config_file, 'w') as configfile:
-        config.write(configfile)
-    configfile.close()
+    with open(config_file, 'w') as del_configfile:
+        config.write(del_configfile)
+    del_configfile.close()
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Processor's automatic setting.")
+    parser.add_argument('--ini_file', type=str, default='config-x86.ini')
+    parser.add_argument('--data_hist', type=str, default='data/historical_data/')
+    args = parser.parse_args()
     config = RawConfigParser(allow_no_value=True)
-    ini_file = 'config-x86.ini'
+    ini_file = args.ini_file
     config.read(ini_file)
-    list_cameras = os.listdir('data/historical_data/')
-    if len(list_cameras) > 1:
-        for i, camera in enumerate(list_cameras):
-            if i == 0:
-                edit_camera(camera, i, ini_file)
-            elif i > 0:
-                new_camera(camera, i, ini_file)
-    elif len(list_cameras) == 1:
-        if 'Source_0' in config.sections():
-            edit_camera(list_cameras[0], 0, ini_file)
-        else:
-            new_camera(list_cameras[0], 0, ini_file)
-    
-    
+    list_cameras = os.listdir(args.data_hist)
+    delete_camera(ini_file)
+    for i, camera in enumerate(list_cameras):
+        new_camera(camera, i, ini_file)
