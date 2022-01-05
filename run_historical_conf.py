@@ -25,7 +25,6 @@ def new_camera(camera, camera_index, config_file):
 
     with open(config_file, 'a') as add_configfile:
         new_config.write(add_configfile)
-    add_configfile.close()  
 
 def delete_camera(config_file):
     config.read(config_file)
@@ -35,13 +34,12 @@ def delete_camera(config_file):
 
     with open(config_file, 'w') as del_configfile:
         config.write(del_configfile)
-    del_configfile.close()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Processor's automatic setting.")
-    parser.add_argument('--ini_file', type=str, default='config-x86.ini')
-    parser.add_argument('--data_hist', type=str, default='data/historical_data/')
+    parser.add_argument('--ini_file', type=str, default=os.environ['DEFAULT_INI_CONFIG'])
+    parser.add_argument('--data_hist', type=str, default=os.environ['DEFAULT_HIST_VIDEOS_FOLDER'])
     args = parser.parse_args()
     config = RawConfigParser(allow_no_value=True)
     ini_file = args.ini_file
