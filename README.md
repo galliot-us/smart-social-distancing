@@ -30,10 +30,10 @@ Smart Distancing is an open-source application to quantify social distancing mea
 
 You can run this application on edge devices such as NVIDIA's Jetson Nano / TX2 or Google's Coral Edge-TPU. This application measures social distancing rates and gives proper notifications each time someone ignores social distancing rules. By generating and analyzing data, this solution outputs statistics about high-traffic areas that are at high risk of exposure to COVID-19 or any other contagious virus.
 
-If you want to understand more about the architecture you can read the following [post](https://neuralet.com/article/smart-social-distancing/).
+If you want to understand more about the architecture you can read the following [post](https://galliot.us/blog/smart-social-distancing-new-codebase-architecture/).
 
 
-Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to covid19project@neuralet.com if you have any questions.
+Please join [our slack channel](https://join.slack.com/t/neuralet/shared_invite/zt-g1w9o45u-Y4R2tADwdGBCruxuAAKgJA) or reach out to hello@galliot.us if you have any questions.
 
 ## Getting Started
 
@@ -92,7 +92,7 @@ The command that you need to execute will depend on the chosen device because ea
 
 There are three alternatives to run the processor in your device:
   1. Using `git` and building the docker image yourself (Follow the guide in [this](#running-the-processor-building-the-image) section). 
-  2. Pulling the (already built) image from [Neuralet's Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing) (Follow the guide in [this](#running-the-processor-from-neuralet-docker-hub-repository) section).
+  2. Pulling the (already built) image from [Galliot's Docker Hub repository](https://hub.docker.com/repository/docker/neuralet/smart-social-distancing) (Follow the guide in [this](#running-the-processor-from-galliot-docker-hub-repository) section).
   3. Using docker-compose to build and run the processor (Follow the guide in [this](#running-the-processor-with-docker-compose) section).
 
 ##### Running a proof of concept
@@ -115,7 +115,7 @@ Afterwards, if you intend on running the processor while consuming from a dedica
 Make sure your system fulfills the prerequisites and then clone this repository to your local system by running this command:
 
 ```bash
-git clone https://github.com/neuralet/smart-social-distancing.git
+git clone https://github.com/galliot-us/smart-social-distancing.git
 cd smart-social-distancing
 ```
 
@@ -134,10 +134,10 @@ git checkout $(git tag | tail -1)
 ./download_jetson_nano_trt.sh
 
 # 2) Build Docker image for Jetson Nano
-docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
+docker build -f jetson-nano.Dockerfile -t "galliot/smart-social-distancing:latest-jetson-nano" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-nano
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-jetson-nano
 ```
 
 ###### Run on Jetson TX2
@@ -148,28 +148,28 @@ docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -
 ./download_jetson_tx2_trt.sh
 
 # 2) Build Docker image for Jetson TX2
-docker build -f jetson-tx2.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-tx2" .
+docker build -f jetson-tx2.Dockerfile -t "galliot/smart-social-distancing:latest-jetson-tx2" .
 
 # 3) Run Docker container:
-docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-jetson-tx2
+docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-jetson-tx2
 ```
 
 ###### Run on Coral Dev Board
 ```bash
-# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from neuralet dockerhub)
-docker build -f coral-dev-board.Dockerfile -t "neuralet/smart-social-distancing:latest-coral-dev-board" .
+# 1) Build Docker image (This step is optional, you can skip it if you want to pull the container from galliot dockerhub)
+docker build -f coral-dev-board.Dockerfile -t "galliot/smart-social-distancing:latest-coral-dev-board" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-coral-dev-board
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-coral-dev-board
 ```
 
 ###### Run on AMD64 node with a connected Coral USB Accelerator
 ```bash
 # 1) Build Docker image
-docker build -f amd64-usbtpu.Dockerfile -t "neuralet/smart-social-distancing:latest-amd64" .
+docker build -f amd64-usbtpu.Dockerfile -t "galliot/smart-social-distancing:latest-amd64" .
 
 # 2) Run Docker container:
-docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-amd64
+docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-amd64
 ```
 
 ###### Run on x86
@@ -182,10 +182,10 @@ docker run -it --privileged -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.
 # ./download_x86_model.sh
 
 # 1) Build Docker image
-docker build -f x86.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64" .
+docker build -f x86.Dockerfile -t "galliot/smart-social-distancing:latest-x86_64" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-x86_64
 ```
 
 ###### Run on x86 with GPU
@@ -199,11 +199,11 @@ Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvid
 # ./download_x86_model.sh
 
 # 1) Build Docker image
-docker build -f x86-gpu.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_gpu" .
+docker build -f x86-gpu.Dockerfile -t "galliot/smart-social-distancing:latest-x86_64_gpu" .
 
 # 2) Run Docker container:
 Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-x86_64_gpu
 ```
 
 ###### Run on x86 with GPU using TensorRT optimization
@@ -213,11 +213,11 @@ Note that you should have [Nvidia Docker Toolkit](https://github.com/NVIDIA/nvid
 
 
 # 1) Build Docker image
-docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt" .
+docker build -f x86-gpu-tensorrt-openpifpaf.Dockerfile -t "galliot/smart-social-distancing:latest-x86_64_gpu_tensorrt" .
 
 # 2) Run Docker container:
 # Notice: you must have Docker >= 19.03 to run the container with `--gpus` flag.
-docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_gpu_tensorrt
+docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-x86_64_gpu_tensorrt
 ```
 
 ###### Run on x86 using OpenVino
@@ -226,13 +226,13 @@ docker run -it --gpus all -p HOST_PORT:8000 -v "$PWD":/repo -e TZ=`./timezone.sh
 ./download_openvino_model.sh
 
 # 1) Build Docker image
-docker build -f x86-openvino.Dockerfile -t "neuralet/smart-social-distancing:latest-x86_64_openvino" .
+docker build -f x86-openvino.Dockerfile -t "galliot/smart-social-distancing:latest-x86_64_openvino" .
 
 # 2) Run Docker container:
-docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` neuralet/smart-social-distancing:latest-x86_64_openvino
+docker run -it -p HOST_PORT:8000 -v "$PWD":/repo  -e TZ=`./timezone.sh` galliot/smart-social-distancing:latest-x86_64_openvino
 ```
 
-##### Running the processor from neuralet Docker Hub repository
+##### Running the processor from galliot Docker Hub repository
 
 Before running any of the images available in the Docker repository, you need to follow these steps to have your device ready.
   1. Create a `data` folder.
@@ -780,16 +780,16 @@ The signature of this endpoint can be found in  http://<PROCESSOR_HOST>:<PROCESS
 
 ## Issues and Contributing
 
-The project is under substantial active development; you can find our roadmap at https://github.com/neuralet/neuralet/projects/1. Feel free to open an issue, send a Pull Request, or reach out if you have any feedback.
-* [Submit a feature request](https://github.com/neuralet/neuralet/issues/new?assignees=&labels=&template=feature_request.md&title=).
-* If you spot a problem or bug, please let us know by [opening a new issue](https://github.com/neuralet/neuralet/issues/new?assignees=&labels=&template=bug_report.md&title=).
+The project is under substantial active development; you can find our roadmap at https://github.com/galliot-us/neuralet/projects/1. Feel free to open an issue, send a Pull Request, or reach out if you have any feedback.
+* [Submit a feature request](https://github.com/galliot-us/neuralet/issues/new?assignees=&labels=&template=feature_request.md&title=).
+* If you spot a problem or bug, please let us know by [opening a new issue](https://github.com/galliot-us/neuralet/issues/new?assignees=&labels=&template=bug_report.md&title=).
 
 
 ## Contact Us
 
-* Visit our website at https://neuralet.com
-* Email us at covid19project@neuralet.com
-* Check out our other models at https://github.com/neuralet.
+* Visit our website at https://galliot.us
+* Email us at hello@galliot.us
+* Check out our other models at https://github.com/galliot-is.
 
 ## License
 
