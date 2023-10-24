@@ -3,6 +3,8 @@ import numpy as np
 import tensorrt as trt
 import pycuda.driver as cuda
 import time
+import os
+import pathlib
 from ..utils.fps_calculator import convert_infr_time_to_fps
 #import pycuda.autoinit  # Required for initializing CUDA driver
 
@@ -27,9 +29,27 @@ class Detector:
 
     def _load_engine(self):
         """ Load engine file as a trt Runtime. """
-        trt_bin_path = '/repo/data/jetson/TRT_%s.bin' % self.model
-        with open(trt_bin_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
-            return runtime.deserialize_cuda_engine(f.read())
+        root_dir = "/repo"
+        exporters_dir = f"{root_dir}/exporters/jetson/"
+        base_model_dir = f'{root_dir}/data/jetson/'
+        model_file = f"TRT_{self.model}.bin"
+        model_path = f'{base_model_dir}{model_file}'
+        if not os.path.isfile(model_path):
+            logger.info("you didn't specify the model file so the COCO pretrained model will be used")
+            base_url =  "https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/"
+            logger.info('model does not exist under: {}, downloading from {}'.format(str(model_path), base_url + model_file))
+            os.makedirs(base_model_dir, exist_ok=True)
+            os.system("bash " + exporters_dir + "generate_mobilenet_tensorrt.bash")
+        elif (pathlib.Path(model_path).suffix == ".pb"):
+            logger.info('model is a Tensorflow protobuf... Converting...')
+            os.makedirs(base_model_dir, exist_ok=True)
+            detector_class_count = 1
+            os.system("bash " + exporters_dir + "generate_mobilenet_tensorrt.bash" + str(model_path) + " " + str(detector_class_count))
+            model_file = "frozen_inference_graph.bin"
+            model_path = os.path.join(base_model_dir, model_file)
+
+        with open(model_path, 'rb') as f, trt.Runtime(self.trt_logger) as runtime:
+           return runtime.deserialize_cuda_engine(f.read())
 
     def _allocate_buffers(self):
         """

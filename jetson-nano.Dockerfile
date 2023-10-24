@@ -3,21 +3,19 @@
 # 1) build: docker build -f jetson-nano.Dockerfile -t "neuralet/smart-social-distancing:latest-jetson-nano" .
 # 2) run: docker run -it --runtime nvidia --privileged -p HOST_PORT:8000 -v "$PWD/data":/repo/data neuralet/smart-social-distancing:latest-jetson-nano
 
-FROM nvcr.io/nvidia/l4t-base:r32.3.1
+FROM nvcr.io/nvidia/l4t-tensorflow:r32.5.0-tf1.15-py3
 
-RUN wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/tensorrt.tar.gz -O /opt/tensorrt.tar.gz
-RUN tar -xzf /opt/tensorrt.tar.gz -C /usr/local/lib/python3.6/dist-packages/
-
-RUN wget https://github.com/sasikiran/jetson_tx2_trt_ssd/raw/master/libflattenconcat.so -O /opt/libflattenconcat.so
 
 # The `python3-opencv` package is old and doesn't support gstreamer video writer on Debian. So we need to manually build opencv.
 ARG OPENCV_VERSION=4.3.0
 # http://amritamaz.net/blog/opencv-config
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
+        ca-certificates \
         cmake \
         curl \
         git \
+        gnupg \
         gstreamer1.0-plugins-bad \
         gstreamer1.0-plugins-good \
         gstreamer1.0-plugins-ugly \
@@ -27,12 +25,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgstreamer-plugins-base1.0-dev \
         libgstreamer1.0-dev \
         libsm6 \
+        libswscale4 \
         libswscale-dev \
         libxext6 \
         libxrender-dev \
         mesa-va-drivers \
-        python3-dev \
-        python3-numpy \
+        nano \
+        pkg-config \
+        python3-pip \
+        vim \
+        zip \
     && rm -rf /var/lib/apt/lists/* \
     && cd /tmp/ \
     && curl -L https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.tar.gz -o opencv.tar.gz \
@@ -63,6 +65,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxrender-dev \
     && apt-get autoremove -y
 
+RUN apt-get update
+
+RUN python3 -m pip install --upgrade pip
+
+RUN printf 'deb https://repo.download.nvidia.com/jetson/common r32 main\ndeb https://repo.download.nvidia.com/jetson/t210 r32 main' > /etc/apt/sources.list.d/nvidia-l4t-apt-source.list
+
+COPY ./bin/trusted-keys /tmp/trusted-keys
+RUN apt-key add /tmp/trusted-keys
+
 # https://askubuntu.com/questions/909277/avoiding-user-interaction-with-tzdata-when-installing-certbot-in-a-docker-contai
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -70,12 +81,20 @@ COPY api/requirements.txt /
 
 # Installing pycuda using already-built wheel is a lot faster
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        tzdata \
+        graphsurgeon-tf \
         libboost-python-dev \
         libboost-thread-dev \
-        pkg-config \
+        libtcmalloc-minimal4 \
+        libnvinfer6 \
+        libnvinfer-dev \
+        libhdf5-100 \
+        libhdf5-dev \
+        libprotobuf-dev \
+        protobuf-compiler \
+        python3-libnvinfer \
+        python3-libnvinfer-dev \
         python3-dev \
+        python3-h5py \
         python3-matplotlib \
         python3-numpy \
         python3-pillow \
@@ -83,20 +102,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-scipy \
         python3-wget \
         supervisor \
+        tensorrt \
+        tzdata \
+        uff-converter-tf \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf $(which gcc) /usr/local/bin/gcc-aarch64-linux-gnu \
     && ln -sf $(which g++) /usr/local/bin/g++-aarch64-linux-gnu \
-    && wget https://github.com/Tony607/jetson_nano_trt_tf_ssd/raw/master/packages/jetpack4.3/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl -O /tmp/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl \
-    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel && pip install -r requirements.txt \
-        /tmp/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl \
-    && rm /tmp/pycuda-2019.1.2-cp36-cp36m-linux_aarch64.whl \
+    && python3 -m pip install --upgrade pip setuptools==41.0.0 wheel protobuf wget pillow pycuda onnx nvidia-pyindex && pip install -r requirements.txt \
     && apt-get purge -y \
-        pkg-config \
     && apt-get autoremove -y
+
+COPY ./bin/libflattenconcat.so /opt/libflattenconcat.so
+
+ENV LD_PRELOAD="/usr/lib/aarch64-linux-gnu/libtcmalloc_minimal.so.4"
 
 ENV DEV_ALLOW_ALL_ORIGINS=true
 ENV CONFIG_FILE=config-jetson-nano.ini
-ENV OPENBLAS_CORETYPE=armv8
 
 COPY . /repo/
 WORKDIR /repo

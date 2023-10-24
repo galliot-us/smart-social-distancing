@@ -11,6 +11,7 @@ class Detector:
     Detector class is a high level class for detecting object using NVIDIA jetson devices.
     When an instance of the Detector is created you can call inference method and feed your
     input image in order to get the detection results.
+    Perform object detection with the given prebuilt tensorrt engine.
 
     :param config: Is a ConfigEngine instance which provides necessary parameters.
     :param source: A string that represents the camera. Ex: "Source_1".
