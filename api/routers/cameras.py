@@ -246,11 +246,11 @@ async def delete_camera(camera_id: str, reboot_processor: Optional[bool] = True)
 
     # Delete all directories related to a given camera.
     camera_screenshot_directory = os.path.join(os.environ.get("ScreenshotsDirectory"), camera_id)
-    shutil.rmtree(camera_screenshot_directory)
+    shutil.rmtree(camera_screenshot_directory, ignore_errors=True)
     source_directory = os.path.join(os.getenv("SourceLogDirectory"), camera_id)
-    shutil.rmtree(source_directory)
+    shutil.rmtree(source_directory, ignore_errors=True)
     source_config_directory = os.path.join(os.getenv("SourceConfigDirectory"), camera_id)
-    shutil.rmtree(source_config_directory)
+    shutil.rmtree(source_config_directory, ignore_errors=True)
 
     return handle_response(None, success, status.HTTP_204_NO_CONTENT)
 

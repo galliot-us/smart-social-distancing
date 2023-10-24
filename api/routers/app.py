@@ -66,6 +66,6 @@ def sync_dashboard():
     if response.status_code != status.HTTP_200_OK:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error syncing processor with dashbord"
+            detail="Error syncing processor with dashboard"
         )
     return response.json()
